@@ -1933,3 +1933,8 @@ details summary {
   font-size: 0.9rem;
   color: #6e4b22;
 }
+/* El ajuste de tamaño del panel de jugadores lo hace el propio componente (zoom calculado) */
+.card.players {
+  zoom: 1 !important;
+  overflow: hidden !important;
+}

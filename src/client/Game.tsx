@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   CAPITALS,
@@ -613,8 +613,37 @@ function PlayersPanel({
 }) {
   const [confirm, setConfirm] = useState<{ kind: 'build'; b: Building } | { kind: 'recruit'; u: UnitType } | null>(null);
   const myTurnNow = s.phase === 'PHASE_2' && s.turn?.seat === mySeat;
+  // Escala el contenido para que el panel quepa siempre entero en el alto disponible.
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const outer = outerRef.current;
+      const inner = innerRef.current;
+      if (!outer || !inner) return;
+      inner.style.zoom = '1';
+      if (window.innerWidth <= 900) return;
+      const cs = getComputedStyle(outer);
+      const avail = outer.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let z = 1;
+      for (let i = 0; i < 3; i++) {
+        const h = inner.getBoundingClientRect().height;
+        if (h <= avail) break;
+        z = z * (avail / h) * 0.995;
+        inner.style.zoom = String(z);
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (outerRef.current) ro.observe(outerRef.current);
+    window.addEventListener('resize', fit);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', fit);
+    };
+  });
   return (
-    <div className="card players">
+    <div className="card players" ref={outerRef}>
       {confirm && (
         <ConfirmDialog
           state={s}
@@ -629,6 +658,7 @@ function PlayersPanel({
         />
       )}
       {/* Tu panel primero y con ilustraciones; los rivales, en resumen. */}
+      <div className="players-fit" ref={innerRef}>
       {[mySeat, ...s.order.filter((x) => x !== mySeat)].map((seat) => {
         const p = s.players[seat];
         const lobby = room.players.find((x) => x.seat === seat);
@@ -744,6 +774,7 @@ function PlayersPanel({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
