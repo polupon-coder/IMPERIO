@@ -38,7 +38,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage, resourceIcon, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_TOKEN, buildingImage, resourceIcon, unitFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -396,7 +396,13 @@ function Phase1Panel({
           <div className="row">
             {front.options.map((o) => (
               <button key={o} className="primary" onClick={() => send({ type: 'chooseReward', option: o })}>
-                {o === 'muralla' ? 'Muralla' : NAMES.unit[o]}
+                {o === 'muralla' ? (
+                  <>
+                    <img className="icon wall-icon" src={WALL_ICON} alt="" /> Muralla
+                  </>
+                ) : (
+                  NAMES.unit[o]
+                )}
               </button>
             ))}
           </div>
@@ -870,7 +876,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                   );
                 })}
                 <span title="Murallas intactas / originales">
-                  🧱 {p.walls.length}/{p.originalWalls.length}
+                  <img className="icon wall-icon" src={WALL_ICON} alt="Murallas" /> {p.walls.length}/{p.originalWalls.length}
                 </span>
               </div>
             </div>
@@ -925,7 +931,9 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 );
               })}
               <figure className={p.walls.length ? 'on' : ''} title="Murallas intactas / originales">
-                <span className="mini-token wall-token" style={{ borderColor: PLAYER_COLORS[p.color], background: PLAYER_COLORS[p.color] }} />
+                <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                  <img src={WALL_TOKEN} alt="Murallas" draggable={false} />
+                </span>
                 <figcaption>
                   Murallas <b>{p.walls.length}</b>/{p.originalWalls.length}
                 </figcaption>

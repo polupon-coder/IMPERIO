@@ -22,6 +22,10 @@ export const buildingImage = (b: string) => `/assets/buildings/${b}.webp`;
 /** Icono de cada recurso (scripts/prepare-resources.py). */
 export const resourceIcon = (r: string) => `/assets/resources/${r}.webp`;
 
+/** Muralla: ficha con papel (círculos) e icono transparente (textos). scripts/prepare-wall.py */
+export const WALL_TOKEN = '/assets/ui/muralla.webp';
+export const WALL_ICON = '/assets/ui/muralla-icono.webp';
+
 /** Iconos pequeños (siluetas) para los paneles. */
 export const UNIT_IMAGES: Record<UnitType, string> = {
   infanteria: '/assets/units/infanteria.svg',

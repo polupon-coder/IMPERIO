@@ -44,7 +44,7 @@ button {
   font: inherit;
   cursor: pointer;
   border: 1px solid var(--line);
-  background: #fffaf0;
+  background: rgba(255, 250, 240, 0.6);
   color: var(--ink);
   padding: 6px 12px;
   border-radius: 6px;
@@ -93,9 +93,9 @@ select {
   align-items: center;
 }
 .card {
-  background-color: var(--paper);
-  background-image: linear-gradient(#f6efdcd9, #f6efdcd9), url('/assets/ui/papiro.webp');
-  background-size: auto, 512px 512px;
+  /* Paneles translúcidos: dejan intuir el papiro del fondo (las ilustraciones siguen opacas) */
+  background-color: rgba(247, 240, 222, 0.62);
+  backdrop-filter: blur(1px);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px 14px;
@@ -112,7 +112,7 @@ select {
   color: var(--ok);
 }
 .hint {
-  background: #fff8e1;
+  background: rgba(255, 248, 225, 0.6);
   border-left: 3px solid var(--conquer);
   padding: 6px 8px;
   margin: 6px 0;
@@ -523,7 +523,7 @@ select {
   font-size: 0.78rem;
 }
 .grid-buttons button.built {
-  background: #e3efd9;
+  background: rgba(227, 239, 217, 0.6);
   opacity: 0.8;
 }
 details summary {
@@ -563,7 +563,7 @@ details summary {
 }
 .prompt {
   border: 2px solid var(--conquer);
-  background: #fff6de;
+  background-color: rgba(255, 246, 222, 0.7);
 }
 .waiting {
   font-style: italic;
@@ -637,10 +637,10 @@ details summary {
   padding: 6px 8px;
   margin-bottom: 8px;
   border-radius: 4px;
-  background: #fffaf0aa;
+  background: rgba(255, 250, 240, 0.35);
 }
 .players .player.active {
-  background: #fff3d6;
+  background: rgba(255, 243, 214, 0.55);
   box-shadow: 0 0 0 1px var(--conquer);
 }
 .player-head {
@@ -878,4 +878,10 @@ details summary {
 }
 .build-btn.built img {
   border-color: var(--ok);
+}
+
+.wall-icon {
+  width: 22px;
+  height: 22px;
+  vertical-align: -6px;
 }
