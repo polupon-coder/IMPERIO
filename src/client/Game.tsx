@@ -570,7 +570,7 @@ function TurnPanel({
 
       <details open>
         <summary>Reclutar (Acción Militar B)</summary>
-        <div className="grid-buttons">
+        <div className="grid-buttons recruit">
           {UNIT_TYPES.map((u) => {
             const unlocked = isUnlocked(s, mySeat, u);
             const count = unitCount(s, mySeat, u);

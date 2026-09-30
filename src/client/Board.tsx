@@ -37,6 +37,7 @@ const MARK_TITLE: Record<Mark, string> = {
 export function Board(p: BoardProps) {
   const { state: s } = p;
   const colorOf = (seat: Seat) => PLAYER_COLORS[s.players[seat].color];
+  const seed = hashString(s.players.map((p) => p.name + p.color).join('|'));
   return (
     <div className="board-wrap">
       <div className="board">
@@ -58,7 +59,15 @@ export function Board(p: BoardProps) {
               title={`${coordLabel(pos)} ${cap !== null ? 'Capital de ' + s.players[cap].name : cell.terrain ? NAMES.terrain[cell.terrain] : 'vacía'}${mark ? ' · ' + MARK_TITLE[mark] : ''}`}
               onClick={() => p.onCell(pos)}
             >
-              {img && <img className="tile-img" src={img} alt="" draggable={false} />}
+              {img && (
+                <img
+                  className="tile-img"
+                  src={img}
+                  alt=""
+                  draggable={false}
+                  style={cap === null && cell.terrain ? { transform: tileTransform(pos, cell.terrain, seed) } : undefined}
+                />
+              )}
               {cap !== null && <Walls state={s} seat={cap} targets={p.wallTargets} onWall={p.onWall} />}
               {units.length > 0 && (
                 <div className={`stack n${units.length}`}>
@@ -139,3 +148,22 @@ function Walls({
   );
 }
 
+
+function hashString(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * Orientación aleatoria (pero igual para todos los jugadores) de cada loseta: volteos y giros.
+ * La Montaña está dibujada en perspectiva, así que solo se voltea en horizontal.
+ */
+function tileTransform(pos: number, terrain: string, seed: number) {
+  const h = hashString(`${seed}:${pos}`);
+  const flipX = h & 1 ? -1 : 1;
+  if (terrain === 'montana') return `scaleX(${flipX})`;
+  const flipY = h & 2 ? -1 : 1;
+  const rot = ((h >>> 2) % 4) * 90;
+  return `rotate(${rot}deg) scale(${flipX}, ${flipY})`;
+}

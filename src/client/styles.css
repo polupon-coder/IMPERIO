@@ -505,7 +505,7 @@ select {
 }
 .grid-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin: 6px 0 10px;
 }
@@ -881,4 +881,8 @@ details summary {
   width: 22px;
   height: 22px;
   vertical-align: -6px;
+}
+
+.grid-buttons.recruit {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
