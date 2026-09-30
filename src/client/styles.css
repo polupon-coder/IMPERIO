@@ -441,17 +441,21 @@ select {
 }
 
 /* Murallas: sobre los lados de la Capital */
+/* Murallas del color del equipo, con juntas de sillería */
 .wall {
   position: absolute;
-  background: #6b5a45;
-  border: 1px solid #3a2c1e;
+  background-color: var(--owner);
+  background-image: repeating-linear-gradient(90deg, #fff3 0 5px, #0004 5px 7px);
+  border: 1px solid #2b2118;
+  box-shadow: 0 1px 3px #0009, inset 0 1px 0 #fff5;
   z-index: 6;
   border-radius: 2px;
-  background-image: repeating-linear-gradient(90deg, #7d6a52 0 6px, #5e4d38 6px 7px);
 }
 .wall.destroyed {
   background: none;
-  border: 2px dashed #6b5a4588;
+  border: 2px dashed var(--owner);
+  box-shadow: none;
+  opacity: 0.7;
 }
 .wall.target {
   cursor: crosshair;
@@ -475,7 +479,7 @@ select {
   top: 8%;
   bottom: 8%;
   width: 9px;
-  background-image: repeating-linear-gradient(0deg, #7d6a52 0 6px, #5e4d38 6px 7px);
+  background-image: repeating-linear-gradient(0deg, #fff3 0 5px, #0004 5px 7px);
 }
 .wall-E {
   right: -6px;

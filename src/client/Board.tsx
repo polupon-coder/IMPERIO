@@ -125,6 +125,7 @@ function Walls({
           <div
             key={side}
             className={`wall wall-${side} ${intact ? 'intact' : 'destroyed'} ${target ? 'target' : ''}`}
+            style={{ ['--owner' as string]: PLAYER_COLORS[pl.color] }}
             title={`Muralla ${NAMES.side[side]}${intact ? '' : ' (destruida)'}${target ? ' · atacar' : ''}`}
             onClick={(e) => {
               if (!target) return;
