@@ -926,7 +926,9 @@ details summary {
 }
 /* Recursos del panel propio, del tamaño de las fichas de tropa */
 .resource-figures {
-  grid-template-columns: repeat(6, 1fr);
+  /* Misma rejilla de 4 columnas que los edificios: cada recurso centrado bajo un edificio */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 6px;
 }
 .res-big {
   display: block;
