@@ -1537,3 +1537,53 @@ details summary {
   font-size: 1.1rem;
   text-align: center;
 }
+
+/* ---------- Pergamino del autor: fondo de ventanas flotantes y panel lateral ---------- */
+/* border-image conserva el borde rasgado y el doble filete sin deformarlos. */
+.modal,
+.side {
+  border-style: solid;
+  border-width: 34px;
+  border-color: transparent;
+  border-image: url('/assets/ui/pergamino.webp') 90 fill / 34px stretch;
+  background: none !important;
+  background-color: transparent !important;
+  box-shadow: none;
+  filter: drop-shadow(0 8px 16px #3a220f66);
+  border-radius: 0;
+  backdrop-filter: none;
+}
+.modal {
+  padding: 4px 10px 6px;
+}
+.modal-close {
+  top: -14px;
+  right: -14px;
+}
+@media (min-width: 901px) {
+  .side {
+    padding: 0 2px;
+  }
+}
+/* Dentro del lateral, los paneles se funden con el pergamino */
+.side > .card {
+  background: none !important;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.side > .chat-bar {
+  border-top: 1px solid #8a6b4355;
+  border-radius: 0;
+}
+.side .player {
+  background: rgba(255, 248, 230, 0.35);
+}
+.modal .modal-close {
+  top: -6px;
+  right: -4px;
+  background: rgba(255, 248, 230, 0.8);
+  border-color: #8a6b43;
+}
