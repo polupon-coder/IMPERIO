@@ -1641,46 +1641,15 @@ details summary {
   text-align: center;
   margin-bottom: 0;
 }
-/* Separador entre los bloques de jugador del lateral */
-.side .players .player + .player {
-  position: relative;
-  margin-top: 16px;
-}
-.side .players .player + .player::before {
-  content: '';
-  position: absolute;
-  left: 4%;
-  right: 4%;
-  top: -15px;
-  height: 14px;
-  background: url('/assets/ui/separador.webp') center / contain no-repeat;
-  opacity: 0.8;
-}
+/* Lateral: bloques de jugador y chat sin separadores decorativos */
 .side .players .player {
   margin-bottom: 0;
 }
-/* y encima del chat */
+.side .players .player + .player {
+  margin-top: 10px;
+}
 .side > .chat-bar {
   border-top: none !important;
-  position: relative;
-}
-.side > .chat-bar::before {
-  content: '';
-  position: absolute;
-  left: 4%;
-  right: 4%;
-  top: -12px;
-  height: 14px;
-  background: url('/assets/ui/separador.webp') center / contain no-repeat;
-  opacity: 0.8;
-}
-.side .players .player + .player {
-  margin-top: 20px;
-}
-.side .players .player + .player::before {
-  top: -19px;
-  height: 18px;
-  opacity: 1;
 }
 
 /* ---------- Portada y sala sobre pergamino ---------- */
