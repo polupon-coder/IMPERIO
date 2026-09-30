@@ -817,6 +817,12 @@ function CombatView({ state: s }: { state: GameState }) {
   );
 }
 
+/** Edificios construidos primero (a la izquierda), después los pendientes; ambos en el orden del reglamento. */
+const builtFirst = (built: string[]) => [
+  ...BUILDINGS.filter((b) => built.includes(b)),
+  ...BUILDINGS.filter((b) => !built.includes(b)),
+];
+
 function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: PublicRoom; mySeat: Seat }) {
   return (
     <div className="card players">
@@ -829,7 +835,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
         const mine = seat === mySeat;
         if (!mine)
           return (
-            <div key={seat} className={`player summary ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color] }}>
+            <div key={seat} className={`player summary ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
               <div className="player-head">
                 <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
                 <b>{p.name}</b>
@@ -846,7 +852,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 ))}
               </div>
               <div className="bld-chips">
-                {BUILDINGS.map((b) => (
+                {builtFirst(p.buildings).map((b) => (
                   <span key={b} className={`bld-chip ${p.buildings.includes(b) ? 'on' : ''}`} title={NAMES.building[b]}>
                     {NAMES.building[b]}
                   </span>
@@ -870,7 +876,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
             </div>
           );
         return (
-          <div key={seat} className={`player mine ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color] }}>
+          <div key={seat} className={`player mine ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
             <div className="player-head">
               <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
               <b>{p.name}</b>
@@ -889,7 +895,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
             </div>
             <div className="buildings-head muted">Edificios {p.buildings.length}/8</div>
             <div className="buildings">
-              {BUILDINGS.map((b) => {
+              {builtFirst(p.buildings).map((b) => {
                 const built = p.buildings.includes(b);
                 return (
                   <figure
@@ -909,7 +915,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 const n = units.filter((x) => x.type === u).length;
                 return (
                   <figure key={u} className={n ? 'on' : ''} title={`${NAMES.unit[u]}: ${n}/5`}>
-                    <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                    <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                       <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
                     </span>
                     <figcaption>
