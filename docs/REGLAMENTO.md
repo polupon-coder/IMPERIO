@@ -27,7 +27,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A14 | Murallas | Están en el lado entre la Capital y la casilla vecina; si están intactas bloquean todo (movimiento, ataques y disparos, también los del propietario). Solo existen alrededor de las Capitales. |
 | A15 | Bombardeo de Murallas | Opción B: la Artillería puede atacar la Muralla de un lado desde la casilla adyacente a ese lado o desde cualquier casilla a distancia 2 de la Capital con una ruta ortogonal mínima que entra por ese lado (la casilla en línea recta y las dos diagonales). |
 | A16 | Pasar | El jugador activo puede terminar su turno sin realizar acciones. |
-| A17 | Negociación | Libre (sin proporciones fijas). Solo **un intercambio aceptado por turno**. |
+| A17 | Negociación | Cada intercambio es de **1 recurso por 1 recurso** con otro jugador. Solo **un intercambio aceptado por turno**. |
 
 ### Decisiones de implementación pendientes de confirmar
 

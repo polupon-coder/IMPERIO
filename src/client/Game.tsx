@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CAPITALS,
   RINGS,
@@ -82,6 +82,7 @@ export function Game({
   const myTurn = active === mySeat;
   const [mode, setMode] = useState<Mode>({ kind: 'none' });
   const [error, setError] = useState('');
+  const [tradeOpen, setTradeOpen] = useState(false);
 
   // Si la selección deja de ser válida tras una actualización, se limpia.
   useEffect(() => {
@@ -214,6 +215,8 @@ export function Game({
         </span>
       </header>
 
+      {tradeOpen && <TradeDialog state={s} mySeat={mySeat} send={send} onClose={() => setTradeOpen(false)} />}
+      {s.prompt?.kind === 'trade' && s.prompt.seat === mySeat && <OfferDialog state={s} send={send} />}
       <main className="layout">
         <section className="board-col">
           <Board
@@ -245,6 +248,7 @@ export function Game({
           <PromptPanel state={s} mySeat={mySeat} send={send} />
           {/* El panel de jugadores establecido va siempre arriba; las acciones del turno, debajo. */}
           <PlayersPanel state={s} room={room} mySeat={mySeat} />
+          <ChatBar room={room} state={s} mySeat={mySeat} onTrade={() => setTradeOpen(true)} />
           {s.phase === 'PHASE_1' && (
             <Phase1Panel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
           )}
@@ -292,6 +296,7 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
       </div>
     );
   }
+  if (pr.kind === 'trade') return null; // se muestra en el panel flotante OfferDialog
   return (
     <div className="card prompt">
       {pr.kind === 'library' && (
@@ -349,21 +354,6 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
               Avanzar
             </button>
             <button onClick={() => send({ type: 'advance', accept: false })}>Quedarse</button>
-          </div>
-        </>
-      )}
-      {pr.kind === 'trade' && (
-        <>
-          <h3>Oferta de {s.players[pr.from].name}</h3>
-          <p>
-            Te da: <b>{costLabel(pr.give) ? <Cost r={pr.give} /> : 'nada'}</b>
-            <br />A cambio de: <b>{costLabel(pr.receive) ? <Cost r={pr.receive} /> : 'nada'}</b>
-          </p>
-          <div className="row">
-            <button className="primary" onClick={() => send({ type: 'respondTrade', accept: true })}>
-              Aceptar
-            </button>
-            <button onClick={() => send({ type: 'respondTrade', accept: false })}>Rechazar</button>
           </div>
         </>
       )}
@@ -672,79 +662,15 @@ function MarketPanel({ state: s, mySeat, send, blocked }: { state: GameState; my
   const my = s.players[mySeat];
   const [give, setGive] = useState<Resource>('comida');
   const [get, setGet] = useState<Resource>('madera');
-  const [to, setTo] = useState<Seat>(((mySeat + 1) % 4) as Seat);
-  const [offer, setOffer] = useState<Resources>(emptyResources());
-  const [want, setWant] = useState<Resources>(emptyResources());
-  const num = (r: Resources, set: (x: Resources) => void, k: Resource) => (
-    <input
-      type="number"
-      min={0}
-      value={r[k]}
-      onChange={(e) => set({ ...r, [k]: Math.max(0, Number(e.target.value) || 0) })}
-    />
-  );
   return (
     <details>
-      <summary>Mercado (sin gastar acción)</summary>
+      <summary>Mercado: convertir 2 → 1 (sin gastar acción)</summary>
       <div className="row">
         2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
         <button disabled={blocked || my.resources[give] < 2} onClick={() => send({ type: 'convert', give, get }, true)}>
           Convertir
         </button>
       </div>
-      {s.turn!.tradeDone ? (
-        <p className="muted">Ya has hecho tu intercambio de este turno.</p>
-      ) : (
-        <div className="trade">
-          <p>
-            Comerciar con{' '}
-            <select value={to} onChange={(e) => setTo(Number(e.target.value) as Seat)}>
-              {s.players
-                .filter((p) => p.seat !== mySeat)
-                .map((p) => (
-                  <option key={p.seat} value={p.seat}>
-                    {p.name}
-                  </option>
-                ))}
-            </select>
-          </p>
-          <table>
-            <thead>
-              <tr>
-                <th />
-                {RESOURCES.map((r) => (
-                  <th key={r}>{NAMES.resource[r]}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Doy</td>
-                {RESOURCES.map((r) => (
-                  <td key={r}>{num(offer, setOffer, r)}</td>
-                ))}
-              </tr>
-              <tr>
-                <td>Pido</td>
-                {RESOURCES.map((r) => (
-                  <td key={r}>{num(want, setWant, r)}</td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-          <button
-            disabled={blocked}
-            onClick={async () => {
-              if (await send({ type: 'proposeTrade', to, give: offer, receive: want }, true)) {
-                setOffer(emptyResources());
-                setWant(emptyResources());
-              }
-            }}
-          >
-            Proponer intercambio
-          </button>
-        </div>
-      )}
     </details>
   );
 }
@@ -962,5 +888,219 @@ function LogPanel({ state: s }: { state: GameState }) {
         ))}
       </ol>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Chat, comercio y oferta recibida
+// ---------------------------------------------------------------------------------------------
+
+/** El jugador activo con Mercado puede comerciar una vez por turno (§46, A17). */
+const canTrade = (s: GameState, seat: Seat) =>
+  s.phase === 'PHASE_2' &&
+  s.turn?.seat === seat &&
+  s.players[seat].buildings.includes('mercado') &&
+  !s.turn.tradeDone &&
+  !s.prompt &&
+  !s.combat;
+
+function ChatBar({
+  room,
+  state: s,
+  mySeat,
+  onTrade,
+}: {
+  room: PublicRoom;
+  state: GameState;
+  mySeat: Seat;
+  onTrade: () => void;
+}) {
+  const [text, setText] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
+  const chat = room.chat ?? [];
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+  }, [chat.length]);
+  const hasMarket = s.players[mySeat].buildings.includes('mercado');
+  const tradeOk = canTrade(s, mySeat);
+  const tradeTitle = !hasMarket
+    ? 'Necesitas construir el Mercado'
+    : tradeOk
+      ? 'Proponer un intercambio de 1 recurso por 1'
+      : s.turn?.seat !== mySeat
+        ? 'Solo puedes comerciar durante tu turno'
+        : s.turn?.tradeDone
+          ? 'Ya has hecho tu intercambio de este turno'
+          : 'Hay una decisión pendiente';
+  const colorOfPlayer = (id: number) => {
+    const lp = room.players.find((x) => x.id === id);
+    return lp?.color ? PLAYER_COLORS[lp.color] : '#6b5a45';
+  };
+  const submit = async () => {
+    const t = text.trim();
+    if (!t) return;
+    const r = await call('chat', { text: t });
+    if (r.ok) setText('');
+  };
+  return (
+    <div className="card chat-bar">
+      <button className="trade-btn" disabled={!tradeOk} title={tradeTitle} onClick={onTrade}>
+        <img src={buildingImage('mercado')} alt="" />
+        Comerciar
+      </button>
+      <div className="chat">
+        <div className="chat-list" ref={listRef}>
+          {chat.length === 0 && <p className="muted chat-empty">Sin mensajes todavía.</p>}
+          {chat.map((m) => {
+            const lp = room.players.find((x) => x.id === m.playerId);
+            return (
+              <p key={m.n} className="chat-msg">
+                <b style={{ color: colorOfPlayer(m.playerId) }}>{lp?.name ?? '¿?'}:</b> {m.text}
+              </p>
+            );
+          })}
+        </div>
+        <form
+          className="chat-input"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+        >
+          <input value={text} maxLength={300} placeholder="Escribe un mensaje…" onChange={(e) => setText(e.target.value)} />
+          <button type="submit" disabled={!text.trim()}>
+            Enviar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
+        <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
+          ×
+        </button>
+        <h3>{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ResourcePicker({
+  value,
+  onChange,
+  available,
+}: {
+  value: Resource | null;
+  onChange: (r: Resource) => void;
+  available: Resources;
+}) {
+  return (
+    <div className="res-picker">
+      {RESOURCES.map((r) => (
+        <button
+          key={r}
+          className={value === r ? 'selected' : ''}
+          disabled={available[r] < 1}
+          title={`${NAMES.resource[r]} (tiene ${available[r]})`}
+          onClick={() => onChange(r)}
+        >
+          <img src={resourceIcon(r)} alt="" />
+          <span>{NAMES.resource[r]}</span>
+          <small>{available[r]}</small>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Panel flotante para proponer un intercambio de 1 recurso por 1 recurso. */
+function TradeDialog({
+  state: s,
+  mySeat,
+  send,
+  onClose,
+}: {
+  state: GameState;
+  mySeat: Seat;
+  send: Send;
+  onClose: () => void;
+}) {
+  const [to, setTo] = useState<Seat | null>(null);
+  const [give, setGive] = useState<Resource | null>(null);
+  const [want, setWant] = useState<Resource | null>(null);
+  const one = (r: Resource): Resources => ({ ...emptyResources(), [r]: 1 });
+  const target = to !== null ? s.players[to] : null;
+  const ready = to !== null && give && want && canTrade(s, mySeat);
+  return (
+    <Modal title="Comerciar (1 recurso por 1)" onClose={onClose}>
+      <p className="muted">Elige con quién comerciar, qué le ofreces y qué quieres a cambio.</p>
+      <div className="trade-players">
+        {s.players
+          .filter((p) => p.seat !== mySeat)
+          .map((p) => (
+            <button
+              key={p.seat}
+              className={to === p.seat ? 'selected' : ''}
+              style={{ borderColor: PLAYER_COLORS[p.color] }}
+              onClick={() => {
+                setTo(p.seat);
+                setWant(null);
+              }}
+            >
+              <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} /> {p.name}
+            </button>
+          ))}
+      </div>
+      <h4>Ofreces</h4>
+      <ResourcePicker value={give} onChange={setGive} available={s.players[mySeat].resources} />
+      <h4>Quieres a cambio{target ? ` (de ${target.name})` : ''}</h4>
+      <ResourcePicker value={want} onChange={setWant} available={target ? target.resources : emptyResources()} />
+      <div className="row modal-actions">
+        <button
+          className="primary"
+          disabled={!ready}
+          onClick={async () => {
+            if (await send({ type: 'proposeTrade', to: to!, give: one(give!), receive: one(want!) }, true)) onClose();
+          }}
+        >
+          Proponer intercambio
+        </button>
+        <button onClick={onClose}>Cancelar</button>
+      </div>
+    </Modal>
+  );
+}
+
+/** Panel flotante con la oferta recibida. Cerrarlo equivale a rechazarla. */
+function OfferDialog({ state: s, send }: { state: GameState; send: Send }) {
+  const pr = s.prompt as Extract<NonNullable<GameState['prompt']>, { kind: 'trade' }>;
+  const from = s.players[pr.from];
+  const reject = () => send({ type: 'respondTrade', accept: false });
+  return (
+    <Modal title={`Oferta de ${from.name}`} onClose={reject}>
+      <div className="offer">
+        <div>
+          <small>Te da</small>
+          <Cost r={pr.give} />
+        </div>
+        <div className="offer-arrow">⇄</div>
+        <div>
+          <small>A cambio de</small>
+          <Cost r={pr.receive} />
+        </div>
+      </div>
+      <div className="row modal-actions">
+        <button className="primary" onClick={() => send({ type: 'respondTrade', accept: true })}>
+          Aceptar
+        </button>
+        <button onClick={reject}>Rechazar</button>
+      </div>
+    </Modal>
   );
 }

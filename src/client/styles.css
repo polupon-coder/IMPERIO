@@ -1039,3 +1039,276 @@ details summary {
     zoom: 0.72;
   }
 }
+
+/* ---------- Chat y comercio (bajo el panel de jugadores) ---------- */
+.chat-bar {
+  display: flex;
+  gap: 8px;
+  height: 118px;
+  padding: 8px;
+  margin-top: 8px;
+}
+.trade-btn {
+  flex: 0 0 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  padding: 6px 4px;
+}
+.trade-btn img {
+  width: 76px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  background: rgba(255, 252, 244, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.85rem;
+}
+.chat-msg {
+  margin: 0 0 2px;
+  line-height: 1.25;
+  word-wrap: break-word;
+}
+.chat-empty {
+  margin: 2px 0;
+  font-style: italic;
+}
+.chat-input {
+  display: flex;
+  gap: 4px;
+}
+.chat-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+}
+.chat-input button {
+  padding: 3px 10px;
+}
+
+/* ---------- Paneles flotantes ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #2b211855;
+  display: grid;
+  place-items: center;
+  z-index: 50;
+}
+.modal {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background-color: rgba(247, 240, 222, 0.97);
+  box-shadow: 0 10px 30px #0006;
+  padding: 16px 18px;
+  margin: 0;
+}
+.modal h4 {
+  margin: 10px 0 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+}
+.modal-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+  border-radius: 50%;
+}
+.modal-actions {
+  margin-top: 14px;
+  justify-content: flex-end;
+}
+.trade-players {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.trade-players button {
+  border-width: 2px;
+}
+.res-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.res-picker button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+}
+.res-picker img {
+  width: 40px;
+  height: 40px;
+}
+.res-picker span {
+  font-size: 0.8rem;
+}
+.res-picker small {
+  color: var(--ink-soft);
+}
+.offer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 10px 0;
+  text-align: center;
+}
+.offer small {
+  display: block;
+  color: var(--ink-soft);
+}
+.offer .cost img {
+  width: 44px;
+  height: 44px;
+}
+.offer .cost {
+  font-size: 1.2rem;
+}
+.offer-arrow {
+  font-size: 1.6rem;
+  color: var(--ink-soft);
+}
+
+/* El panel de jugadores + el chat caben enteros en el alto del tablero */
+@media (min-width: 901px) {
+  .card.players {
+    zoom: 1;
+  }
+}
+@media (max-height: 970px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.9;
+  }
+}
+@media (max-height: 899px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.84;
+  }
+}
+@media (max-height: 849px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.77;
+  }
+}
+@media (max-height: 799px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.72;
+  }
+}
+@media (max-height: 759px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.64;
+  }
+}
+
+/* ---------- Ajuste final al alto de la ventana (sustituye al escalado anterior) ---------- */
+@media (min-width: 901px) {
+  .card.players {
+    zoom: 1 !important;
+  }
+  /* Ilustraciones del panel propio proporcionales al alto disponible */
+  .bld img {
+    aspect-ratio: auto;
+    height: clamp(30px, calc(7.2vh - 4px), 84px);
+  }
+  .mini-token,
+  .res-big {
+    width: clamp(26px, calc(5vh - 4px), 46px);
+    height: clamp(26px, calc(5vh - 4px), 46px);
+  }
+  .chat-bar {
+    height: clamp(92px, 13vh, 132px);
+  }
+  .trade-btn img {
+    width: clamp(44px, 7vh, 76px);
+  }
+}
+@media (max-height: 899px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.9;
+  }
+}
+@media (max-height: 799px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.8;
+  }
+  .buildings-head {
+    margin-top: 1px;
+  }
+}
+@media (max-height: 719px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.72;
+  }
+}
+@media (min-width: 901px) {
+  .player.summary {
+    padding: 3px 8px 4px;
+  }
+  .player.summary .player-head {
+    font-size: 0.95rem;
+    line-height: 1.1;
+  }
+  .sum-row {
+    height: 24px;
+    margin-top: 2px;
+  }
+  .sum-row > .res,
+  .sum-row > .bld-chip {
+    height: 22px;
+  }
+  .bld img {
+    height: clamp(28px, calc(6.4vh - 4px), 80px);
+  }
+  .chat-bar {
+    height: clamp(88px, 11vh, 124px);
+  }
+}
+@media (max-height: 829px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.8;
+  }
+}
+@media (max-height: 779px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.72;
+  }
+}
+@media (max-height: 739px) and (min-width: 901px) {
+  .player.summary {
+    zoom: 0.66;
+  }
+  .bld img {
+    height: calc(5.6vh - 4px);
+  }
+  .chat-bar {
+    height: 84px;
+  }
+}

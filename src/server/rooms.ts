@@ -20,6 +20,14 @@ export interface Room {
   players: LobbyPlayer[];
   game: GameState | null;
   version: number;
+  chat?: ChatMessage[];
+}
+
+export interface ChatMessage {
+  n: number;
+  playerId: number;
+  text: string;
+  ts: number;
 }
 
 const COLORS: Color[] = ['rojo', 'azul', 'amarillo', 'verde'];
@@ -163,6 +171,16 @@ export function act(room: Room, token: string, action: Action) {
 }
 
 /** Estado visible para los clientes: sin tokens ni semilla del generador de dados. */
+export function addChat(room: Room, token: string, text: unknown) {
+  const p = playerByToken(room, token);
+  const clean = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  if (!clean) throw new RoomError('Mensaje vacío.');
+  const chat = (room.chat ??= []);
+  chat.push({ n: (chat.at(-1)?.n ?? 0) + 1, playerId: p.id, text: clean, ts: Date.now() });
+  if (chat.length > 200) chat.splice(0, chat.length - 200);
+  save(room);
+}
+
 export function publicRoom(room: Room, online: Set<number>) {
   const game = room.game ? { ...room.game, rng: 0 } : null;
   return {
@@ -178,6 +196,7 @@ export function publicRoom(room: Room, online: Set<number>) {
       online: online.has(p.id),
     })),
     game,
+    chat: room.chat ?? [],
   };
 }
 export type PublicRoom = ReturnType<typeof publicRoom>;

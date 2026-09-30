@@ -802,7 +802,9 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (action.to === seat || !s.players[action.to]) fail('Elige otro jugador.');
       const give = sanitize(action.give);
       const receive = sanitize(action.receive);
-      if (!RESOURCES.some((r) => give[r] || receive[r])) fail('El intercambio está vacío.');
+      const total = (x: Resources) => RESOURCES.reduce((n, r) => n + x[r], 0);
+      // Aclaración A17: cada intercambio es exactamente 1 recurso por 1 recurso.
+      if (total(give) !== 1 || total(receive) !== 1) fail('El intercambio debe ser de 1 recurso por 1 recurso.');
       if (!canAfford(p.resources, give)) fail('No tienes esos recursos.');
       if (!canAfford(s.players[action.to].resources, receive)) fail('El otro jugador no tiene esos recursos.');
       s.prompt = { kind: 'trade', seat: action.to, from: seat, give, receive };

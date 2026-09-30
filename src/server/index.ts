@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { Server, type Socket } from 'socket.io';
 import {
   act,
+  addChat,
   createRoom,
   getRoom,
   joinRoom,
@@ -128,6 +129,14 @@ io.on('connection', (socket: Socket) => {
     handle(ack, () => {
       const { room, token } = current();
       startGame(room, token);
+      broadcast(room);
+    }),
+  );
+
+  socket.on('chat', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      addChat(room, token, data?.text);
       broadcast(room);
     }),
   );

@@ -314,6 +314,16 @@ describe('Economía y turno', () => {
     expect(() => applyAction(s, 0, { type: 'proposeTrade', to: 2, give, receive })).toThrow();
   });
 
+  it('el intercambio es siempre de 1 recurso por 1 recurso', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['mercado'];
+    const two = { comida: 2, madera: 0, piedra: 0, agua: 0 };
+    const one = { comida: 0, madera: 1, piedra: 0, agua: 0 };
+    const none = { comida: 0, madera: 0, piedra: 0, agua: 0 };
+    expect(() => applyAction(s, 0, { type: 'proposeTrade', to: 1, give: two, receive: one })).toThrow();
+    expect(() => applyAction(s, 0, { type: 'proposeTrade', to: 1, give: none, receive: one })).toThrow();
+  });
+
   it('victoria inmediata con 8 edificios y 1 Conquista', () => {
     let s = phase2Board();
     s.players[0].buildings = ['cuartel', 'arqueria', 'caballerizas', 'herreria', 'iglesia', 'mercado', 'biblioteca'];
