@@ -19,6 +19,9 @@ export const unitFigure = (color: string, type: UnitType) => `/assets/units/${co
 /** Ilustración de cada edificio (scripts/prepare-buildings.py). */
 export const buildingImage = (b: string) => `/assets/buildings/${b}.webp`;
 
+/** Icono de cada recurso (scripts/prepare-resources.py). */
+export const resourceIcon = (r: string) => `/assets/resources/${r}.webp`;
+
 /** Iconos pequeños (siluetas) para los paneles. */
 export const UNIT_IMAGES: Record<UnitType, string> = {
   infanteria: '/assets/units/infanteria.svg',

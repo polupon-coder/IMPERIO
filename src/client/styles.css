@@ -657,10 +657,33 @@ details summary {
   font-size: 0.9rem;
 }
 .res {
-  padding: 0 6px;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 7px 0 3px;
+  border-radius: 10px;
   background: #fff;
   border: 1px solid var(--line);
+}
+.res img {
+  width: 24px;
+  height: 24px;
+}
+/* Costes con iconos de recurso */
+.cost {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.cost > span {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cost img {
+  width: 20px;
+  height: 20px;
 }
 .res-comida {
   background: #eef3cf;

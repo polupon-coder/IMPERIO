@@ -38,7 +38,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage, resourceIcon } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -355,8 +355,8 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
         <>
           <h3>Oferta de {s.players[pr.from].name}</h3>
           <p>
-            Te da: <b>{costLabel(pr.give) || 'nada'}</b>
-            <br />A cambio de: <b>{costLabel(pr.receive) || 'nada'}</b>
+            Te da: <b>{costLabel(pr.give) ? <Cost r={pr.give} /> : 'nada'}</b>
+            <br />A cambio de: <b>{costLabel(pr.receive) ? <Cost r={pr.receive} /> : 'nada'}</b>
           </p>
           <div className="row">
             <button className="primary" onClick={() => send({ type: 'respondTrade', accept: true })}>
@@ -555,7 +555,7 @@ function TurnPanel({
               >
                 <img src={buildingImage(b)} alt="" draggable={false} />
                 <b>{NAMES.building[b]}</b>
-                <small>{built ? 'construido' : reqTH ? 'requiere 2 edificios' : costLabel(cost)}</small>
+                <small>{built ? 'construido' : reqTH ? 'requiere 2 edificios' : <Cost r={cost} />}</small>
               </button>
             );
           })}
@@ -576,7 +576,7 @@ function TurnPanel({
                 ? 'máximo 5'
                 : spots === 0
                   ? 'sin casilla'
-                  : costLabel(UNIT_COST[u]);
+                  : null;
             return (
               <button
                 key={u}
@@ -587,7 +587,7 @@ function TurnPanel({
                 <b>
                   <img className="icon" src={UNIT_IMAGES[u]} alt="" /> {NAMES.unit[u]} ({count}/5)
                 </b>
-                <small>{why}</small>
+                <small>{why ?? <Cost r={UNIT_COST[u]} />}</small>
               </button>
             );
           })}
@@ -754,6 +754,20 @@ function Sel({ value, onChange }: { value: Resource; onChange: (r: Resource) => 
   );
 }
 
+/** Coste o cantidad de recursos con sus iconos (p. ej. 3 [madera] 2 [piedra]). */
+function Cost({ r }: { r: Resources }) {
+  return (
+    <span className="cost">
+      {RESOURCES.filter((k) => r[k] > 0).map((k) => (
+        <span key={k} title={NAMES.resource[k]}>
+          {r[k]}
+          <img src={resourceIcon(k)} alt={NAMES.resource[k]} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function Dice({ values }: { values: number[] }) {
   const max = Math.max(...values);
   let marked = false;
@@ -825,7 +839,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
             <div className="resources">
               {RESOURCES.map((r) => (
                 <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
-                  {NAMES.resource[r]} <b>{p.resources[r]}</b>
+                  <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
                 </span>
               ))}
             </div>
