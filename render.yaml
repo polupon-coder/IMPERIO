@@ -1,0 +1,12 @@
+# Configuración para Render (https://render.com): Blueprint → conectar este repositorio.
+services:
+  - type: web
+    name: imperio
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22

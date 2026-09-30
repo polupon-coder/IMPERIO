@@ -14,6 +14,7 @@ import {
   loadRooms,
   playerByToken,
   publicRoom,
+  purgeOldRooms,
   RoomError,
   startGame,
   updateLobby,
@@ -54,7 +55,41 @@ function handle(ack: unknown, fn: () => Record<string, unknown> | void) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Límites de intentos por dirección IP (evita probar códigos al azar y abusos)
+// ---------------------------------------------------------------------------------------------
+const hits = new Map<string, number[]>();
+/** Registra un intento y lanza error si se supera `max` en `windowMs`. */
+function limit(key: string, max: number, windowMs: number, message: string) {
+  const now = Date.now();
+  const list = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (list.length >= max) throw new RoomError(message);
+  list.push(now);
+  hits.set(key, list);
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, list] of hits) if (list.every((t) => now - t > 60 * 60 * 1000)) hits.delete(k);
+}, 10 * 60 * 1000).unref();
+
+const clientIp = (socket: Socket) =>
+  String(socket.handshake.headers['x-forwarded-for'] ?? socket.handshake.address).split(',')[0].trim();
+
 io.on('connection', (socket: Socket) => {
+  const ip = clientIp(socket);
+  /** Cuenta los intentos fallidos de entrar en un Mundo. */
+  const guardedEntry = (fn: () => Record<string, unknown>) => {
+    const blockKey = `fail:${ip}`;
+    const now = Date.now();
+    const fails = (hits.get(blockKey) ?? []).filter((t) => now - t < 10 * 60 * 1000);
+    if (fails.length >= 10) throw new RoomError('Demasiados intentos fallidos. Espera unos minutos.');
+    try {
+      return fn();
+    } catch (e) {
+      if (e instanceof RoomError) hits.set(blockKey, [...fails, now]);
+      throw e;
+    }
+  };
   let session: { code: string; token: string; id: number } | null = null;
 
   const attach = (room: Room, token: string) => {
@@ -88,22 +123,25 @@ io.on('connection', (socket: Socket) => {
   };
 
   const current = () => {
-    if (!session) throw new RoomError('No estás en ninguna sala.');
+    if (!session) throw new RoomError('No estás en ningún Mundo.');
     return { room: getRoom(session.code), token: session.token };
   };
 
   socket.on('createRoom', (data, ack) =>
     handle(ack, () => {
+      limit(`create:${ip}`, 20, 60 * 60 * 1000, 'Has creado demasiados Mundos. Prueba más tarde.');
       const { room, player } = createRoom(data?.name);
       return attach(room, player.token);
     }),
   );
 
   socket.on('joinRoom', (data, ack) =>
-    handle(ack, () => {
-      const { room, player } = joinRoom(data?.code, data?.name);
-      return attach(room, player.token);
-    }),
+    handle(ack, () =>
+      guardedEntry(() => {
+        const { room, player } = joinRoom(data?.code, data?.name);
+        return attach(room, player.token);
+      }),
+    ),
   );
 
   socket.on('rejoin', (data, ack) =>
@@ -113,7 +151,7 @@ io.on('connection', (socket: Socket) => {
       // Con onlyIfOffline, no se entra si ese jugador ya está conectado en otra pestaña.
       if (data?.onlyIfOffline && onlineSet(room.code).has(playerByToken(room, token).id))
         throw new RoomError('Ese jugador ya está conectado en otra pestaña.');
-      return attach(room, token);
+      return guardedEntry(() => attach(room, token));
     }),
   );
 
@@ -144,6 +182,7 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('chat', (data, ack) =>
     handle(ack, () => {
+      limit(`chat:${socket.id}`, 8, 10 * 1000, 'Estás enviando mensajes demasiado rápido.');
       const { room, token } = current();
       addChat(room, token, data?.text);
       broadcast(room);
@@ -162,4 +201,10 @@ io.on('connection', (socket: Socket) => {
 });
 
 const n = loadRooms();
-http.listen(PORT, () => console.log(`IMPERIO escuchando en http://localhost:${PORT} (${n} salas cargadas)`));
+const purged = purgeOldRooms();
+if (purged) console.log(`${purged} Mundos antiguos borrados`);
+setInterval(() => {
+  const k = purgeOldRooms();
+  if (k) console.log(`${k} Mundos antiguos borrados`);
+}, 60 * 60 * 1000).unref();
+http.listen(PORT, () => console.log(`IMPERIO escuchando en http://localhost:${PORT} (${n} Mundos cargados)`));

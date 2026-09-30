@@ -40,6 +40,18 @@ Las tiradas se hacen automáticamente y la Fe se ofrece cuando corresponde.
 
 Para parar el servidor, pulsa `Ctrl + C` en la terminal. Las partidas se guardan en la carpeta `data/`.
 
+## Publicarlo en Internet (Render)
+
+El repositorio incluye `render.yaml`. En https://render.com: **New → Blueprint**, conectar este repositorio y la rama, y aceptar. Render compila (`npm run build`) y arranca (`npm start`) el juego, y da una dirección pública con HTTPS.
+
+En el plan gratuito el servidor se duerme tras un rato sin uso (tarda ~1 minuto en despertar) y las partidas guardadas pueden perderse si se reinicia. Con un plan de pago y un disco persistente (`DATA_DIR` apuntando al disco) se conservan siempre.
+
+## Privacidad y límites
+
+- Solo se guardan el nombre elegido, la partida y el chat; no se piden correos ni contraseñas.
+- Las partidas terminadas se borran a los **3 días** y cualquier Mundo sin actividad a los **14 días** (con su chat).
+- Límites por dirección IP: 10 intentos fallidos de entrar en un Mundo cada 10 minutos, 20 Mundos creados por hora, y un máximo de 8 mensajes de chat cada 10 segundos.
+
 ## Desarrollo
 
 Requiere Node 20 o superior.

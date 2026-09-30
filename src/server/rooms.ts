@@ -1,6 +1,6 @@
 // Salas: jugadores, lobby y persistencia en disco para poder reconectar sin perder la partida.
 import { randomBytes, randomInt } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyAction, createGame, RuleError, type Action, type Color, type GameState, type Seat } from '../engine';
 
@@ -16,6 +16,8 @@ export interface LobbyPlayer {
 export interface Room {
   code: string;
   createdAt: number;
+  /** Última modificación (ms). */
+  updatedAt?: number;
   hostId: number;
   players: LobbyPlayer[];
   game: GameState | null;
@@ -41,9 +43,35 @@ export class RoomError extends Error {}
 
 function save(room: Room) {
   room.version++;
+  room.updatedAt = Date.now();
   const file = join(DATA_DIR, `${room.code}.json`);
   writeFileSync(file + '.tmp', JSON.stringify(room));
   renameSync(file + '.tmp', file);
+}
+
+/**
+ * Borrado automático: partidas terminadas tras 3 días y cualquier Mundo sin actividad
+ * durante 14 días (incluido su chat). Devuelve cuántos se han borrado.
+ */
+const DAY = 24 * 60 * 60 * 1000;
+export const FINISHED_TTL = 3 * DAY;
+export const IDLE_TTL = 14 * DAY;
+export function purgeOldRooms(now = Date.now()) {
+  let n = 0;
+  for (const room of [...rooms.values()]) {
+    const last = room.updatedAt ?? room.createdAt;
+    const finished = room.game?.phase === 'GAME_OVER';
+    if (now - last > (finished ? FINISHED_TTL : IDLE_TTL)) {
+      rooms.delete(room.code);
+      try {
+        unlinkSync(join(DATA_DIR, `${room.code}.json`));
+      } catch {
+        /* ya no existía */
+      }
+      n++;
+    }
+  }
+  return n;
 }
 
 export function loadRooms() {
@@ -71,19 +99,19 @@ const cleanName = (name: unknown) => String(name ?? '').trim().slice(0, 20) || '
 
 export function getRoom(code: string): Room {
   const room = rooms.get(String(code ?? '').toUpperCase().trim());
-  if (!room) throw new RoomError('La sala no existe.');
+  if (!room) throw new RoomError('Ese Mundo no existe.');
   return room;
 }
 
 export function playerByToken(room: Room, token: string) {
   const p = room.players.find((x) => x.token === token);
-  if (!p) throw new RoomError('No perteneces a esta sala.');
+  if (!p) throw new RoomError('No perteneces a este Mundo.');
   return p;
 }
 
 function addPlayer(room: Room, name: string): LobbyPlayer {
   if (room.game) throw new RoomError('La partida ya ha empezado.');
-  if (room.players.length >= 4) throw new RoomError('La sala está completa (4 jugadores).');
+  if (room.players.length >= 4) throw new RoomError('El Mundo está completo (4 jugadores).');
   const takenSeats = room.players.map((p) => p.seat);
   const seat = ([0, 1, 2, 3] as Seat[]).find((s) => !takenSeats.includes(s)) ?? null;
   const p: LobbyPlayer = {
@@ -144,7 +172,7 @@ export function leaveLobby(room: Room, token: string) {
 export function startGame(room: Room, token: string) {
   const p = playerByToken(room, token);
   if (room.game) throw new RoomError('La partida ya ha empezado.');
-  if (p.id !== room.hostId) throw new RoomError('Solo quien creó la sala puede iniciar la partida.');
+  if (p.id !== room.hostId) throw new RoomError('Solo quien creó el Mundo puede iniciar la partida.');
   if (room.players.length !== 4) throw new RoomError('Hacen falta 4 jugadores.');
   if (room.players.some((x) => !x.ready)) throw new RoomError('Todos los jugadores deben estar preparados.');
   room.game = createGame(
