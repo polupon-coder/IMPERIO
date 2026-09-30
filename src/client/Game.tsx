@@ -38,7 +38,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_TOKEN, buildingImage, resourceIcon, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -870,12 +870,12 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                   const n = units.filter((x) => x.type === u).length;
                   return (
                     <span key={u} title={NAMES.unit[u]} className={`res unit-pill ${n ? '' : 'zero'}`}>
-                      <img className="pill-token" src={unitFigure(p.color, u)} alt={NAMES.unit[u]} /> <b>{n}</b>
+                      <img src={UNIT_IMAGES[u]} alt={NAMES.unit[u]} /> <b>{n}</b>
                     </span>
                   );
                 })}
-                <span title="Murallas intactas / originales" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
-                  <img src={WALL_ICON} alt="Murallas" /> <b>{p.walls.length}</b>/{p.originalWalls.length}
+                <span title="Murallas" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
+                  <img src={WALL_SILHOUETTE} alt="Murallas" /> <b>{p.walls.length}</b>
                 </span>
               </div>
             </div>

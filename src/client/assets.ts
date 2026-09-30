@@ -25,6 +25,8 @@ export const resourceIcon = (r: string) => `/assets/resources/${r}.webp`;
 /** Muralla: ficha con papel (círculos) e icono transparente (textos). scripts/prepare-wall.py */
 export const WALL_TOKEN = '/assets/ui/muralla.webp';
 export const WALL_ICON = '/assets/ui/muralla-icono.webp';
+/** Silueta simplificada de Muralla, a juego con las siluetas de tropas. */
+export const WALL_SILHOUETTE = '/assets/ui/muralla.svg';
 
 /** Iconos pequeños (siluetas) para los paneles. */
 export const UNIT_IMAGES: Record<UnitType, string> = {

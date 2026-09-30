@@ -893,10 +893,8 @@ details summary {
 .unit-pill.zero {
   opacity: 0.45;
 }
-.res img.pill-token {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid var(--owner);
-  object-fit: cover;
+.unit-pill img {
+  width: 18px;
+  height: 18px;
+  margin: 0 2px;
 }
