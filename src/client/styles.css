@@ -1414,3 +1414,126 @@ details summary {
   width: 22px !important;
   height: 22px !important;
 }
+
+/* ---------- Guía de la Fase I (arriba del lateral) ---------- */
+.phase1-guide {
+  border: 2px solid var(--conquer);
+  padding: 8px 10px;
+}
+.phase1-guide p {
+  margin: 4px 0;
+}
+.drawn {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.drawn img {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+@media (min-width: 901px) {
+  .side > .card.players {
+    overflow-y: auto;
+  }
+}
+
+/* ---------- Recompensas ---------- */
+.reward-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.reward-options button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-family: 'Cinzel', serif;
+}
+
+/* ---------- Dados ---------- */
+.dice-board {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 10px;
+  text-align: center;
+  margin: 8px 0;
+}
+.dice-board .vs {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.side-dice p {
+  margin: 0 0 6px;
+}
+.dice.big .die {
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px #0003;
+}
+.dice.big {
+  gap: 6px;
+}
+.faith-used {
+  display: block;
+  color: #2f5d9b;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.faith-ask {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 4px;
+}
+.combat-summary {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ---------- Avisos ---------- */
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 60;
+  pointer-events: none;
+}
+.toast {
+  background: rgba(252, 247, 234, 0.97);
+  border: 1px solid var(--line);
+  border-left: 4px solid #3f7d3a;
+  border-radius: 8px;
+  padding: 6px 14px;
+  box-shadow: 0 4px 14px #0004;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  animation: toast-in 0.25s ease-out;
+}
+.toast .cost img {
+  width: 26px;
+  height: 26px;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.banner-text {
+  font-size: 1.1rem;
+  text-align: center;
+}

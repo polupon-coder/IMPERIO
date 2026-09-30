@@ -245,6 +245,9 @@ export function Game({
 
       {tradeOpen && <TradeDialog state={s} mySeat={mySeat} send={send} onClose={() => setTradeOpen(false)} />}
       {s.prompt?.kind === 'trade' && s.prompt.seat === mySeat && <OfferDialog state={s} send={send} />}
+      <RewardDialog state={s} mySeat={mySeat} send={send} />
+      <CombatDialog state={s} mySeat={mySeat} send={send} />
+      <Announcements state={s} mySeat={mySeat} />
       <main className="layout">
         <section className="board-col">
           <Board
@@ -259,7 +262,6 @@ export function Game({
             onWall={onWall}
           />
           {s.phase === 'PHASE_2' && myTurn && <TurnHint state={s} mode={mode} setMode={setMode} />}
-          <CombatView state={s} />
         </section>
 
         <aside className="side">
@@ -275,6 +277,9 @@ export function Game({
             </div>
           )}
           <PromptPanel state={s} mySeat={mySeat} send={send} />
+          {s.phase === 'PHASE_1' && (
+            <Phase1Panel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
+          )}
           {/* El panel de jugadores establecido va siempre arriba; las acciones del turno, debajo. */}
           <PlayersPanel
             state={s}
@@ -285,9 +290,6 @@ export function Game({
             recruiting={mode.kind === 'recruit' ? mode.unit : null}
           />
           <ChatBar room={room} state={s} mySeat={mySeat} onTrade={() => setTradeOpen(true)} />
-          {s.phase === 'PHASE_1' && (
-            <Phase1Panel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
-          )}
         </aside>
       </main>
     </div>
@@ -312,7 +314,7 @@ function TileChip({ t }: { t: Terrain }) {
 
 function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
   const pr = s.prompt;
-  if (!pr) return null;
+  if (!pr || pr.kind === 'faith' || pr.kind === 'defenderChoice' || pr.kind === 'advance') return null;
   const who = s.players[pr.seat];
   if (pr.seat !== mySeat) {
     const what: Record<string, string> = {
@@ -344,51 +346,6 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
           </div>
         </>
       )}
-      {pr.kind === 'defenderChoice' && (
-        <>
-          <h3>¡Te atacan!</h3>
-          <p>
-            {s.players[s.combat!.attacker].name} ataca con {s.combat!.attackerUnits.length}{' '}
-            {NAMES.unit[s.combat!.attackerType]} a distancia {s.combat!.distance}. Elige qué tipo defiende:
-          </p>
-          <div className="row">
-            {pr.options.map((u) => (
-              <button key={u} onClick={() => send({ type: 'defenderChoice', unit: u })}>
-                {NAMES.unit[u]}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {pr.kind === 'faith' && (
-        <>
-          <h3>Fe</h3>
-          <p>
-            Tus dados: <Dice values={pr.role === 'attacker' ? s.combat!.attackerDice : s.combat!.defenderDice} />
-            <br />
-            Rival: <Dice values={pr.role === 'attacker' ? s.combat!.defenderDice : s.combat!.attackerDice} />
-          </p>
-          <p>¿Pagas 1 Agua para repetir toda tu tirada? El nuevo resultado es obligatorio.</p>
-          <div className="row">
-            <button className="primary" onClick={() => send({ type: 'faith', use: true })}>
-              Usar Fe (1 Agua)
-            </button>
-            <button onClick={() => send({ type: 'faith', use: false })}>No</button>
-          </div>
-        </>
-      )}
-      {pr.kind === 'advance' && (
-        <>
-          <h3>Avance tras el combate</h3>
-          <p>La loseta ha quedado libre. ¿Avanza toda tu formación?</p>
-          <div className="row">
-            <button className="primary" onClick={() => send({ type: 'advance', accept: true })}>
-              Avanzar
-            </button>
-            <button onClick={() => send({ type: 'advance', accept: false })}>Quedarse</button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -411,49 +368,20 @@ function Phase1Panel({
   const active = s.order[s.current];
   const myTurn = active === mySeat;
   return (
-    <div className="card">
-      <h3>Creación del Mundo</h3>
-      {front?.kind === 'choose' && (
-        <div className="prompt-inline">
-          <p>Recompensa de {NAMES.terrain[front.from]}: elige</p>
-          <div className="row">
-            {front.options.map((o) => (
-              <button key={o} className="primary" onClick={() => send({ type: 'chooseReward', option: o })}>
-                {o === 'muralla' ? (
-                  <>
-                    <img className="icon wall-icon" src={WALL_ICON} alt="" /> Muralla
-                  </>
-                ) : (
-                  NAMES.unit[o]
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="card phase1-guide">
       {front?.kind === 'deploy' && (
         <p className="hint">
-          Despliega tu <b>{NAMES.unit[front.unit]}</b>: haz clic en una casilla resaltada de tu anillo.
+          Coloca tu <b>{NAMES.unit[front.unit]}</b>: pulsa una casilla resaltada de tu anillo.
         </p>
       )}
-      {front?.kind === 'wall' && (
-        <div className="prompt-inline">
-          <p>Coloca tu Muralla en un lado de tu Capital:</p>
-          <div className="row">
-            {SIDES.filter((x) => !my.originalWalls.includes(x)).map((x) => (
-              <button key={x} onClick={() => send({ type: 'placeWall', side: x })}>
-                {NAMES.side[x]}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {s.step === 'INITIAL_PLACEMENT' && !front && (
         <>
           {my.initialTiles.length ? (
             <>
-              <p>Coloca tus losetas iniciales en tu anillo. Elige una:</p>
+              <p>
+                <b>Coloca tus 4 losetas iniciales alrededor de tu Capital.</b> Elige una y pulsa una casilla
+                resaltada de tu anillo:
+              </p>
               <div className="row">
                 {my.initialTiles.map((t, i) => (
                   <button
@@ -472,11 +400,19 @@ function Phase1Panel({
         </>
       )}
 
-      {(s.step === 'PILE_PLACEMENT' || s.step === 'EXCHANGE') && (
-        <p>
-          {myTurn ? 'Te toca' : `Turno de ${s.players[active].name}`} · Loseta{' '}
+      {(s.step === 'PILE_PLACEMENT' || s.step === 'EXCHANGE') && myTurn && !front && (
+        <div className="drawn">
+          <img src={TILE_IMAGES[s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]]} alt="" />
+          <p>
+            Te ha tocado: <b>{NAMES.terrain[s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]]}</b>.
+            {s.step === 'PILE_PLACEMENT' && <> ¿Dónde la quieres poner? Pulsa una casilla resaltada.</>}
+          </p>
+        </div>
+      )}
+      {(s.step === 'PILE_PLACEMENT' || s.step === 'EXCHANGE') && !myTurn && (
+        <p className="muted">
+          {s.players[active].name} está colocando{' '}
           <TileChip t={s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]} />
-          {myTurn && s.step === 'PILE_PLACEMENT' && !front && ' — haz clic en una casilla resaltada.'}
         </p>
       )}
       {s.step === 'EXCHANGE' && myTurn && (
@@ -635,11 +571,11 @@ function Cost({ r }: { r: Resources }) {
   );
 }
 
-function Dice({ values }: { values: number[] }) {
+function Dice({ values, big }: { values: number[]; big?: boolean }) {
   const max = Math.max(...values);
   let marked = false;
   return (
-    <span className="dice">
+    <span className={`dice ${big ? 'big' : ''}`}>
       {values.map((v, i) => {
         const best = v === max && !marked;
         if (best) marked = true;
@@ -653,36 +589,6 @@ function Dice({ values }: { values: number[] }) {
   );
 }
 
-function CombatView({ state: s }: { state: GameState }) {
-  const c = s.combat ?? s.lastCombat;
-  if (!c) return null;
-  const live = !!s.combat && !s.combat.result;
-  const A = s.players[c.attacker];
-  const D = s.players[c.defender];
-  return (
-    <div className={`card combat ${live ? 'live' : ''}`}>
-      <h3>{live ? 'Combate en curso' : 'Último combate'}</h3>
-      <div className="combat-sides">
-        <div>
-          <span className="dot" style={{ background: PLAYER_COLORS[A.color] }} /> {A.name} ·{' '}
-          {c.attackerUnits.length} {NAMES.unit[c.attackerType]}
-          <br />
-          {c.attackerDice.length > 0 && <Dice values={c.attackerDice} />}
-          {c.attackerFaith && <small> (Fe)</small>}
-        </div>
-        <div className="vs">contra</div>
-        <div>
-          <span className="dot" style={{ background: PLAYER_COLORS[D.color] }} /> {D.name} ·{' '}
-          {c.target.kind === 'wall' ? `Muralla ${NAMES.side[c.target.side]}` : c.defenderType ? NAMES.unit[c.defenderType] : '¿?'}
-          <br />
-          {c.defenderDice.length > 0 && <Dice values={c.defenderDice} />}
-          {c.defenderFaith && <small> (Fe)</small>}
-        </div>
-      </div>
-      {c.summary && <p className="combat-summary">{c.summary}</p>}
-    </div>
-  );
-}
 
 /** Edificios construidos primero (a la izquierda), después los pendientes; ambos en el orden del reglamento. */
 const builtFirst = (built: string[]) => [
@@ -985,19 +891,23 @@ function Modal({
   onClose,
   children,
   wide,
+  noClose,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   wide?: boolean;
+  noClose?: boolean;
 }) {
   // Portal al <body>: la ventana flota sobre toda la página aunque se abra desde un panel.
   return createPortal(
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={noClose ? undefined : onClose}>
       <div className={`modal card ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
-        <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
-          ×
-        </button>
+        {!noClose && (
+          <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
+            ×
+          </button>
+        )}
         <h3>{title}</h3>
         {children}
       </div>
@@ -1211,5 +1121,220 @@ function OfferDialog({ state: s, send }: { state: GameState; send: Send }) {
         <button onClick={reject}>Rechazar</button>
       </div>
     </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ventanas flotantes: recompensas de la Fase I, dados y anuncios
+// ---------------------------------------------------------------------------------------------
+
+/** Recompensa militar de la Fase I: elegir tropa/Muralla, colocar Muralla o avisar del despliegue. */
+function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
+  const my = s.players[mySeat];
+  const front = my.rewardQueue[0];
+  const key = front ? `${front.kind}:${my.placementsLeft}:${my.initialTiles.length}:${s.units.length}` : '';
+  const [seen, setSeen] = useState('');
+  if (s.phase !== 'PHASE_1' || !front) return null;
+  if (front.kind === 'deploy') {
+    if (seen === key) return null;
+    return (
+      <Modal title="Recompensa del anillo" onClose={() => setSeen(key)}>
+        <div className="confirm-body">
+          <img className="confirm-unit" src={unitFigure(my.color, front.unit)} alt="" style={{ borderColor: PLAYER_COLORS[my.color] }} />
+          <p>
+            Recibes <b>1 {NAMES.unit[front.unit]}</b>. Colócala en una casilla resaltada de tu anillo.
+          </p>
+        </div>
+        <div className="row modal-actions">
+          <button className="primary" onClick={() => setSeen(key)}>
+            Elegir casilla
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+  if (front.kind === 'choose')
+    return (
+      <Modal title={`Recompensa de ${NAMES.terrain[front.from]}`} onClose={() => {}} noClose>
+        <p>¿Qué quieres recibir?</p>
+        <div className="reward-options">
+          {front.options.map((o) => (
+            <button key={o} onClick={() => send({ type: 'chooseReward', option: o })}>
+              <img
+                className="confirm-unit"
+                src={o === 'muralla' ? WALL_TOKEN : unitFigure(my.color, o)}
+                alt=""
+                style={{ borderColor: PLAYER_COLORS[my.color] }}
+              />
+              <span>{o === 'muralla' ? 'Muralla' : NAMES.unit[o]}</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+    );
+  return (
+    <Modal title="Coloca tu Muralla" onClose={() => {}} noClose>
+      <p>¿En qué lado de tu Capital la levantas?</p>
+      <div className="row">
+        {SIDES.filter((x) => !my.originalWalls.includes(x)).map((x) => (
+          <button key={x} onClick={() => send({ type: 'placeWall', side: x })}>
+            {NAMES.side[x][0].toUpperCase() + NAMES.side[x].slice(1)}
+          </button>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
+/** Tiradas de dados en ventana flotante para todos; Fe, defensa y avance para quien le toque. */
+function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
+  const c = s.combat ?? s.lastCombat;
+  const key = c ? `${s.turnNumber}:${c.from}:${c.summary}:${c.attackerDice.join()}:${c.defenderDice.join()}` : '';
+  const [closed, setClosed] = useState('');
+  if (!c || (!s.combat && closed === key)) return null;
+  if (!s.combat && s.lastCombat && s.log.length && !s.log.slice(-6).some((e) => e.text === c.summary)) return null;
+  const pr = s.prompt;
+  const mine = pr && pr.seat === mySeat && (pr.kind === 'faith' || pr.kind === 'defenderChoice' || pr.kind === 'advance') ? pr : null;
+  const waiting = pr && pr.seat !== mySeat && (pr.kind === 'faith' || pr.kind === 'defenderChoice' || pr.kind === 'advance') ? pr : null;
+  const A = s.players[c.attacker];
+  const D = s.players[c.defender];
+  const onClose = () => {
+    if (mine?.kind === 'faith') send({ type: 'faith', use: false });
+    else if (mine?.kind === 'advance') send({ type: 'advance', accept: false });
+    else if (!mine) setClosed(key);
+  };
+  return (
+    <Modal title={s.combat && !s.combat.result ? 'Combate' : 'Resultado del combate'} onClose={onClose} noClose={mine?.kind === 'defenderChoice'}>
+      <div className="dice-board">
+        <div className="side-dice">
+          <p>
+            <span className="dot" style={{ background: PLAYER_COLORS[A.color] }} /> <b>{A.name}</b>
+            <br />
+            <small>
+              {c.attackerUnits.length} {NAMES.unit[c.attackerType]}
+            </small>
+          </p>
+          {c.attackerDice.length > 0 ? <Dice values={c.attackerDice} big /> : <p className="muted">…</p>}
+          {c.attackerFaith && <small className="faith-used">Fe usada</small>}
+        </div>
+        <div className="vs">contra</div>
+        <div className="side-dice">
+          <p>
+            <span className="dot" style={{ background: PLAYER_COLORS[D.color] }} /> <b>{D.name}</b>
+            <br />
+            <small>
+              {c.target.kind === 'wall' ? `Muralla ${NAMES.side[c.target.side]}` : c.defenderType ? NAMES.unit[c.defenderType] : 'elige defensor…'}
+            </small>
+          </p>
+          {c.defenderDice.length > 0 ? <Dice values={c.defenderDice} big /> : <p className="muted">…</p>}
+          {c.defenderFaith && <small className="faith-used">Fe usada</small>}
+        </div>
+      </div>
+      {c.summary && <p className="combat-summary">{c.summary.replace(/^.*?\]\. /, '')}</p>}
+      {mine?.kind === 'faith' && (
+        <div className="faith-ask">
+          <p>
+            Tienes Iglesia: ¿pagas <b>1 Agua</b> para usar la Fe y repetir toda tu tirada? El nuevo resultado es
+            obligatorio.
+          </p>
+          <div className="row modal-actions">
+            <button className="primary" onClick={() => send({ type: 'faith', use: true })}>
+              Usar Fe (1 Agua)
+            </button>
+            <button onClick={() => send({ type: 'faith', use: false })}>No</button>
+          </div>
+        </div>
+      )}
+      {mine?.kind === 'defenderChoice' && (
+        <>
+          <p>¡Te atacan! Elige qué tipo de tropa defiende:</p>
+          <div className="row">
+            {mine.options.map((u) => (
+              <button key={u} onClick={() => send({ type: 'defenderChoice', unit: u })}>
+                {NAMES.unit[u]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {mine?.kind === 'advance' && (
+        <>
+          <p>La loseta ha quedado libre. ¿Avanza toda tu formación?</p>
+          <div className="row modal-actions">
+            <button className="primary" onClick={() => send({ type: 'advance', accept: true })}>
+              Avanzar
+            </button>
+            <button onClick={() => send({ type: 'advance', accept: false })}>Quedarse</button>
+          </div>
+        </>
+      )}
+      {waiting && (
+        <p className="muted">
+          Esperando a {s.players[waiting.seat].name}
+          {waiting.kind === 'faith' ? ' (decide si usa la Fe)' : waiting.kind === 'defenderChoice' ? ' (elige defensor)' : ' (decide si avanza)'}…
+        </p>
+      )}
+    </Modal>
+  );
+}
+
+/** Avisos: recursos ganados, comienzo de la Fase II y Conquistas. */
+function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat }) {
+  const prev = useRef<GameState | null>(null);
+  const [toasts, setToasts] = useState<Array<{ id: number; node: React.ReactNode }>>([]);
+  const [banner, setBanner] = useState<{ title: string; text: string } | null>(null);
+  useEffect(() => {
+    const before = prev.current;
+    prev.current = s;
+    if (!before) return;
+    // Recursos ganados
+    const got = RESOURCES.filter((r) => s.players[mySeat].resources[r] > before.players[mySeat].resources[r]);
+    if (got.length) {
+      const gain = emptyResources();
+      for (const r of got) gain[r] = s.players[mySeat].resources[r] - before.players[mySeat].resources[r];
+      const id = Date.now() + Math.random();
+      setToasts((t) => [...t, { id, node: <>Ganas <Cost r={gain} /></> }]);
+      setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+    }
+    // Comienza la Fase II
+    if (before.phase === 'PHASE_1' && s.phase === 'PHASE_2')
+      setBanner({ title: 'Empieza la Fase II', text: 'El mapa está completo. Comienza la lucha por el Imperio.' });
+    // Conquistas
+    for (const p of s.players) {
+      const nb = before.players[p.seat].conquests.length;
+      if (p.conquests.length > nb) {
+        const victim = s.players[p.conquests[p.conquests.length - 1]];
+        setBanner({
+          title: '¡Conquista!',
+          text:
+            p.seat === mySeat
+              ? `Has conquistado la Capital de ${victim.name}.`
+              : victim.seat === mySeat
+                ? `${p.name} ha conquistado tu Capital.`
+                : `${p.name} ha conquistado la Capital de ${victim.name}.`,
+        });
+      }
+    }
+  }, [s]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <>
+      <div className="toasts">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast">
+            {t.node}
+          </div>
+        ))}
+      </div>
+      {banner && (
+        <Modal title={banner.title} onClose={() => setBanner(null)}>
+          <p className="banner-text">{banner.text}</p>
+          <div className="row modal-actions">
+            <button className="primary" onClick={() => setBanner(null)}>
+              Continuar
+            </button>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
