@@ -76,7 +76,7 @@ Hay dos tipos de decisiones que se superponen al estado principal:
 
 Las imágenes están en `public/assets/`:
 
-- **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp` y `agua.webp` se generan desde `art/losetas.webp` con `python3 scripts/prepare-tiles.py`, que aplica los ajustes de color (Agua más suave, Llanura más amarillenta). Las ilustraciones originales del autor están en `art/`.
+- **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp` y `agua.webp` se generan desde `art/losetas.webp` con `python3 scripts/prepare-tiles.py`, que aplica los ajustes de color (Agua suavizada, Llanura más amarillenta). Las ilustraciones originales del autor están en `art/`.
 - **Capitales:** `tiles/capital.webp` es la ilustración original. Las versiones `capital-<color>.webp`, con los tejados del color de cada jugador, se generan con `python3 scripts/recolor-capital.py`.
 - **Edificios:** `buildings/<edificio>.webp`, recortados con `python3 scripts/prepare-buildings.py` de `art/edificios-militares.webp` y `art/edificios-civiles.webp`. En el panel de cada jugador, los que no ha construido aparecen con baja opacidad.
 - **Recursos:** `resources/{comida,madera,piedra,agua}.webp`, recortados y algo desaturados con `python3 scripts/prepare-resources.py` a partir de `art/recursos.webp`.

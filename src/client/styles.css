@@ -268,10 +268,7 @@ select {
   grid-template-columns: repeat(8, var(--cell));
   grid-template-rows: repeat(8, var(--cell));
   gap: 3px;
-  padding: 8px;
-  background: linear-gradient(135deg, #8a6b43, #6d5232);
-  border-radius: 10px;
-  box-shadow: 0 6px 18px #0005, inset 0 0 0 2px #0003;
+  /* Sin marco: las losetas se apoyan directamente sobre el papiro */
 }
 .axis {
   position: absolute;
@@ -282,7 +279,7 @@ select {
 }
 .axis.cols {
   top: 2px;
-  left: 30px;
+  left: 22px;
   gap: 3px;
 }
 .axis.cols span {
@@ -290,7 +287,7 @@ select {
   text-align: center;
 }
 .axis.rows {
-  top: 30px;
+  top: 22px;
   left: 4px;
   flex-direction: column;
   gap: 3px;

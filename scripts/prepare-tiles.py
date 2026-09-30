@@ -27,7 +27,7 @@ def hsv_adjust(im, hue_shift=0.0, sat=1.0, val=1.0, hue_target=None, pull=0.0):
 
 
 ADJUST = {
-    'agua': lambda im: hsv_adjust(im, sat=0.72, val=1.1),  # agua más suave
+    'agua': lambda im: hsv_adjust(im, sat=0.5, val=1.17),  # agua suave
     'llanura': lambda im: hsv_adjust(im, hue_target=50, pull=0.35, sat=1.05, val=1.06),  # más amarillenta
 }
 
