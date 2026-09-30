@@ -29,6 +29,7 @@ import {
   unitById,
   unitCount,
   type Action,
+  type Building,
   type GameState,
   type Resource,
   type Resources,
@@ -61,8 +62,8 @@ const STEP_LABEL: Record<string, string> = {
 };
 const PHASE_LABEL: Record<string, string> = {
   SETUP: 'Preparación',
-  PHASE_1: 'Fase I · Creación del Mundo',
-  PHASE_2: 'Fase II · El Imperio',
+  PHASE_1: 'Fase I',
+  PHASE_2: 'Fase II',
   GAME_OVER: 'Partida terminada',
 };
 
@@ -203,8 +204,24 @@ export function Game({
           {PHASE_LABEL[s.phase]} · {s.phase === 'PHASE_2' ? `Turno ${s.turnNumber}` : STEP_LABEL[s.step]}
         </span>
         {s.phase !== 'GAME_OVER' && s.step !== 'INITIAL_PLACEMENT' && s.step !== 'FINAL_DEPLOY' && (
-          <span className="active-player" style={{ background: PLAYER_COLORS[s.players[active].color] }}>
+          <span
+            className="active-player"
+            style={{ background: myTurn ? '#3f7d3a' : PLAYER_COLORS[s.players[active].color] }}
+          >
             {myTurn ? 'Tu turno' : `Turno de ${s.players[active].name}`}
+          </span>
+        )}
+        {s.phase === 'PHASE_2' && myTurn && (
+          <span className="turn-actions">
+            <ActionStatus state={s} />
+            {s.turn?.military?.open && (
+              <button disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endMilitary' })}>
+                Terminar acción militar
+              </button>
+            )}
+            <button className="end-turn-top" disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endTurn' })}>
+              Terminar turno
+            </button>
           </span>
         )}
         <span className="room-code">
@@ -230,6 +247,7 @@ export function Game({
             onUnit={onUnit}
             onWall={onWall}
           />
+          {s.phase === 'PHASE_2' && myTurn && <TurnHint state={s} mode={mode} setMode={setMode} />}
           <CombatView state={s} />
         </section>
 
@@ -247,13 +265,17 @@ export function Game({
           )}
           <PromptPanel state={s} mySeat={mySeat} send={send} />
           {/* El panel de jugadores establecido va siempre arriba; las acciones del turno, debajo. */}
-          <PlayersPanel state={s} room={room} mySeat={mySeat} />
+          <PlayersPanel
+            state={s}
+            room={room}
+            mySeat={mySeat}
+            onBuild={(b) => send({ type: 'build', building: b })}
+            onRecruit={(u) => setMode({ kind: 'recruit', unit: u })}
+            recruiting={mode.kind === 'recruit' ? mode.unit : null}
+          />
           <ChatBar room={room} state={s} mySeat={mySeat} onTrade={() => setTradeOpen(true)} />
           {s.phase === 'PHASE_1' && (
             <Phase1Panel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
-          )}
-          {s.phase === 'PHASE_2' && myTurn && (
-            <TurnPanel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
           )}
         </aside>
       </main>
@@ -481,120 +503,56 @@ function Phase1Panel({
   );
 }
 
-function TurnPanel({
-  state: s,
-  mySeat,
-  mode,
-  setMode,
-  send,
-}: {
-  state: GameState;
-  mySeat: Seat;
-  mode: Mode;
-  setMode: (m: Mode) => void;
-  send: Send;
-}) {
-  const my = s.players[mySeat];
+/** Qué puede construir y reclutar ahora el jugador activo (para marcarlo en su panel). */
+function buildable(s: GameState, seat: Seat, b: Building) {
+  const my = s.players[seat];
+  if (s.turn?.seat !== seat || s.prompt || s.combat || !canUseCivil(s)) return false;
+  if (my.buildings.includes(b)) return false;
+  if (b === 'ayuntamiento' && my.buildings.length < 2) return false;
+  return canAfford(my.resources, BUILDING_COST[b]);
+}
+function recruitable(s: GameState, seat: Seat, u: UnitType) {
+  const my = s.players[seat];
+  if (s.turn?.seat !== seat || s.prompt || s.combat || !canUseMilitary(s) || s.turn.military) return false;
+  return (
+    isUnlocked(s, seat, u) &&
+    unitCount(s, seat, u) < MAX_PER_TYPE &&
+    ringSpots(s, seat, u).length > 0 &&
+    canAfford(my.resources, UNIT_COST[u])
+  );
+}
+
+/** Estado de las acciones del turno, para la barra superior. */
+function ActionStatus({ state: s }: { state: GameState }) {
   const t = s.turn!;
-  const blocked = !!s.prompt || !!s.combat;
-  const hasTH = my.buildings.includes('ayuntamiento');
-  const civilOk = canUseCivil(s);
-  const milOk = canUseMilitary(s);
   const mil = t.military;
   const nAct = mil ? Object.keys(mil.activations).length : 0;
-
-  const civilStatus = t.civilUsed ? 'usada' : civilOk ? 'disponible' : mil?.open ? 'tras la militar' : 'no disponible';
-  const milStatus = mil?.open ? `en curso (${nAct}/3 figuras)` : t.militaryUsed ? 'usada' : milOk ? 'disponible' : 'no disponible';
-
+  const civil = t.civilUsed ? 'usada' : canUseCivil(s) ? 'libre' : '—';
+  const military = mil?.open ? `${nAct}/3` : t.militaryUsed ? 'usada' : canUseMilitary(s) ? 'libre' : '—';
   return (
-    <div className="card turn-panel">
-      <h3>Tu turno</h3>
-      <p className="actions-status">
-        {hasTH ? 'Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar.' : 'Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar.'}
-        <br />
-        Civil: <b>{civilStatus}</b> · Militar: <b>{milStatus}</b>
-      </p>
+    <span
+      className="action-status"
+      title="Pulsa un edificio de tu panel para construir, una figura de tu Ejército para reclutar o una tropa del tablero para moverla o atacar."
+    >
+      Civil: <b>{civil}</b> · Militar: <b>{military}</b>
+    </span>
+  );
+}
 
+/** Aviso flotante sobre el tablero: tropa seleccionada o reclutamiento en curso. */
+function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; setMode: (m: Mode) => void }) {
+  if (mode.kind !== 'unit' && mode.kind !== 'recruit') return null;
+  return (
+    <div className="card turn-hint">
       {mode.kind === 'unit' && <UnitPanel state={s} mode={mode} setMode={setMode} />}
       {mode.kind === 'recruit' && (
-        <p className="hint">
+        <p>
           Elige una casilla resaltada de tu anillo para el {NAMES.unit[mode.unit]}.{' '}
           <button className="link" onClick={() => setMode({ kind: 'none' })}>
             cancelar
           </button>
         </p>
       )}
-      {mode.kind === 'none' && milOk && (
-        <p className="hint">Haz clic en una de tus tropas para moverla o atacar (Acción Militar A).</p>
-      )}
-      {mil?.open && (
-        <button disabled={blocked} onClick={() => send({ type: 'endMilitary' })}>
-          Terminar Acción Militar
-        </button>
-      )}
-
-      <details open>
-        <summary>Construir (Acción Civil)</summary>
-        <div className="grid-buttons">
-          {BUILDINGS.map((b) => {
-            const built = my.buildings.includes(b);
-            const cost = BUILDING_COST[b];
-            const reqTH = b === 'ayuntamiento' && my.buildings.length < 2;
-            const ok = civilOk && !built && !reqTH && canAfford(my.resources, cost) && !blocked;
-            return (
-              <button
-                key={b}
-                disabled={!ok}
-                className={`build-btn ${built ? 'built' : ''}`}
-                title={reqTH ? 'Requiere 2 edificios previos' : costLabel(cost)}
-                onClick={() => send({ type: 'build', building: b })}
-              >
-                <img src={buildingImage(b)} alt="" draggable={false} />
-                <b>{NAMES.building[b]}</b>
-                <small>{built ? 'construido' : reqTH ? 'requiere 2 edificios' : <Cost r={cost} />}</small>
-              </button>
-            );
-          })}
-        </div>
-      </details>
-
-      <details open>
-        <summary>Reclutar (Acción Militar B)</summary>
-        <div className="grid-buttons recruit">
-          {UNIT_TYPES.map((u) => {
-            const unlocked = isUnlocked(s, mySeat, u);
-            const count = unitCount(s, mySeat, u);
-            const spots = ringSpots(s, mySeat, u).length;
-            const ok = milOk && !mil && unlocked && count < MAX_PER_TYPE && spots > 0 && canAfford(my.resources, UNIT_COST[u]) && !blocked;
-            const why = !unlocked
-              ? 'falta edificio'
-              : count >= MAX_PER_TYPE
-                ? 'máximo 5'
-                : spots === 0
-                  ? 'sin casilla'
-                  : null;
-            return (
-              <button
-                key={u}
-                disabled={!ok}
-                className={mode.kind === 'recruit' && mode.unit === u ? 'selected' : ''}
-                onClick={() => setMode({ kind: 'recruit', unit: u })}
-              >
-                <b>
-                  <img className="icon" src={UNIT_IMAGES[u]} alt="" /> {NAMES.unit[u]} ({count}/5)
-                </b>
-                <small>{why ?? <Cost r={UNIT_COST[u]} />}</small>
-              </button>
-            );
-          })}
-        </div>
-      </details>
-
-      {my.buildings.includes('mercado') && <MarketPanel state={s} mySeat={mySeat} send={send} blocked={blocked} />}
-
-      <button className="primary end-turn" disabled={blocked} onClick={() => send({ type: 'endTurn' })}>
-        Terminar turno
-      </button>
     </div>
   );
 }
@@ -654,23 +612,6 @@ function UnitPanel({
         · Murallas atacables parpadean
       </p>
     </div>
-  );
-}
-
-function MarketPanel({ state: s, mySeat, send, blocked }: { state: GameState; mySeat: Seat; send: Send; blocked: boolean }) {
-  const my = s.players[mySeat];
-  const [give, setGive] = useState<Resource>('comida');
-  const [get, setGet] = useState<Resource>('madera');
-  return (
-    <details>
-      <summary>Mercado: convertir 2 → 1 (sin gastar acción)</summary>
-      <div className="row">
-        2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
-        <button disabled={blocked || my.resources[give] < 2} onClick={() => send({ type: 'convert', give, get }, true)}>
-          Convertir
-        </button>
-      </div>
-    </details>
   );
 }
 
@@ -755,7 +696,21 @@ const builtFirst = (built: string[]) => [
   ...BUILDINGS.filter((b) => !built.includes(b)),
 ];
 
-function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: PublicRoom; mySeat: Seat }) {
+function PlayersPanel({
+  state: s,
+  room,
+  mySeat,
+  onBuild,
+  onRecruit,
+  recruiting,
+}: {
+  state: GameState;
+  room: PublicRoom;
+  mySeat: Seat;
+  onBuild: (b: Building) => void;
+  onRecruit: (u: UnitType) => void;
+  recruiting: UnitType | null;
+}) {
   return (
     <div className="card players">
       {/* Tu panel primero y con ilustraciones; los rivales, en resumen. */}
@@ -820,11 +775,17 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
             <div className="buildings">
               {builtFirst(p.buildings).map((b) => {
                 const built = p.buildings.includes(b);
+                const can = buildable(s, mySeat, b);
                 return (
                   <figure
                     key={b}
-                    className={`bld ${built ? 'on' : ''}`}
-                    title={`${NAMES.building[b]}${built ? '' : ' (sin construir)'}`}
+                    className={`bld ${built ? 'on' : ''} ${can ? 'can' : ''}`}
+                    title={
+                      built
+                        ? NAMES.building[b]
+                        : `${NAMES.building[b]} · ${costLabel(BUILDING_COST[b])}${can ? ' · pulsa para construir' : ''}`
+                    }
+                    onClick={() => can && onBuild(b)}
                   >
                     <img src={buildingImage(b)} alt={NAMES.building[b]} draggable={false} />
                     <figcaption>{NAMES.building[b]}</figcaption>
@@ -837,7 +798,12 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
               {UNIT_TYPES.map((u) => {
                 const n = units.filter((x) => x.type === u).length;
                 return (
-                  <figure key={u} className={n ? 'on' : ''} title={`${NAMES.unit[u]}: ${n}/5`}>
+                  <figure
+                    key={u}
+                    className={`${n ? 'on' : ''} ${recruitable(s, mySeat, u) ? 'can' : ''} ${recruiting === u ? 'sel' : ''}`}
+                    title={`${NAMES.unit[u]}: ${n}/5 · ${costLabel(UNIT_COST[u])}${recruitable(s, mySeat, u) ? ' · pulsa para reclutar' : ''}`}
+                    onClick={() => recruitable(s, mySeat, u) && onRecruit(u)}
+                  >
                     <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                       <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
                     </span>
@@ -887,6 +853,9 @@ const canTrade = (s: GameState, seat: Seat) =>
   !s.turn.tradeDone &&
   !s.prompt &&
   !s.combat;
+/** El panel de Comerciar (conversión 2→1 e intercambio) se abre con Mercado durante tu turno. */
+const canOpenMarket = (s: GameState, seat: Seat) =>
+  s.phase === 'PHASE_2' && s.turn?.seat === seat && s.players[seat].buildings.includes('mercado') && !s.prompt && !s.combat;
 
 type FeedItem = { key: string; ts: number; kind: 'msg' | 'ev'; color: string; who?: string; text: string };
 
@@ -960,16 +929,14 @@ function ChatBar({
   const feed = useFeed(room, s);
   const lastItem = feed.at(-1);
   const hasMarket = s.players[mySeat].buildings.includes('mercado');
-  const tradeOk = canTrade(s, mySeat);
+  const tradeOk = canOpenMarket(s, mySeat);
   const tradeTitle = !hasMarket
     ? 'Necesitas construir el Mercado'
     : tradeOk
-      ? 'Proponer un intercambio de 1 recurso por 1'
+      ? 'Convertir recursos o proponer un intercambio'
       : s.turn?.seat !== mySeat
         ? 'Solo puedes comerciar durante tu turno'
-        : s.turn?.tradeDone
-          ? 'Ya has hecho tu intercambio de este turno'
-          : 'Hay una decisión pendiente';
+        : 'Hay una decisión pendiente';
   return (
     <>
       <div className="card chat-bar">
@@ -1063,6 +1030,24 @@ function ResourcePicker({
   );
 }
 
+/** Conversión del Mercado: 2 recursos iguales → 1 cualquiera (§45). */
+function ConvertRow({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
+  const my = s.players[mySeat];
+  const [give, setGive] = useState<Resource>('comida');
+  const [get, setGet] = useState<Resource>('madera');
+  return (
+    <>
+      <h4>Convertir (2 iguales → 1 cualquiera)</h4>
+      <div className="row">
+        2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
+        <button disabled={my.resources[give] < 2} onClick={() => send({ type: 'convert', give, get }, true)}>
+          Convertir
+        </button>
+      </div>
+    </>
+  );
+}
+
 /** Panel flotante para proponer un intercambio de 1 recurso por 1 recurso. */
 function TradeDialog({
   state: s,
@@ -1082,8 +1067,12 @@ function TradeDialog({
   const target = to !== null ? s.players[to] : null;
   const ready = to !== null && give && want && canTrade(s, mySeat);
   return (
-    <Modal title="Comerciar (1 recurso por 1)" onClose={onClose}>
-      <p className="muted">Elige con quién comerciar, qué le ofreces y qué quieres a cambio.</p>
+    <Modal title="Comerciar" onClose={onClose}>
+      <ConvertRow state={s} mySeat={mySeat} send={send} />
+      <h4>Intercambio con un jugador (1 recurso por 1)</h4>
+      {s.turn?.tradeDone && <p className="muted">Ya has hecho tu intercambio de este turno.</p>}
+      {!s.turn?.tradeDone && (
+        <>
       <div className="trade-players">
         {s.players
           .filter((p) => p.seat !== mySeat)
@@ -1117,6 +1106,13 @@ function TradeDialog({
         </button>
         <button onClick={onClose}>Cancelar</button>
       </div>
+        </>
+      )}
+      {s.turn?.tradeDone && (
+        <div className="row modal-actions">
+          <button onClick={onClose}>Cerrar</button>
+        </div>
+      )}
     </Modal>
   );
 }

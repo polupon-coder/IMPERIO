@@ -1239,3 +1239,68 @@ details summary {
 .chat-modal-input input {
   flex: 1;
 }
+
+/* ---------- Acciones del turno sin panel propio ---------- */
+.turn-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.turn-actions button {
+  padding: 3px 12px;
+  font-size: 0.9rem;
+}
+.end-turn-top {
+  background: #3f7d3a !important;
+  color: #fff !important;
+  border-color: #2e5c2a !important;
+}
+/* Edificios construibles y tropas reclutables: se pueden pulsar */
+.bld.can,
+.army-figures figure.can {
+  cursor: pointer;
+}
+.bld.can img {
+  opacity: 0.85;
+  filter: none;
+  border: 2px dashed #3f7d3a;
+  animation: pulse 1.6s infinite;
+}
+.army-figures figure.can .mini-token {
+  opacity: 0.85;
+  filter: none;
+  outline: 2px dashed #3f7d3a;
+  outline-offset: 1px;
+}
+.army-figures figure.sel .mini-token {
+  outline: 3px solid var(--conquer);
+}
+/* Aviso flotante sobre el tablero */
+.board-col {
+  position: relative;
+}
+.turn-hint {
+  position: absolute;
+  left: 30px;
+  right: 8px;
+  bottom: 4px;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  background-color: rgba(247, 240, 222, 0.92);
+  z-index: 20;
+}
+.turn-hint p {
+  margin: 2px 0;
+}
+.turn-hint .unit-panel p {
+  margin: 2px 0;
+}
+.action-status {
+  align-self: center;
+  font-size: 0.85rem;
+  color: #e7d9b8;
+  margin-right: 4px;
+}
+.action-status b {
+  color: #fff;
+}
