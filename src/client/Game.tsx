@@ -236,7 +236,7 @@ export function Game({
           </span>
         )}
         <span className="room-code">
-          Sala {room.code}
+          Mundo {room.code}
           <button className="link" onClick={onExit}>
             salir
           </button>

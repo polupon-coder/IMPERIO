@@ -1872,3 +1872,64 @@ details summary {
 .lobby .seats .seat:nth-child(3) {
   order: 0;
 }
+
+/* ---------- Botones con perfil de escudo y fondo beige ---------- */
+.seal {
+  --shield: polygon(0% 0%, 100% 0%, 100% 50%, 96% 64%, 88% 76%, 76% 87%, 50% 100%, 24% 87%, 12% 76%, 4% 64%, 0% 50%);
+  position: relative;
+  isolation: isolate;
+  width: 116px;
+  height: 132px;
+  padding: 10px 14px 34px;
+  clip-path: var(--shield);
+  background: #6e4b22 !important; /* perfil del escudo */
+  color: var(--ink) !important;
+  text-shadow: none;
+  box-shadow: none;
+  font-size: 1.05rem;
+}
+.seal::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  clip-path: var(--shield);
+  background: radial-gradient(circle at 50% 30%, #fbf2dc, #e8d6ae 70%, #d9c190);
+}
+.seal::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  z-index: -1;
+  clip-path: var(--shield);
+  box-shadow: inset 0 0 0 1px #8a6b43;
+}
+.seal.small {
+  width: 92px;
+  height: 106px;
+  padding: 8px 10px 26px;
+  font-size: 0.95rem;
+}
+.seal.green {
+  background: #2e5c24 !important;
+  color: #1f3f18 !important;
+}
+.seal:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+/* Crédito de la portada */
+.home {
+  position: relative;
+}
+.credit {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #6e4b22;
+}

@@ -130,6 +130,7 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
         </div>
         {error && <p className="error center">{error}</p>}
       </div>
+      <p className="credit">Un juego de Pol Lupon</p>
     </div>
   );
 }
@@ -151,7 +152,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
   return (
     <div className="lobby">
       <div className="parchment lobby-sheet">
-        <h1 className="lobby-title">Sala {room.code}</h1>
+        <h1 className="lobby-title">Mundo {room.code}</h1>
         <div className="row share">
           <input readOnly value={link} className="ink-input link-input" onFocus={(e) => e.target.select()} />
           <button onClick={() => navigator.clipboard?.writeText(link).then(() => setCopied(true))}>
@@ -234,7 +235,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
               onExit();
             }}
           >
-            Salir de la sala
+            Salir del mundo
           </button>
         </p>
         {error && <p className="error center">{error}</p>}
