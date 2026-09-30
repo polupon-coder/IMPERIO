@@ -33,17 +33,21 @@ for name, (path, (x0, x1, y0, y1)) in SOURCES.items():
     m = 10
     bx0, bx1 = max(0, xs.min() - m), min(region.shape[1], xs.max() + m)
     by0, by1 = max(0, ys.min() - m), min(region.shape[0], ys.max() + m)
-    crop = Image.fromarray(region[by0:by1, bx0:bx1].astype(np.uint8))
-    # Encaja en 4:3 sobre el papel original
+    sub = region[by0:by1, bx0:bx1]
+    # Fondo de papel transparente: solo queda el dibujo del edificio
+    d = np.sqrt(((sub - paper) ** 2).sum(-1))
+    alpha = np.clip((d - 14) / 24, 0, 1)
+    crop = Image.fromarray(np.dstack([sub, alpha * 255]).astype(np.uint8), 'RGBA')
+    # Encaja en 4:3
     k = min(W_OUT / crop.width, H_OUT / crop.height)
     crop = crop.resize((round(crop.width * k), round(crop.height * k)), Image.LANCZOS)
-    can = Image.new('RGB', (W_OUT, H_OUT), tuple(int(c) for c in paper))
-    can.paste(crop, ((W_OUT - crop.width) // 2, (H_OUT - crop.height) // 2))
+    can = Image.new('RGBA', (W_OUT, H_OUT), (0, 0, 0, 0))
+    can.alpha_composite(crop, ((W_OUT - crop.width) // 2, (H_OUT - crop.height) // 2))
     can.save(f'public/assets/buildings/{name}.webp', quality=88)
     out[name] = can
 
 if len(sys.argv) > 1:
-    prev = Image.new('RGB', (W_OUT * 4, H_OUT * 2), 'white')
+    prev = Image.new('RGBA', (W_OUT * 4, H_OUT * 2), (236, 222, 190, 255))
     for i, (k, im) in enumerate(out.items()):
-        prev.paste(im, ((i % 4) * W_OUT, (i // 4) * H_OUT))
+        prev.alpha_composite(im, ((i % 4) * W_OUT, (i // 4) * H_OUT))
     prev.save(sys.argv[1])

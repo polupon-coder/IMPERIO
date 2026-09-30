@@ -77,7 +77,7 @@ button {
   transition: background 0.15s, transform 0.05s;
 }
 button:hover:not(:disabled) {
-  background: #fff3d6;
+  background: #efe2c2;
 }
 button:active:not(:disabled) {
   transform: translateY(1px);
@@ -110,7 +110,7 @@ select {
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #fffdf6;
+  background: #f6eedb;
 }
 .row {
   display: flex;
@@ -465,7 +465,7 @@ select {
   height: 22px;
   border-radius: 50%;
   border: 2px dashed var(--ink-soft);
-  background: #fff8;
+  background: #f3e8cf99;
   font-size: 0.7rem;
   display: grid;
   place-items: center;
@@ -625,7 +625,7 @@ details summary {
   width: 26px;
   height: 26px;
   border-radius: 5px;
-  background: #fffdf6;
+  background: #f6eedb;
   border: 1px solid #0005;
   display: grid;
   place-items: center;
@@ -694,7 +694,7 @@ details summary {
   gap: 2px;
   padding: 0 7px 0 3px;
   border-radius: 10px;
-  background: #fff;
+  background: #f6eedb;
   border: 1px solid var(--line);
 }
 .res img {
@@ -1937,4 +1937,53 @@ details summary {
 .card.players {
   zoom: 1 !important;
   overflow: hidden !important;
+}
+
+/* ---------- Nunca blanco puro: máximo blanco roto ---------- */
+:root {
+  --off-white: #f6eedb;
+}
+button,
+input,
+select,
+textarea {
+  background-color: rgba(246, 238, 219, 0.75);
+}
+.die {
+  background: var(--off-white) !important;
+}
+.res,
+.unit-pill,
+.bld-chip {
+  background-color: rgba(246, 238, 219, 0.75);
+}
+.cost-tip,
+.toast {
+  background: rgba(243, 233, 210, 0.98) !important;
+}
+.res-picker button,
+.reward-options button,
+.trade-players button {
+  background: rgba(243, 233, 210, 0.7);
+}
+/* Edificios: sin marco ni fondo; construidos a todo color, pendientes atenuados */
+.bld img,
+.bld.on img,
+.bld.can img {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0;
+}
+.bld.on img {
+  filter: drop-shadow(0 2px 2px #3a220f55);
+}
+.bld.can img {
+  opacity: 0.8;
+  filter: drop-shadow(0 0 4px #3f7d3a);
+}
+.build-btn img,
+.confirm-bld {
+  border: none !important;
+  background: transparent !important;
 }
