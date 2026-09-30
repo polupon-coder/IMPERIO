@@ -29,13 +29,16 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A16 | Pasar | El jugador activo puede terminar su turno sin realizar acciones. |
 | A17 | Negociación | Cada intercambio es de **1 recurso por 1 recurso** con otro jugador. Solo **un intercambio aceptado por turno**. |
 
-### Decisiones de implementación pendientes de confirmar
+### Decisiones de implementación (confirmadas por el autor)
 
 - **Obstáculos de la Artillería contra tropas:** igual que el Arquero, solo la bloquean las Capitales (A8) y las Murallas (A14).
 - **Avance con Artillería hacia una Montaña:** avanzan todas las figuras de la formación que pueden entrar. La Artillería no puede entrar en Montaña (§74), así que se queda.
 - **Intercambio con tropas encima:** si la loseta movida era del propio anillo y tenía tropas, estas se quedan en su casilla. El intercambio solo es legal si siguen siendo legales sobre el nuevo terreno.
 - **Orden de las acciones:** con Ayuntamiento, la Acción Militar en curso debe terminarse antes de construir.
 - **Bloqueo sin solución** (ni siquiera el intercambio es posible): no está cubierto por el reglamento. El motor lo detecta y detiene la Fase I. En 2000 partidas simuladas no ha ocurrido nunca.
+- **Recompensas de la Fase I:** la tropa no puede rechazarse si existe una casilla legal (§20).
+- **Rondas:** una ronda son 4 turnos (uno por jugador) y se numera en romanos.
+- **Desconexiones:** si un jugador con una decisión pendiente se desconecta, la partida espera a que vuelva.
 
 ---
 
