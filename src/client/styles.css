@@ -763,3 +763,19 @@ details summary {
   font-weight: 600;
   bottom: 5px;
 }
+
+/* Botones de construcción con la ilustración del edificio */
+.build-btn {
+  padding: 4px 6px 6px;
+}
+.build-btn img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  border: 1px solid var(--line);
+}
+.build-btn.built img {
+  border-color: var(--ok);
+}

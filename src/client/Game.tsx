@@ -549,12 +549,13 @@ function TurnPanel({
               <button
                 key={b}
                 disabled={!ok}
-                className={built ? 'built' : ''}
+                className={`build-btn ${built ? 'built' : ''}`}
                 title={reqTH ? 'Requiere 2 edificios previos' : costLabel(cost)}
                 onClick={() => send({ type: 'build', building: b })}
               >
+                <img src={buildingImage(b)} alt="" draggable={false} />
                 <b>{NAMES.building[b]}</b>
-                <small>{built ? 'construido' : costLabel(cost)}</small>
+                <small>{built ? 'construido' : reqTH ? 'requiere 2 edificios' : costLabel(cost)}</small>
               </button>
             );
           })}
