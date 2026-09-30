@@ -68,12 +68,12 @@ export function Board(p: BoardProps) {
               )}
               {cap !== null && <Walls state={s} seat={cap} targets={p.wallTargets} onWall={p.onWall} />}
               {units.length > 0 && (
-                <div className={`stack n${units.length}`}>
-                  {units.map((u) => (
+                <div className="stack">
+                  {stackLayout(units).map(({ u, left, top }) => (
                     <button
                       key={u.id}
                       className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''}`}
-                      style={{ ['--owner' as string]: colorOf(u.owner) }}
+                      style={{ ['--owner' as string]: colorOf(u.owner), left: `${left}%`, top: `${top}%` }}
                       title={`${NAMES.unit[u.type]} de ${s.players[u.owner].name}`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -147,3 +147,27 @@ function Walls({
 }
 
 
+
+/**
+ * Colocación de las fichas de una casilla: cada tipo de tropa en su propia fila,
+ * y las del mismo tipo un poco solapadas en horizontal.
+ */
+const TOKEN = 54; // % de la casilla (igual para todas las fichas)
+function stackLayout(units: Unit[]) {
+  const groups: Unit[][] = [];
+  for (const u of units) {
+    const g = groups.find((x) => x[0].type === u.type);
+    if (g) g.push(u);
+    else groups.push([u]);
+  }
+  const rows = groups.length;
+  const rowStep = rows > 1 ? (100 - TOKEN) / (rows - 1) : 0;
+  const out: Array<{ u: Unit; left: number; top: number }> = [];
+  groups.forEach((g, r) => {
+    const top = rows > 1 ? r * rowStep - 2 : (100 - TOKEN) / 2;
+    const step = g.length > 1 ? Math.min(TOKEN * 0.62, (100 - TOKEN) / (g.length - 1)) : 0;
+    const width = TOKEN + step * (g.length - 1);
+    g.forEach((u, i) => out.push({ u, left: (100 - width) / 2 + i * step, top }));
+  });
+  return out;
+}

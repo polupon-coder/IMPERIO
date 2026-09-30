@@ -60,6 +60,17 @@ const STEP_LABEL: Record<string, string> = {
   TURN: 'Turno',
   END: 'Fin',
 };
+/** Número romano (rondas). */
+const roman = (n: number) => {
+  const map: Array<[number, string]> = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+  let out = '';
+  for (const [v, r] of map) while (n >= v) {
+    out += r;
+    n -= v;
+  }
+  return out;
+};
+
 const PHASE_LABEL: Record<string, string> = {
   SETUP: 'Preparación',
   PHASE_1: 'Fase I',
@@ -201,7 +212,7 @@ export function Game({
       <header className="topbar">
         <span className="brand">IMPERIO</span>
         <span className="phase">
-          {PHASE_LABEL[s.phase]} · {s.phase === 'PHASE_2' ? `Turno ${s.turnNumber}` : STEP_LABEL[s.step]}
+          {PHASE_LABEL[s.phase]} · {s.phase === 'PHASE_2' ? `Ronda ${roman(Math.ceil(s.turnNumber / 4))}` : STEP_LABEL[s.step]}
         </span>
         {s.phase !== 'GAME_OVER' && s.step !== 'INITIAL_PLACEMENT' && s.step !== 'FINAL_DEPLOY' && (
           <span
@@ -213,7 +224,6 @@ export function Game({
         )}
         {s.phase === 'PHASE_2' && myTurn && (
           <span className="turn-actions">
-            <ActionStatus state={s} />
             {s.turn?.military?.open && (
               <button disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endMilitary' })}>
                 Terminar acción militar
@@ -519,23 +529,6 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
     unitCount(s, seat, u) < MAX_PER_TYPE &&
     ringSpots(s, seat, u).length > 0 &&
     canAfford(my.resources, UNIT_COST[u])
-  );
-}
-
-/** Estado de las acciones del turno, para la barra superior. */
-function ActionStatus({ state: s }: { state: GameState }) {
-  const t = s.turn!;
-  const mil = t.military;
-  const nAct = mil ? Object.keys(mil.activations).length : 0;
-  const civil = t.civilUsed ? 'usada' : canUseCivil(s) ? 'libre' : '—';
-  const military = mil?.open ? `${nAct}/3` : t.militaryUsed ? 'usada' : canUseMilitary(s) ? 'libre' : '—';
-  return (
-    <span
-      className="action-status"
-      title="Pulsa un edificio de tu panel para construir, una figura de tu Ejército para reclutar o una tropa del tablero para moverla o atacar."
-    >
-      Civil: <b>{civil}</b> · Militar: <b>{military}</b>
-    </span>
   );
 }
 
