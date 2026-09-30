@@ -7,7 +7,7 @@ export const TILE_IMAGES: Record<Terrain | 'capital', string> = {
   bosque: '/assets/tiles/bosque.webp',
   montana: '/assets/tiles/montana.webp',
   agua: '/assets/tiles/agua.webp',
-  capital: '/assets/tiles/capital.svg',
+  capital: '/assets/tiles/capital.webp',
 };
 
 export const UNIT_IMAGES: Record<UnitType, string> = {

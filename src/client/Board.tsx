@@ -60,6 +60,9 @@ export function Board(p: BoardProps) {
             >
               {img && <img className="tile-img" src={img} alt="" draggable={false} />}
               {cap !== null && (
+                <div className="capital-frame" style={{ borderColor: colorOf(cap) }} />
+              )}
+              {cap !== null && (
                 <div className="capital-banner" style={{ background: colorOf(cap) }}>
                   {s.players[cap].name}
                 </div>

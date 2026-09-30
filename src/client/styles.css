@@ -724,3 +724,19 @@ details summary {
     grid-template-columns: 1fr;
   }
 }
+
+/* Marco del color del dueño alrededor de la ilustración de la Capital */
+.capital-frame {
+  position: absolute;
+  inset: 0;
+  border: 4px solid;
+  border-radius: 5px;
+  box-shadow: inset 0 0 6px #0006;
+  pointer-events: none;
+  z-index: 1;
+}
+.cell.capital .capital-banner {
+  font-size: 0.7rem;
+  font-weight: 600;
+  bottom: 5px;
+}
