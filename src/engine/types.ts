@@ -129,6 +129,8 @@ export interface LogEntry {
   n: number;
   text: string;
   seat?: Seat;
+  /** Momento del evento (ms), para intercalarlo con el chat. */
+  ts?: number;
 }
 
 export interface GameState {

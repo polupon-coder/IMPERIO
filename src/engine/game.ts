@@ -67,7 +67,7 @@ export interface NewPlayer {
 const pname = (s: GameState, seat: Seat) => s.players[seat].name;
 
 function log(s: GameState, text: string, seat?: Seat) {
-  s.log.push({ n: (s.log.at(-1)?.n ?? 0) + 1, text, seat });
+  s.log.push({ n: (s.log.at(-1)?.n ?? 0) + 1, text, seat, ts: Date.now() });
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
 }
 

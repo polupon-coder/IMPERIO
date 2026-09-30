@@ -255,7 +255,6 @@ export function Game({
           {s.phase === 'PHASE_2' && myTurn && (
             <TurnPanel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
           )}
-          <LogPanel state={s} />
         </aside>
       </main>
     </div>
@@ -875,21 +874,6 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
   );
 }
 
-function LogPanel({ state: s }: { state: GameState }) {
-  const entries = [...s.log].reverse().slice(0, 80);
-  return (
-    <div className="card log">
-      <h3>Registro</h3>
-      <ol>
-        {entries.map((e) => (
-          <li key={e.n} style={e.seat !== undefined ? { borderLeftColor: PLAYER_COLORS[s.players[e.seat].color] } : {}}>
-            {e.text}
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------------------------
 // Chat, comercio y oferta recibida
@@ -904,6 +888,63 @@ const canTrade = (s: GameState, seat: Seat) =>
   !s.prompt &&
   !s.combat;
 
+type FeedItem = { key: string; ts: number; kind: 'msg' | 'ev'; color: string; who?: string; text: string };
+
+/** Chat y registro de acciones en un único hilo, ordenado en el tiempo. */
+function useFeed(room: PublicRoom, s: GameState): FeedItem[] {
+  return useMemo(() => {
+    const colorOfPlayer = (id: number) => {
+      const lp = room.players.find((x) => x.id === id);
+      return lp?.color ? PLAYER_COLORS[lp.color] : '#6b5a45';
+    };
+    const items: FeedItem[] = [];
+    let last = 0;
+    for (const e of s.log) {
+      last = e.ts ?? last; // entradas antiguas sin hora: se colocan tras la anterior
+      items.push({
+        key: 'e' + e.n,
+        ts: last + e.n / 1e6,
+        kind: 'ev',
+        color: e.seat !== undefined ? PLAYER_COLORS[s.players[e.seat].color] : '#cbb994',
+        text: e.text,
+      });
+    }
+    for (const m of room.chat ?? []) {
+      const lp = room.players.find((x) => x.id === m.playerId);
+      items.push({ key: 'm' + m.n, ts: m.ts, kind: 'msg', color: colorOfPlayer(m.playerId), who: lp?.name ?? '¿?', text: m.text });
+    }
+    return items.sort((x, y) => x.ts - y.ts);
+  }, [room.version, room.chat?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function FeedLine({ item }: { item: FeedItem }) {
+  return item.kind === 'msg' ? (
+    <p>
+      <b style={{ color: item.color }}>{item.who}:</b> {item.text}
+    </p>
+  ) : (
+    <p className="ev" style={{ borderLeftColor: item.color }}>
+      {item.text}
+    </p>
+  );
+}
+
+function ChatInput({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
+  const [text, setText] = useState('');
+  return (
+    <form
+      className={className}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const t = text.trim();
+        if (t && (await call('chat', { text: t })).ok) setText('');
+      }}
+    >
+      <input value={text} maxLength={300} autoFocus={autoFocus} placeholder="Escribe un mensaje…" onChange={(e) => setText(e.target.value)} />
+    </form>
+  );
+}
+
 function ChatBar({
   room,
   state: s,
@@ -915,12 +956,9 @@ function ChatBar({
   mySeat: Seat;
   onTrade: () => void;
 }) {
-  const [text, setText] = useState('');
-  const listRef = useRef<HTMLDivElement>(null);
-  const chat = room.chat ?? [];
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [chat.length]);
+  const [open, setOpen] = useState(false);
+  const feed = useFeed(room, s);
+  const lastItem = feed.at(-1);
   const hasMarket = s.players[mySeat].buildings.includes('mercado');
   const tradeOk = canTrade(s, mySeat);
   const tradeTitle = !hasMarket
@@ -932,55 +970,61 @@ function ChatBar({
         : s.turn?.tradeDone
           ? 'Ya has hecho tu intercambio de este turno'
           : 'Hay una decisión pendiente';
-  const colorOfPlayer = (id: number) => {
-    const lp = room.players.find((x) => x.id === id);
-    return lp?.color ? PLAYER_COLORS[lp.color] : '#6b5a45';
-  };
-  const submit = async () => {
-    const t = text.trim();
-    if (!t) return;
-    const r = await call('chat', { text: t });
-    if (r.ok) setText('');
-  };
   return (
-    <div className="card chat-bar">
-      <button className="trade-btn" disabled={!tradeOk} title={tradeTitle} onClick={onTrade}>
-        <img src={buildingImage('mercado')} alt="" />
-        Comerciar
-      </button>
-      <div className="chat">
-        <div className="chat-list" ref={listRef}>
-          {chat.length === 0 && <p className="muted chat-empty">Sin mensajes todavía.</p>}
-          {chat.map((m) => {
-            const lp = room.players.find((x) => x.id === m.playerId);
-            return (
-              <p key={m.n} className="chat-msg">
-                <b style={{ color: colorOfPlayer(m.playerId) }}>{lp?.name ?? '¿?'}:</b> {m.text}
-              </p>
-            );
-          })}
+    <>
+      <div className="card chat-bar">
+        <button disabled={!tradeOk} title={tradeTitle} onClick={onTrade}>
+          Comerciar
+        </button>
+        <div className="chat-line">
+          {lastItem && (
+            <span className="chat-last" title={lastItem.text}>
+              {lastItem.kind === 'msg' && <b style={{ color: lastItem.color }}>{lastItem.who}: </b>}
+              {lastItem.text}
+            </span>
+          )}
+          <ChatInput />
         </div>
-        <form
-          className="chat-input"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit();
-          }}
-        >
-          <input value={text} maxLength={300} placeholder="Escribe un mensaje…" onChange={(e) => setText(e.target.value)} />
-          <button type="submit" disabled={!text.trim()}>
-            Enviar
-          </button>
-        </form>
+        <button className="chat-expand" title="Ver el historial del chat" onClick={() => setOpen(true)}>
+          ▴
+        </button>
       </div>
-    </div>
+      {open && <ChatHistory feed={feed} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function ChatHistory({ feed, onClose }: { feed: FeedItem[]; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollTo({ top: ref.current.scrollHeight });
+  }, [feed.length]);
+  return (
+    <Modal title="Chat y registro de la partida" onClose={onClose} wide>
+      <div className="chat-history" ref={ref}>
+        {feed.map((it) => (
+          <FeedLine key={it.key} item={it} />
+        ))}
+      </div>
+      <ChatInput className="chat-modal-input" autoFocus />
+    </Modal>
+  );
+}
+
+function Modal({
+  title,
+  onClose,
+  children,
+  wide,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
+      <div className={`modal card ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
           ×
         </button>
