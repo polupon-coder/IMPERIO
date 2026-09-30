@@ -32,9 +32,12 @@ def cut(name):
         alpha[max(0, ey0 - Y0):max(0, ey1 - Y0), max(0, ex0 - X0):max(0, ex1 - X0)] = 0
     im = Image.fromarray(np.dstack([a, alpha * 255]).astype(np.uint8), 'RGBA')
     im = im.crop(im.getchannel('A').point(lambda x: 255 if x > 40 else 0).getbbox())
+    # Ficha circular: la figura centrada sobre el papel original, con margen para que quepa en el círculo.
     W, H = im.size
-    k = 256 / max(W, H)  # recorte ajustado a la figura, lado mayor 256 px
-    return im.resize((max(1, round(W * k)), max(1, round(H * k))), Image.LANCZOS)
+    side = round(max(max(W, H) * 0.98, (W * W + H * H) ** 0.5 * 0.74))
+    can = Image.new('RGBA', (side, side), tuple(int(c) for c in paper) + (255,))
+    can.alpha_composite(im, ((side - W) // 2, (side - H) // 2))
+    return can.resize((256, 256), Image.LANCZOS)
 
 
 def hsv(a):
@@ -86,10 +89,10 @@ if __name__ == '__main__':
     for i, name in enumerate(BOXES):
         base = cut(name)
         base.save(f'public/assets/units/rojo/{name}.webp', quality=90)
-        preview.alpha_composite(base, (i * 256 + (256 - base.width) // 2, 256 - base.height))
+        preview.alpha_composite(base, (i * 256, 0))
         for j, c in enumerate(TARGET):
             r = recolor(base, c)
             r.save(f'public/assets/units/{c}/{name}.webp', quality=90)
-            preview.alpha_composite(r, (i * 256 + (256 - r.width) // 2, (j + 2) * 256 - r.height))
+            preview.alpha_composite(r, (i * 256, (j + 1) * 256))
     if len(sys.argv) > 2:
         preview.save(sys.argv[2])

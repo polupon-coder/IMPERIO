@@ -83,4 +83,4 @@ Las imágenes están en `public/assets/`:
   - Para usar ilustraciones propias de cada color, sustituye esos archivos.
 - **Iconos de los paneles:** siluetas en `units/<tipo>.svg`.
 
-Para usar archivos PNG u otros nombres, cambia las rutas en `src/client/assets.ts`. Las losetas se recortan en cuadrado (`object-fit: cover`). Las tropas se muestran de pie sobre una peana del color del jugador, con fondo transparente.
+Para usar archivos PNG u otros nombres, cambia las rutas en `src/client/assets.ts`. Las losetas se recortan en cuadrado (`object-fit: cover`). Las tropas se muestran en fichas circulares con el fondo de papel original y un borde del color del jugador.
