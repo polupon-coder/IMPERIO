@@ -16,6 +16,9 @@ export const capitalImage = (color: string) => `/assets/tiles/capital-${color}.w
 /** Ilustración de la tropa en el tablero, por color de jugador: public/assets/units/<color>/<tipo>.webp */
 export const unitFigure = (color: string, type: UnitType) => `/assets/units/${color}/${type}.webp`;
 
+/** Ilustración de cada edificio (scripts/prepare-buildings.py). */
+export const buildingImage = (b: string) => `/assets/buildings/${b}.webp`;
+
 /** Iconos pequeños (siluetas) para los paneles. */
 export const UNIT_IMAGES: Record<UnitType, string> = {
   infanteria: '/assets/units/infanteria.svg',

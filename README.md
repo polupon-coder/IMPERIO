@@ -78,6 +78,7 @@ Las imágenes están en `public/assets/`:
 
 - **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp` y `agua.webp` se generan desde `art/losetas.webp` con `python3 scripts/prepare-tiles.py`, que aplica los ajustes de color (Agua más suave, Llanura más amarillenta). Las ilustraciones originales del autor están en `art/`.
 - **Capitales:** `tiles/capital.webp` es la ilustración original. Las versiones `capital-<color>.webp`, con los tejados del color de cada jugador, se generan con `python3 scripts/recolor-capital.py`.
+- **Edificios:** `buildings/<edificio>.webp`, recortados con `python3 scripts/prepare-buildings.py` de `art/edificios-militares.webp` y `art/edificios-civiles.webp`. En el panel de cada jugador, los que no ha construido aparecen con baja opacidad.
 - **Tropas en el tablero:** `units/<color>/<tipo>.webp`, donde el color es `rojo`, `azul`, `amarillo` o `verde` y el tipo es `infanteria`, `arquero`, `lancero`, `caballeria` o `artilleria`.
   - Las rojas son las ilustraciones del autor.
   - Las azules, amarillas y verdes se generan recoloreando las rojas con `python3 scripts/recolor-units.py`. Las fuentes son `art/tropas-rojo.webp` y, para la Infantería con espada, `art/infanteria-rojo.jpg`.

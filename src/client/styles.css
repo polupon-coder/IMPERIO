@@ -674,23 +674,50 @@ details summary {
 .res-agua {
   background: #d7e9f1;
 }
+.buildings-head {
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+/* Edificios del jugador: ilustración con el nombre debajo; sin construir, en baja opacidad */
 .buildings {
-  margin: 4px 0;
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
-  font-size: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 6px;
+  margin: 2px 0 6px;
 }
 .bld {
-  padding: 0 4px;
-  border-radius: 3px;
-  border: 1px solid var(--line);
-  color: #0005;
+  margin: 0;
+  text-align: center;
 }
-.bld.on {
-  background: var(--ok);
-  color: white;
+.bld img {
+  opacity: 0.3;
+  filter: grayscale(0.6);
+  transition: opacity 0.2s, filter 0.2s;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.bld.on img {
+  opacity: 1;
+  filter: none;
   border-color: var(--ok);
+  box-shadow: 0 1px 3px #0003;
+}
+.bld figcaption {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.1;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bld.on figcaption {
+  color: var(--ink);
+  font-weight: 600;
 }
 .army {
   display: flex;

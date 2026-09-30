@@ -38,7 +38,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -828,13 +828,21 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 </span>
               ))}
             </div>
+            <div className="buildings-head muted">Edificios {p.buildings.length}/8</div>
             <div className="buildings">
-              {BUILDINGS.map((b) => (
-                <span key={b} className={`bld ${p.buildings.includes(b) ? 'on' : ''}`} title={NAMES.building[b]}>
-                  {NAMES.building[b].slice(0, 3)}
-                </span>
-              ))}
-              <span className="muted"> {p.buildings.length}/8</span>
+              {BUILDINGS.map((b) => {
+                const built = p.buildings.includes(b);
+                return (
+                  <figure
+                    key={b}
+                    className={`bld ${built ? 'on' : ''}`}
+                    title={`${NAMES.building[b]}${built ? '' : ' (sin construir)'}`}
+                  >
+                    <img src={buildingImage(b)} alt={NAMES.building[b]} draggable={false} />
+                    <figcaption>{NAMES.building[b]}</figcaption>
+                  </figure>
+                );
+              })}
             </div>
             <div className="army">
               {UNIT_TYPES.map((u) => {
