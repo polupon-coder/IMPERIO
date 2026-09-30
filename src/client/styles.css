@@ -1987,3 +1987,22 @@ textarea {
   border: none !important;
   background: transparent !important;
 }
+
+/* ---------- Tropas sin activar (falta su edificio militar): sin color y veladas ---------- */
+.token.locked img {
+  filter: grayscale(1) sepia(0.15) brightness(1.05);
+  opacity: 0.7;
+}
+.token.locked {
+  border-color: color-mix(in srgb, var(--owner) 55%, #b9ad97) !important;
+}
+.army-figures figure.on.locked .mini-token {
+  opacity: 0.75;
+  filter: grayscale(1) sepia(0.15);
+}
+.unit-pill.locked:not(.zero) img {
+  opacity: 0.55;
+}
+.unit-pill.locked:not(.zero) {
+  color: #7a6a52;
+}

@@ -687,7 +687,11 @@ function PlayersPanel({
                 {UNIT_TYPES.map((u) => {
                   const n = units.filter((x) => x.type === u).length;
                   return (
-                    <span key={u} title={NAMES.unit[u]} className={`res unit-pill ${n ? '' : 'zero'}`}>
+                    <span
+                      key={u}
+                      title={`${NAMES.unit[u]}${isUnlocked(s, seat, u) ? '' : ' · sin activar'}`}
+                      className={`res unit-pill ${n ? '' : 'zero'} ${isUnlocked(s, seat, u) ? '' : 'locked'}`}
+                    >
                       <img src={UNIT_IMAGES[u]} alt={NAMES.unit[u]} /> <b>{n}</b>
                     </span>
                   );
@@ -739,7 +743,7 @@ function PlayersPanel({
                 return (
                   <figure
                     key={u}
-                    className={`${n ? 'on' : ''} ${recruitable(s, mySeat, u) ? 'can' : ''} ${recruiting === u ? 'sel' : ''}`}
+                    className={`${n ? 'on' : ''} ${recruitable(s, mySeat, u) ? 'can' : ''} ${recruiting === u ? 'sel' : ''} ${isUnlocked(s, mySeat, u) ? '' : 'locked'}`}
                     onClick={() => myTurnNow && setConfirm({ kind: 'recruit', u })}
                   >
                     <CostTip title={NAMES.unit[u]} cost={UNIT_COST[u]} />

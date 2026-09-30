@@ -1,4 +1,5 @@
 import {
+  isUnlocked,
   NAMES,
   SIDES,
   capitalSeatAt,
@@ -72,9 +73,9 @@ export function Board(p: BoardProps) {
                   {stackLayout(units).map(({ u, left, top }) => (
                     <button
                       key={u.id}
-                      className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''}`}
+                      className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''} ${isUnlocked(s, u.owner, u.type) ? '' : 'locked'}`}
                       style={{ ['--owner' as string]: colorOf(u.owner), left: `${left}%`, top: `${top}%` }}
-                      title={`${NAMES.unit[u.type]} de ${s.players[u.owner].name}`}
+                      title={`${NAMES.unit[u.type]} de ${s.players[u.owner].name}${isUnlocked(s, u.owner, u.type) ? '' : ' · sin activar (solo defiende)'}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         p.onUnit(u);
