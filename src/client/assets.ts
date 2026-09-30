@@ -10,6 +10,9 @@ export const TILE_IMAGES: Record<Terrain | 'capital', string> = {
   capital: '/assets/tiles/capital.webp',
 };
 
+/** Loseta de Capital con los tejados del color del jugador (scripts/recolor-capital.py). */
+export const capitalImage = (color: string) => `/assets/tiles/capital-${color}.webp`;
+
 /** Ilustración de la tropa en el tablero, por color de jugador: public/assets/units/<color>/<tipo>.webp */
 export const unitFigure = (color: string, type: UnitType) => `/assets/units/${color}/${type}.webp`;
 

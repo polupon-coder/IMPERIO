@@ -9,7 +9,7 @@ import {
   type Side,
   type Unit,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, capitalImage, unitFigure } from './assets';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -45,7 +45,7 @@ export function Board(p: BoardProps) {
           const ring = ringOwner(pos);
           const units = s.units.filter((u) => u.pos === pos);
           const mark = p.marks.get(pos);
-          const img = cap !== null ? TILE_IMAGES.capital : cell.terrain ? TILE_IMAGES[cell.terrain] : null;
+          const img = cap !== null ? capitalImage(s.players[cap].color) : cell.terrain ? TILE_IMAGES[cell.terrain] : null;
           return (
             <div
               key={pos}
@@ -59,9 +59,6 @@ export function Board(p: BoardProps) {
               onClick={() => p.onCell(pos)}
             >
               {img && <img className="tile-img" src={img} alt="" draggable={false} />}
-              {cap !== null && (
-                <div className="capital-frame" style={{ borderColor: colorOf(cap) }} />
-              )}
               {cap !== null && (
                 <div className="capital-banner" style={{ background: colorOf(cap) }}>
                   {s.players[cap].name}
