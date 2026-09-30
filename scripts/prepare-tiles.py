@@ -31,12 +31,34 @@ ADJUST = {
     'llanura': lambda im: hsv_adjust(im, hue_target=50, pull=0.35, sat=1.05, val=1.06),  # más amarillenta
 }
 
+# Color de base de cada terreno: el dibujo se atenúa y predomina este color.
+BASE_COLOR = {
+    'llanura': (222, 200, 110),  # amarillo
+    'bosque': (104, 146, 84),  # verde
+    'montana': (150, 148, 142),  # gris
+    'agua': (112, 162, 196),  # azul
+}
+DETAIL = 0.45  # intensidad del dibujo que se conserva (1 = original)
+WASH = 0.55  # peso del color de base
+
+
+def base_wash(im, color):
+    a = np.asarray(im).astype(float)
+    lum = a.mean(-1, keepdims=True)
+    # El color de base modulado suavemente por la luz del dibujo
+    tint = np.array(color, float) * (0.82 + 0.18 * lum / lum.mean())
+    soft = lum.mean() + (a - lum.mean()) * DETAIL  # dibujo con menos contraste
+    out = soft * (1 - WASH) + tint * WASH
+    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8))
+
+
 sheet = Image.open('art/losetas.webp').convert('RGB')
 out = {}
 for name, (a, b, c, d) in BOXES.items():
     t = sheet.crop((a + INSET, b + INSET, c - INSET, d - INSET)).resize((512, 512), Image.LANCZOS)
     if name in ADJUST:
         t = ADJUST[name](t)
+    t = base_wash(t, BASE_COLOR[name])
     t.save(f'public/assets/tiles/{name}.webp', quality=88)
     out[name] = t
 
