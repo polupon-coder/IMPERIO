@@ -139,7 +139,7 @@ export function createGame(players: NewPlayer[], seed: number): GameState {
 
   s.phase = 'PHASE_1';
   s.step = 'INITIAL_PLACEMENT';
-  log(s, 'FASE I — Creación del Mundo. Cada jugador coloca a la vez sus 4 losetas iniciales en su anillo.');
+  log(s, 'Fase I — Creación del Mundo. Cada jugador coloca a la vez sus 4 losetas iniciales en su anillo.');
   return s;
 }
 
@@ -288,7 +288,7 @@ function checkFinalDeploy(s: GameState) {
   s.step = 'TURN';
   s.current = 0;
   for (const c of s.cells) c.placedBy = null; // §9: al comenzar la Fase II ninguna loseta pertenece a nadie
-  log(s, 'FASE II — El Imperio.');
+  log(s, 'Fase II — El Imperio.');
   startTurn(s);
 }
 
@@ -723,7 +723,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       victim.walls = [...victim.originalWalls]; // §115
       log(
         s,
-        `¡${p.name} CONQUISTA la Capital de ${victim.name} con ${NAMES.unit[u!.type]} desde ${coordLabel(u!.pos)}!` +
+        `¡${p.name} conquista la Capital de ${victim.name} con ${NAMES.unit[u!.type]} desde ${coordLabel(u!.pos)}!` +
           (victim.originalWalls.length ? ' Sus Murallas originales se restauran.' : ''),
         seat,
       );

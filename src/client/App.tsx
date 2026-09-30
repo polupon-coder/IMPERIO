@@ -119,7 +119,7 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
             value={code}
             maxLength={5}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="CÓDIGO"
+            placeholder="Código"
             className="ink-input code-input"
           />
           <button

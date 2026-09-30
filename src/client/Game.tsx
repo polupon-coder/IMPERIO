@@ -214,7 +214,7 @@ export function Game({
   return (
     <div className="game">
       <header className="topbar">
-        <span className="brand">IMPERIO</span>
+        <span className="brand">Imperio</span>
         <span className="phase">
           {PHASE_LABEL[s.phase]} · {s.phase === 'PHASE_2' ? `Ronda ${roman(Math.ceil(s.turnNumber / 4))}` : STEP_LABEL[s.step]}
         </span>

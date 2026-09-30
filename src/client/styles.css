@@ -11,11 +11,6 @@
   font-display: swap;
 }
 @font-face {
-  font-family: 'IM Fell English SC';
-  src: url('/assets/fonts/IMFellEnglishSC.ttf') format('truetype');
-  font-display: swap;
-}
-@font-face {
   font-family: 'EB Garamond';
   src: url('/assets/fonts/EBGaramond.ttf') format('truetype');
   font-weight: 400 700;
@@ -1654,7 +1649,7 @@ details summary {
 
 /* ---------- Portada y sala sobre pergamino ---------- */
 .sc {
-  font-family: 'IM Fell English SC', 'EB Garamond', serif;
+  font-family: 'IM Fell English', 'EB Garamond', serif;
   letter-spacing: 0.04em;
 }
 .center {
@@ -1694,7 +1689,7 @@ details summary {
   padding: 16px;
   border: none !important;
   color: #f7e6c4 !important;
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 1rem;
   line-height: 1.1;
   text-align: center;
@@ -1779,7 +1774,7 @@ details summary {
   padding: 10px 26px 6px;
 }
 .lobby-title {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   text-align: center;
   font-size: 2.4rem;
   color: var(--ink);
@@ -1993,7 +1988,7 @@ textarea {
   margin: 4px 0;
 }
 .victory-name {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 2.6rem;
   line-height: 1.1;
   display: flex;
@@ -2033,14 +2028,14 @@ textarea {
   text-align: center;
 }
 .card.winner h2 {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 1.3rem;
 }
 
 /* ---------- Hoja de reglas ---------- */
 .rules-btn {
   padding: 3px 14px;
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 0.95rem;
   background: #efe2c2 !important;
   color: var(--ink) !important;
@@ -2057,7 +2052,7 @@ textarea {
   margin-bottom: 8px;
 }
 .rules-tabs button {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   padding: 3px 10px;
   font-size: 0.9rem;
 }
@@ -2112,4 +2107,29 @@ textarea {
   text-align: center;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* Placeholder del código en minúsculas normales (el código sí se escribe en mayúsculas) */
+.code-input::placeholder {
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+/* Cerrar ventana: solo la cruz, sin fondo ni círculo */
+.modal .modal-close,
+.modal-close {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  color: var(--ink);
+  font-size: 1.9rem;
+  top: 2px;
+  right: 6px;
+  opacity: 0.75;
+}
+.modal .modal-close:hover,
+.modal-close:hover {
+  opacity: 1;
+  background: none !important;
 }
