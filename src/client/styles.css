@@ -374,54 +374,77 @@ select {
 }
 .token {
   position: absolute;
-  width: 46%;
-  height: 46%;
   padding: 0;
-  border-radius: 50%;
-  border: 2px solid #fff8ec;
-  box-shadow: 0 2px 3px #0007;
-  display: grid;
-  place-items: center;
+  border: none;
+  background: none;
   pointer-events: auto;
 }
-.token img {
-  width: 72%;
-  height: 72%;
-  filter: invert(1) drop-shadow(0 0 1px #0008);
+/* Peana del color del jugador bajo la miniatura */
+.token::before {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 2%;
+  height: 26%;
+  border-radius: 50%;
+  background: var(--owner);
+  border: 2px solid #fff8ec;
+  box-shadow: 0 2px 3px #0009;
 }
-.token.sel {
-  outline: 3px solid var(--conquer);
-  outline-offset: 1px;
+.token img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 100%;
+  /* Contorno del color del jugador para distinguir las figuras sobre cualquier terreno */
+  filter: drop-shadow(0 0 1px var(--owner)) drop-shadow(0 0 1px var(--owner)) drop-shadow(0 1px 2px #000a);
+}
+.token:hover {
+  background: none !important;
+}
+.token.sel::before {
+  box-shadow: 0 0 0 3px var(--conquer), 0 2px 3px #0009;
+}
+.token.sel img {
+  filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 2px var(--conquer));
 }
 .token.used {
-  opacity: 0.7;
-  border-style: dashed;
+  opacity: 0.65;
 }
 .stack.n1 .token {
-  left: 27%;
-  top: 22%;
-  width: 50%;
-  height: 50%;
+  left: 10%;
+  top: 4%;
+  width: 80%;
+  height: 90%;
+}
+.stack.n2 .token {
+  top: 14%;
+  width: 58%;
+  height: 80%;
 }
 .stack.n2 .token:nth-child(1) {
-  left: 4%;
-  top: 26%;
+  left: -4%;
 }
 .stack.n2 .token:nth-child(2) {
-  left: 50%;
-  top: 26%;
+  left: 46%;
+}
+.stack.n3 .token {
+  width: 52%;
+  height: 62%;
 }
 .stack.n3 .token:nth-child(1) {
-  left: 27%;
-  top: 3%;
+  left: 24%;
+  top: -4%;
 }
 .stack.n3 .token:nth-child(2) {
-  left: 4%;
-  top: 48%;
+  left: -4%;
+  top: 38%;
 }
 .stack.n3 .token:nth-child(3) {
-  left: 50%;
-  top: 48%;
+  left: 52%;
+  top: 38%;
 }
 .ghost {
   position: absolute;

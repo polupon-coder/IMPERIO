@@ -9,7 +9,7 @@ import {
   type Side,
   type Unit,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, unitFigure } from './assets';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -74,14 +74,14 @@ export function Board(p: BoardProps) {
                     <button
                       key={u.id}
                       className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''}`}
-                      style={{ background: colorOf(u.owner) }}
+                      style={{ ['--owner' as string]: colorOf(u.owner) }}
                       title={`${NAMES.unit[u.type]} de ${s.players[u.owner].name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         p.onUnit(u);
                       }}
                     >
-                      <img src={UNIT_IMAGES[u.type]} alt={NAMES.unit[u.type]} draggable={false} />
+                      <img src={unitFigure(s.players[u.owner].color, u.type)} alt={NAMES.unit[u.type]} draggable={false} />
                     </button>
                   ))}
                 </div>

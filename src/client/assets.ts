@@ -10,6 +10,10 @@ export const TILE_IMAGES: Record<Terrain | 'capital', string> = {
   capital: '/assets/tiles/capital.webp',
 };
 
+/** Ilustración de la tropa en el tablero, por color de jugador: public/assets/units/<color>/<tipo>.webp */
+export const unitFigure = (color: string, type: UnitType) => `/assets/units/${color}/${type}.webp`;
+
+/** Iconos pequeños (siluetas) para los paneles. */
 export const UNIT_IMAGES: Record<UnitType, string> = {
   infanteria: '/assets/units/infanteria.svg',
   arquero: '/assets/units/arquero.svg',

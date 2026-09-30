@@ -76,7 +76,11 @@ Hay dos tipos de decisiones que se superponen al estado principal:
 
 Las imágenes están en `public/assets/`:
 
-- `tiles/llanura.svg`, `bosque.svg`, `montana.svg`, `agua.svg`, `capital.svg`
-- `units/infanteria.svg`, `arquero.svg`, `lancero.svg`, `caballeria.svg`, `artilleria.svg`
+- **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp`, `agua.webp` y `capital.webp` (ilustraciones del autor).
+- **Tropas en el tablero:** `units/<color>/<tipo>.webp`, donde el color es `rojo`, `azul`, `amarillo` o `verde` y el tipo es `infanteria`, `arquero`, `lancero`, `caballeria` o `artilleria`.
+  - Las rojas son las ilustraciones del autor.
+  - Las azules, amarillas y verdes se generan recoloreando las rojas con `python3 scripts/recolor-units.py hoja.webp`.
+  - Para usar ilustraciones propias de cada color, sustituye esos archivos.
+- **Iconos de los paneles:** siluetas en `units/<tipo>.svg`.
 
-Para usar tus ilustraciones, sustituye cada archivo manteniendo el nombre. Si quieres usar PNG o WebP, cambia la ruta o la extensión en `src/client/assets.ts`. Las losetas se muestran cuadradas y recortadas (`object-fit: cover`). Los iconos de tropa se muestran en blanco sobre la ficha del color de cada jugador; si usas ilustraciones a color, quita el `filter: invert(1)` de `.token img` en `src/client/styles.css`.
+Para usar archivos PNG u otros nombres, cambia las rutas en `src/client/assets.ts`. Las losetas se recortan en cuadrado (`object-fit: cover`). Las tropas se muestran de pie sobre una peana del color del jugador, con fondo transparente.
