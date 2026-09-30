@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CAPITALS,
   RINGS,
@@ -704,8 +705,23 @@ function PlayersPanel({
   onRecruit: (u: UnitType) => void;
   recruiting: UnitType | null;
 }) {
+  const [confirm, setConfirm] = useState<{ kind: 'build'; b: Building } | { kind: 'recruit'; u: UnitType } | null>(null);
+  const myTurnNow = s.phase === 'PHASE_2' && s.turn?.seat === mySeat;
   return (
     <div className="card players">
+      {confirm && (
+        <ConfirmDialog
+          state={s}
+          mySeat={mySeat}
+          item={confirm}
+          onClose={() => setConfirm(null)}
+          onConfirm={() => {
+            if (confirm.kind === 'build') onBuild(confirm.b);
+            else onRecruit(confirm.u);
+            setConfirm(null);
+          }}
+        />
+      )}
       {/* Tu panel primero y con ilustraciones; los rivales, en resumen. */}
       {[mySeat, ...s.order.filter((x) => x !== mySeat)].map((seat) => {
         const p = s.players[seat];
@@ -764,7 +780,6 @@ function PlayersPanel({
                 ⚑ {p.conquests.length}
               </span>
             </div>
-            <div className="buildings-head muted">Edificios {p.buildings.length}/8</div>
             <div className="buildings">
               {builtFirst(p.buildings).map((b) => {
                 const built = p.buildings.includes(b);
@@ -773,20 +788,15 @@ function PlayersPanel({
                   <figure
                     key={b}
                     className={`bld ${built ? 'on' : ''} ${can ? 'can' : ''}`}
-                    title={
-                      built
-                        ? NAMES.building[b]
-                        : `${NAMES.building[b]} · ${costLabel(BUILDING_COST[b])}${can ? ' · pulsa para construir' : ''}`
-                    }
-                    onClick={() => can && onBuild(b)}
+                    onClick={() => !built && myTurnNow && setConfirm({ kind: 'build', b })}
                   >
+                    <CostTip title={NAMES.building[b]} cost={BUILDING_COST[b]} note={built ? 'Construido' : undefined} />
                     <img src={buildingImage(b)} alt={NAMES.building[b]} draggable={false} />
                     <figcaption>{NAMES.building[b]}</figcaption>
                   </figure>
                 );
               })}
             </div>
-            <div className="buildings-head muted">Ejército</div>
             <div className="army-figures">
               {UNIT_TYPES.map((u) => {
                 const n = units.filter((x) => x.type === u).length;
@@ -794,9 +804,9 @@ function PlayersPanel({
                   <figure
                     key={u}
                     className={`${n ? 'on' : ''} ${recruitable(s, mySeat, u) ? 'can' : ''} ${recruiting === u ? 'sel' : ''}`}
-                    title={`${NAMES.unit[u]}: ${n}/5 · ${costLabel(UNIT_COST[u])}${recruitable(s, mySeat, u) ? ' · pulsa para reclutar' : ''}`}
-                    onClick={() => recruitable(s, mySeat, u) && onRecruit(u)}
+                    onClick={() => myTurnNow && setConfirm({ kind: 'recruit', u })}
                   >
+                    <CostTip title={NAMES.unit[u]} cost={UNIT_COST[u]} />
                     <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                       <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
                     </span>
@@ -811,11 +821,10 @@ function PlayersPanel({
                   <img src={WALL_TOKEN} alt="Murallas" draggable={false} />
                 </span>
                 <figcaption>
-                  Murallas <b>{p.walls.length}</b>
+                  Murallas <b>{p.walls.length}</b>/4
                 </figcaption>
               </figure>
             </div>
-            <div className="buildings-head muted">Recursos</div>
             <div className="army-figures resource-figures">
               {RESOURCES.map((r) => (
                 <figure key={r} className="on" title={NAMES.resource[r]}>
@@ -982,7 +991,8 @@ function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
-  return (
+  // Portal al <body>: la ventana flota sobre toda la página aunque se abra desde un panel.
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className={`modal card ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
@@ -991,7 +1001,8 @@ function Modal({
         <h3>{title}</h3>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -1020,6 +1031,71 @@ function ResourcePicker({
         </button>
       ))}
     </div>
+  );
+}
+
+/** Coste en recursos que aparece al pasar el cursor por un edificio o una tropa. */
+function CostTip({ title, cost, note }: { title: string; cost: Resources; note?: string }) {
+  return (
+    <span className="cost-tip" role="tooltip">
+      <b>{title}</b>
+      {note ? <small>{note}</small> : <Cost r={cost} />}
+    </span>
+  );
+}
+
+/** Ventana flotante para confirmar la construcción de un edificio o el reclutamiento de una tropa. */
+function ConfirmDialog({
+  state: s,
+  mySeat,
+  item,
+  onClose,
+  onConfirm,
+}: {
+  state: GameState;
+  mySeat: Seat;
+  item: { kind: 'build'; b: Building } | { kind: 'recruit'; u: UnitType };
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const my = s.players[mySeat];
+  const build = item.kind === 'build';
+  const name = build ? NAMES.building[item.b] : NAMES.unit[item.u];
+  const cost = build ? BUILDING_COST[item.b] : UNIT_COST[item.u];
+  const ok = build ? buildable(s, mySeat, item.b) : recruitable(s, mySeat, item.u);
+  let why = '';
+  if (!ok) {
+    if (!canAfford(my.resources, cost)) why = 'No tienes recursos suficientes.';
+    else if (build && item.b === 'ayuntamiento' && my.buildings.length < 2) why = 'El Ayuntamiento requiere 2 edificios previos.';
+    else if (build) why = 'No te queda Acción Civil en este turno.';
+    else if (!isUnlocked(s, mySeat, item.u)) why = 'Falta el edificio necesario para reclutar esta tropa.';
+    else if (unitCount(s, mySeat, item.u) >= MAX_PER_TYPE) why = 'Ya tienes 5 unidades de este tipo.';
+    else if (!ringSpots(s, mySeat, item.u).length) why = 'No hay ninguna casilla libre válida en tu anillo.';
+    else why = 'No te queda Acción Militar en este turno.';
+  }
+  return (
+    <Modal title={build ? `¿Construir ${name}?` : `¿Reclutar ${name}?`} onClose={onClose}>
+      <div className="confirm-body">
+        <img
+          className={build ? 'confirm-bld' : 'confirm-unit'}
+          src={build ? buildingImage(item.b) : unitFigure(my.color, item.u)}
+          alt=""
+          style={build ? undefined : { borderColor: PLAYER_COLORS[my.color] }}
+        />
+        <div>
+          <p>Coste:</p>
+          <Cost r={cost} />
+          {!build && ok && <p className="muted">Después elige una casilla de tu anillo en el tablero.</p>}
+          {why && <p className="error">{why}</p>}
+        </div>
+      </div>
+      <div className="row modal-actions">
+        <button className="primary" disabled={!ok} onClick={onConfirm}>
+          {build ? 'Construir' : 'Reclutar'}
+        </button>
+        <button onClick={onClose}>Cancelar</button>
+      </div>
+    </Modal>
   );
 }
 

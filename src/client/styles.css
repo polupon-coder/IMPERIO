@@ -1330,3 +1330,87 @@ details summary {
     justify-content: space-between;
   }
 }
+
+/* ---------- Coste al pasar el cursor ---------- */
+.bld,
+.army-figures figure {
+  position: relative;
+}
+.cost-tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 4px);
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(252, 247, 234, 0.98);
+  border: 1px solid var(--line);
+  box-shadow: 0 3px 10px #0004;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+}
+.cost-tip b {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 2px;
+}
+.cost-tip .cost img {
+  width: 22px;
+  height: 22px;
+}
+.bld:hover .cost-tip,
+.army-figures figure:hover .cost-tip {
+  display: block;
+}
+.bld img,
+.army-figures figure {
+  cursor: pointer;
+}
+/* Ventana de confirmación */
+.confirm-body {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.confirm-body p {
+  margin: 4px 0;
+}
+.confirm-bld {
+  width: 160px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+.confirm-unit {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid;
+  object-fit: cover;
+}
+.confirm-body .cost img {
+  width: 30px;
+  height: 30px;
+}
+/* El coste se superpone centrado sobre el elemento (así nunca queda recortado por el lateral) */
+.cost-tip {
+  bottom: auto;
+  top: 45%;
+  transform: translate(-50%, -50%);
+}
+.cost-tip .cost {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.cost-tip img {
+  opacity: 1 !important;
+  filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+  aspect-ratio: auto !important;
+  width: 22px !important;
+  height: 22px !important;
+}
