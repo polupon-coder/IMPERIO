@@ -25,6 +25,21 @@ Durante la partida, el tablero resalta siempre lo que es legal:
 
 Las tiradas se hacen automáticamente y la Fe se ofrece cuando corresponde.
 
+## Probarlo en tu ordenador
+
+1. Instala **Node.js** (versión 20 o superior) desde https://nodejs.org.
+2. Descarga el proyecto: en GitHub, rama `claude/nuevo-proyecto-b2ocru`, botón **Code → Download ZIP**, y descomprímelo.
+3. Abre una terminal en la carpeta del proyecto y ejecuta:
+   ```bash
+   npm install
+   npm run jugar
+   ```
+4. Abre **http://localhost:3001** en el navegador y crea una partida.
+5. Para jugar tú solo con los 4 jugadores, abre el enlace del Mundo en **otras 3 pestañas** y únete con otro nombre en cada una. Cada pestaña recuerda su jugador aunque la recargues.
+6. Para jugar con otras personas **de tu misma red wifi**, comparte la dirección de tu ordenador en la red (por ejemplo, `http://192.168.1.35:3001/?sala=CÓDIGO`).
+
+Para parar el servidor, pulsa `Ctrl + C` en la terminal. Las partidas se guardan en la carpeta `data/`.
+
 ## Desarrollo
 
 Requiere Node 20 o superior.

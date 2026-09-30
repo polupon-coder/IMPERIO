@@ -18,34 +18,49 @@ export const call = (event: string, data?: unknown) =>
 const KEY = 'imperio:sessions';
 type Sessions = Record<string, string>;
 
-export function loadSessions(): Sessions {
+/**
+ * Cada pestaña recuerda su propio jugador (sessionStorage), para poder probar con
+ * varias pestañas a la vez. localStorage guarda la última sesión como respaldo,
+ * para volver a entrar tras cerrar el navegador.
+ */
+function read(store: Storage): Sessions {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    return JSON.parse(store.getItem(KEY) ?? '{}');
   } catch {
     return {};
   }
 }
+/** Solo las sesiones de esta pestaña. */
+export const tabSessions = (): Sessions => read(sessionStorage);
+
+export function loadSessions(): Sessions {
+  return { ...read(localStorage), ...read(sessionStorage) };
+}
 export function saveSession(code: string, token: string) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify({ ...loadSessions(), [code]: token }));
-    localStorage.setItem('imperio:last', code);
-  } catch {
-    /* sin almacenamiento */
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      store.setItem(KEY, JSON.stringify({ ...read(store), [code]: token }));
+      store.setItem('imperio:last', code);
+    } catch {
+      /* sin almacenamiento */
+    }
   }
 }
 export function forgetSession(code: string) {
-  try {
-    const s = loadSessions();
-    delete s[code];
-    localStorage.setItem(KEY, JSON.stringify(s));
-    localStorage.removeItem('imperio:last');
-  } catch {
-    /* sin almacenamiento */
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      const s = read(store);
+      delete s[code];
+      store.setItem(KEY, JSON.stringify(s));
+      store.removeItem('imperio:last');
+    } catch {
+      /* sin almacenamiento */
+    }
   }
 }
 export const lastCode = () => {
   try {
-    return localStorage.getItem('imperio:last');
+    return sessionStorage.getItem('imperio:last') ?? localStorage.getItem('imperio:last');
   } catch {
     return null;
   }

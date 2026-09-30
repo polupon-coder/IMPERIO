@@ -106,7 +106,16 @@ io.on('connection', (socket: Socket) => {
     }),
   );
 
-  socket.on('rejoin', (data, ack) => handle(ack, () => attach(getRoom(data?.code), String(data?.token ?? ''))));
+  socket.on('rejoin', (data, ack) =>
+    handle(ack, () => {
+      const room = getRoom(data?.code);
+      const token = String(data?.token ?? '');
+      // Con onlyIfOffline, no se entra si ese jugador ya está conectado en otra pestaña.
+      if (data?.onlyIfOffline && onlineSet(room.code).has(playerByToken(room, token).id))
+        throw new RoomError('Ese jugador ya está conectado en otra pestaña.');
+      return attach(room, token);
+    }),
+  );
 
   socket.on('lobby', (patch, ack) =>
     handle(ack, () => {

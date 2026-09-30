@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CAPITALS, SEAT_LABEL, coordLabel, type Color, type Seat } from '../engine';
 import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
-import { call, forgetSession, lastCode, loadSessions, saveSession, socket, type PublicRoom } from './socket';
+import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
 
 /** Cada Capital tiene siempre el mismo color (igual que en el servidor). */
 const SEAT_COLOR: Record<Seat, Color> = { 0: 'verde', 1: 'azul', 2: 'rojo', 3: 'amarillo' };
@@ -22,13 +22,18 @@ export function App() {
     const tryRejoin = async () => {
       setConnected(true);
       const code = codeFromUrl() ?? lastCode();
-      const token = code ? loadSessions()[code] : undefined;
-      if (!code || !token) return;
-      const r = await call('rejoin', { code, token });
+      if (!code) return;
+      // La sesión de esta pestaña manda; la guardada en el navegador solo se usa si ese
+      // jugador no está ya jugando en otra pestaña (así se puede probar con varias pestañas).
+      const own = tabSessions()[code];
+      const token = own ?? loadSessions()[code];
+      if (!token) return;
+      const r = await call('rejoin', { code, token, onlyIfOffline: !own });
       if (r.ok) {
+        saveSession(r.code!, r.token!);
         setMyId(r.playerId!);
         history.replaceState(null, '', `?sala=${r.code}`);
-      } else forgetSession(code);
+      } else if (own) forgetSession(code);
     };
     socket.on('room', onRoom);
     socket.on('connect', tryRejoin);
