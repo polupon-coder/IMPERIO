@@ -2067,3 +2067,80 @@ textarea {
   font-family: 'IM Fell English SC', serif;
   font-size: 1.3rem;
 }
+
+/* ---------- Hoja de reglas ---------- */
+.rules-btn {
+  padding: 3px 14px;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 0.95rem;
+  background: #efe2c2 !important;
+  color: var(--ink) !important;
+  border: 1px solid #b8892f !important;
+}
+.modal.wide:has(.rules) {
+  width: min(820px, calc(100vw - 32px));
+}
+.rules-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.rules-tabs button {
+  font-family: 'IM Fell English SC', serif;
+  padding: 3px 10px;
+  font-size: 0.9rem;
+}
+.rules-tabs button.selected {
+  outline: none;
+  background: #6e4b22 !important;
+  color: #f6eedb !important;
+}
+.rules-body {
+  height: min(62vh, 560px);
+  overflow-y: auto;
+  padding: 0 6px 6px;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.rules-body h4 {
+  margin: 12px 0 4px;
+}
+.rules-body ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.rules-body li {
+  margin-bottom: 3px;
+}
+.rules-lead {
+  font-family: 'IM Fell English', serif;
+  font-size: 1.15rem;
+}
+.rules-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 4px 0 8px;
+}
+.rules-table td,
+.rules-table th {
+  border-bottom: 1px solid #8a6b4344;
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+.rules-bld {
+  width: 70px;
+  height: 52px;
+  object-fit: contain;
+}
+.rules .cost img {
+  width: 20px;
+  height: 20px;
+}
+.dice-table td:last-child {
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+}

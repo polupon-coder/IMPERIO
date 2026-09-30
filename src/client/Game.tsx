@@ -42,6 +42,7 @@ import {
 } from '../engine';
 import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure, coatOfArms } from './assets';
 import { Board, type Mark } from './Board';
+import { RulesSheet } from './Rules';
 import { call, type PublicRoom } from './socket';
 
 type Mode =
@@ -97,6 +98,7 @@ export function Game({
   const [error, setError] = useState('');
   const [tradeOpen, setTradeOpen] = useState(false);
   const [victoryOpen, setVictoryOpen] = useState(true);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   // Si la selección deja de ser válida tras una actualización, se limpia.
   useEffect(() => {
@@ -236,6 +238,9 @@ export function Game({
             </button>
           </span>
         )}
+        <button className="rules-btn" onClick={() => setRulesOpen(true)}>
+          Reglas
+        </button>
         <span className="room-code">
           Mundo {room.code}
           <button className="link" onClick={onExit}>
@@ -249,6 +254,11 @@ export function Game({
       <RewardDialog state={s} mySeat={mySeat} send={send} />
       <CombatDialog state={s} mySeat={mySeat} send={send} />
       <Announcements state={s} mySeat={mySeat} />
+      {rulesOpen && (
+        <Modal title="Reglas de Imperio" onClose={() => setRulesOpen(false)} wide>
+          <RulesSheet />
+        </Modal>
+      )}
       {s.phase === 'GAME_OVER' && s.winner !== null && victoryOpen && (
         <VictoryDialog state={s} mySeat={mySeat} onClose={() => setVictoryOpen(false)} onExit={onExit} />
       )}
