@@ -19,7 +19,12 @@
 }
 body {
   margin: 0;
-  background: radial-gradient(ellipse at top, #efe4c9, #d9c9a3) fixed;
+  /* Papiro antiguo: textura sutil repetida + viñeta suave en los bordes */
+  background-color: #e6d7b5;
+  background-image: radial-gradient(ellipse at 50% 35%, #fff8e600 55%, #8a6b4333 100%),
+    url('/assets/ui/papiro.webp');
+  background-size: 100% 100%, 512px 512px;
+  background-attachment: fixed, fixed;
   color: var(--ink);
   font-family: 'EB Garamond', Georgia, serif;
   font-size: 16px;
@@ -88,7 +93,9 @@ select {
   align-items: center;
 }
 .card {
-  background: var(--paper);
+  background-color: var(--paper);
+  background-image: linear-gradient(#f6efdcd9, #f6efdcd9), url('/assets/ui/papiro.webp');
+  background-size: auto, 512px 512px;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px 14px;
