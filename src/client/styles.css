@@ -1587,3 +1587,74 @@ details summary {
   background: rgba(255, 248, 230, 0.8);
   border-color: #8a6b43;
 }
+
+/* ---------- Heráldica y separador ---------- */
+.coat {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px #0005);
+  margin-right: 2px;
+}
+.coat-big {
+  width: 32px;
+  height: 32px;
+}
+.seat-coat {
+  float: right;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px #0006);
+}
+.ornament {
+  height: 16px;
+  margin: 2px 8% 8px;
+  background: url('/assets/ui/separador.webp') center / contain no-repeat;
+  opacity: 0.85;
+}
+.modal h3 {
+  text-align: center;
+  margin-bottom: 0;
+}
+/* Separador entre los bloques de jugador del lateral */
+.side .players .player + .player {
+  position: relative;
+  margin-top: 16px;
+}
+.side .players .player + .player::before {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: -15px;
+  height: 14px;
+  background: url('/assets/ui/separador.webp') center / contain no-repeat;
+  opacity: 0.8;
+}
+.side .players .player {
+  margin-bottom: 0;
+}
+/* y encima del chat */
+.side > .chat-bar {
+  border-top: none !important;
+  position: relative;
+}
+.side > .chat-bar::before {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: -12px;
+  height: 14px;
+  background: url('/assets/ui/separador.webp') center / contain no-repeat;
+  opacity: 0.8;
+}
+.side .players .player + .player {
+  margin-top: 20px;
+}
+.side .players .player + .player::before {
+  top: -19px;
+  height: 18px;
+  opacity: 1;
+}

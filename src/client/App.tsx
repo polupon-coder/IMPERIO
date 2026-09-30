@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CAPITALS, SEAT_LABEL, coordLabel, type Color, type Seat } from '../engine';
-import { PLAYER_COLORS } from './assets';
+import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, type PublicRoom } from './socket';
 
@@ -170,8 +170,8 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
               </h3>
               {p ? (
                 <>
+                  {p.color && <img className="seat-coat" src={coatOfArms(p.color)} alt="" />}
                   <p className="seat-name">
-                    <span className="dot" style={{ background: p.color ? PLAYER_COLORS[p.color] : '#999' }} />
                     {p.name} {p.id === room.hostId && <em>(anfitrión)</em>} {p.id === me.id && <em>(tú)</em>}
                   </p>
                   <p className={p.ready ? 'ok' : 'muted'}>{p.ready ? '✔ Preparado' : 'Sin confirmar'}</p>

@@ -40,7 +40,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure, coatOfArms } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -639,7 +639,7 @@ function PlayersPanel({
           return (
             <div key={seat} className={`player summary ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
               <div className="player-head">
-                <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
+                <img className="coat" src={coatOfArms(p.color)} alt="" />
                 <b>{p.name}</b>
                 {lobby && !lobby.online && <span className="offline">desconectado</span>}
                 <span className="conquests" title="Conquistas">
@@ -678,7 +678,7 @@ function PlayersPanel({
         return (
           <div key={seat} className={`player mine ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
             <div className="player-head">
-              <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
+              <img className="coat coat-big" src={coatOfArms(p.color)} alt="" />
               <b>{p.name}</b>
               {seat === mySeat && <em> (tú)</em>}
               {lobby && !lobby.online && <span className="offline">desconectado</span>}
@@ -909,6 +909,7 @@ function Modal({
           </button>
         )}
         <h3>{title}</h3>
+        <div className="ornament" />
         {children}
       </div>
     </div>,
