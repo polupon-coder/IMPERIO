@@ -80,7 +80,8 @@ Las imágenes están en `public/assets/`:
 - **Capitales:** `tiles/capital.webp` es la ilustración original. Las versiones `capital-<color>.webp`, con los tejados del color de cada jugador, se generan con `python3 scripts/recolor-capital.py`.
 - **Tropas en el tablero:** `units/<color>/<tipo>.webp`, donde el color es `rojo`, `azul`, `amarillo` o `verde` y el tipo es `infanteria`, `arquero`, `lancero`, `caballeria` o `artilleria`.
   - Las rojas son las ilustraciones del autor.
-  - Las azules, amarillas y verdes se generan recoloreando las rojas con `python3 scripts/recolor-units.py hoja.webp`.
+  - La Infantería lleva espada en lugar de alabarda: `python3 scripts/edit-infantry-sword.py` genera `art/tropas-rojo-editado.webp` con la espada del jinete.
+  - Las azules, amarillas y verdes se generan recoloreando las rojas con `python3 scripts/recolor-units.py art/tropas-rojo-editado.webp`.
   - Para usar ilustraciones propias de cada color, sustituye esos archivos.
 - **Iconos de los paneles:** siluetas en `units/<tipo>.svg`.
 
