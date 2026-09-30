@@ -898,3 +898,56 @@ details summary {
   height: 18px;
   margin: 0 2px;
 }
+
+/* Resumen de rivales: tres filas de la misma altura (edificios, tropas, recursos) */
+.sum-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.sum-row > .res,
+.sum-row > .bld-chip {
+  height: 26px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+}
+.sum-row.bld-chips {
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+}
+.sum-row .bld-chip {
+  padding: 0 4px;
+  border-radius: 6px;
+}
+/* Recursos del panel propio, del tamaño de las fichas de tropa */
+.resource-figures {
+  grid-template-columns: repeat(6, 1fr);
+}
+.res-big {
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+.sum-row > .res,
+.sum-row > .bld-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sum-row.bld-chips {
+  font-size: 0.64rem;
+  gap: 3px;
+}
+.sum-row .bld-chip {
+  padding: 0 2px;
+}

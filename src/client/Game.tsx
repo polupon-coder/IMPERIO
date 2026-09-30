@@ -850,14 +850,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                   ⚑ {p.conquests.length}
                 </span>
               </div>
-              <div className="resources">
-                {RESOURCES.map((r) => (
-                  <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
-                    <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
-                  </span>
-                ))}
-              </div>
-              <div className="bld-chips">
+              <div className="sum-row bld-chips">
                 {builtFirst(p.buildings).map((b) => (
                   <span key={b} className={`bld-chip ${p.buildings.includes(b) ? 'on' : ''}`} title={NAMES.building[b]}>
                     {NAMES.building[b]}
@@ -865,7 +858,7 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 ))}
                 <span className="muted"> {p.buildings.length}/8</span>
               </div>
-              <div className="resources army-pills">
+              <div className="sum-row">
                 {UNIT_TYPES.map((u) => {
                   const n = units.filter((x) => x.type === u).length;
                   return (
@@ -877,6 +870,13 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 <span title="Murallas" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
                   <img src={WALL_SILHOUETTE} alt="Murallas" /> <b>{p.walls.length}</b>
                 </span>
+              </div>
+              <div className="sum-row">
+                {RESOURCES.map((r) => (
+                  <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
+                    <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
+                  </span>
+                ))}
               </div>
             </div>
           );
@@ -890,13 +890,6 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
               <span className="conquests" title="Conquistas">
                 ⚑ {p.conquests.length}
               </span>
-            </div>
-            <div className="resources">
-              {RESOURCES.map((r) => (
-                <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
-                  <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
-                </span>
-              ))}
             </div>
             <div className="buildings-head muted">Edificios {p.buildings.length}/8</div>
             <div className="buildings">
@@ -934,9 +927,20 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                   <img src={WALL_TOKEN} alt="Murallas" draggable={false} />
                 </span>
                 <figcaption>
-                  Murallas <b>{p.walls.length}</b>/{p.originalWalls.length}
+                  Murallas <b>{p.walls.length}</b>
                 </figcaption>
               </figure>
+            </div>
+            <div className="buildings-head muted">Recursos</div>
+            <div className="army-figures resource-figures">
+              {RESOURCES.map((r) => (
+                <figure key={r} className="on" title={NAMES.resource[r]}>
+                  <img className="res-big" src={resourceIcon(r)} alt={NAMES.resource[r]} draggable={false} />
+                  <figcaption>
+                    {NAMES.resource[r]} <b>{p.resources[r]}</b>
+                  </figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         );
