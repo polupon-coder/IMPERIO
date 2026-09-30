@@ -84,7 +84,7 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
       return '';
     }
   });
-  const [code, setCode] = useState(codeFromUrl() ?? '');
+  const [code, setCode] = useState('');
   const remember = () => {
     try {
       localStorage.setItem('imperio:name', name);
@@ -93,6 +93,7 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
     }
   };
   const invited = codeFromUrl();
+  const [joining, setJoining] = useState(false);
   const join = async () => {
     remember();
     onEnter(await call('joinRoom', { code: invited ?? code, name }));
@@ -111,7 +112,26 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
             placeholder="Tu nombre"
             aria-label="Tu nombre"
           />
-          {invited ? (
+          {joining && !invited ? (
+            <div className="home-actions">
+              <input
+                autoFocus
+                value={code}
+                maxLength={5}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && code.length === 5 && join()}
+                placeholder="Código del Mundo"
+                aria-label="Código del Mundo"
+                className="ink-input code-input"
+              />
+              <button className="seal" disabled={code.length < 5} onClick={join}>
+                Entrar
+              </button>
+              <button className="link home-back" onClick={() => setJoining(false)}>
+                volver
+              </button>
+            </div>
+          ) : invited ? (
             <div className="home-actions">
               <button className="seal" disabled={!name.trim()} onClick={join}>
                 Entrar al
@@ -134,15 +154,7 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
                 partida
               </button>
               <span className="home-or">o</span>
-              <input
-                value={code}
-                maxLength={5}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="Código"
-                aria-label="Código del Mundo"
-                className="ink-input code-input"
-              />
-              <button className="seal" disabled={!name.trim() || code.length < 5} onClick={join}>
+              <button className="seal" disabled={!name.trim()} onClick={() => setJoining(true)}>
                 Unirse
               </button>
             </div>
