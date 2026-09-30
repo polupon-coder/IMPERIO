@@ -1,7 +1,7 @@
 """Genera la loseta de Capital de cada jugador tiñendo los tejados con su color.
 
 Uso: python3 scripts/recolor-capital.py [vista_previa.png]
-Entrada: public/assets/tiles/capital.webp (ilustración original)
+Entrada: public/assets/tiles/capital.webp (recorte de art/ciudad.webp)
 Salida: public/assets/tiles/capital-{rojo,azul,amarillo,verde}.webp
 """
 import sys

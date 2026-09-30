@@ -59,11 +59,6 @@ export function Board(p: BoardProps) {
               onClick={() => p.onCell(pos)}
             >
               {img && <img className="tile-img" src={img} alt="" draggable={false} />}
-              {cap !== null && (
-                <div className="capital-banner" style={{ background: colorOf(cap) }}>
-                  {s.players[cap].name}
-                </div>
-              )}
               {cap !== null && <Walls state={s} seat={cap} targets={p.wallTargets} onWall={p.onWall} />}
               {units.length > 0 && (
                 <div className={`stack n${units.length}`}>

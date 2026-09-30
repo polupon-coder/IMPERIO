@@ -76,7 +76,7 @@ Hay dos tipos de decisiones que se superponen al estado principal:
 
 Las imágenes están en `public/assets/`:
 
-- **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp` y `agua.webp` (ilustraciones del autor).
+- **Losetas:** `tiles/llanura.webp`, `bosque.webp`, `montana.webp` y `agua.webp` se generan desde `art/losetas.webp` con `python3 scripts/prepare-tiles.py`, que aplica los ajustes de color (Agua más suave, Llanura más amarillenta). Las ilustraciones originales del autor están en `art/`.
 - **Capitales:** `tiles/capital.webp` es la ilustración original. Las versiones `capital-<color>.webp`, con los tejados del color de cada jugador, se generan con `python3 scripts/recolor-capital.py`.
 - **Tropas en el tablero:** `units/<color>/<tipo>.webp`, donde el color es `rojo`, `azul`, `amarillo` o `verde` y el tipo es `infanteria`, `arquero`, `lancero`, `caballeria` o `artilleria`.
   - Las rojas son las ilustraciones del autor.
