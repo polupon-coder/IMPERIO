@@ -10,7 +10,9 @@
   --move: #4a86c5;
   --attack: #c0392b;
   --conquer: #d4a017;
-  --cell: min(9.2vh, 7.2vw, 84px);
+  /* El tablero ocupa el alto disponible, igual que el panel lateral:
+     100vh − barra superior (40px) − márgenes (32px) − números de columna (22px) − separaciones (21px) */
+  --cell: min(calc((100vh - 115px) / 8), calc((100vw - 451px) / 8));
   color-scheme: light;
 }
 
@@ -255,7 +257,9 @@ select {
   flex: 1 1 360px;
   min-width: 320px;
   max-width: 560px;
-  max-height: calc(100vh - 80px);
+  /* Mismo borde superior e inferior que el tablero (bajo la fila de números de columna) */
+  margin-top: 22px;
+  height: calc(100vh - 94px);
   overflow-y: auto;
 }
 
@@ -952,4 +956,11 @@ details summary {
 }
 .sum-row .bld-chip {
   padding: 0 2px;
+}
+
+@media (max-width: 900px) {
+  .side {
+    height: auto;
+    margin-top: 0;
+  }
 }
