@@ -30,7 +30,8 @@ export interface ChatMessage {
   ts: number;
 }
 
-const COLORS: Color[] = ['rojo', 'azul', 'amarillo', 'verde'];
+/** Cada Capital tiene siempre el mismo color: NO verde, NE azul, SE rojo, SO amarillo. */
+export const SEAT_COLOR: Record<Seat, Color> = { 0: 'verde', 1: 'azul', 2: 'rojo', 3: 'amarillo' };
 const DATA_DIR = process.env.DATA_DIR ?? join(process.cwd(), 'data', 'rooms');
 mkdirSync(DATA_DIR, { recursive: true });
 
@@ -84,13 +85,13 @@ function addPlayer(room: Room, name: string): LobbyPlayer {
   if (room.game) throw new RoomError('La partida ya ha empezado.');
   if (room.players.length >= 4) throw new RoomError('La sala está completa (4 jugadores).');
   const takenSeats = room.players.map((p) => p.seat);
-  const takenColors = room.players.map((p) => p.color);
+  const seat = ([0, 1, 2, 3] as Seat[]).find((s) => !takenSeats.includes(s)) ?? null;
   const p: LobbyPlayer = {
     id: room.players.reduce((m, x) => Math.max(m, x.id), -1) + 1,
     token: randomBytes(16).toString('hex'),
     name: cleanName(name),
-    seat: ([0, 1, 2, 3] as Seat[]).find((s) => !takenSeats.includes(s)) ?? null,
-    color: COLORS.find((c) => !takenColors.includes(c)) ?? null,
+    seat,
+    color: seat === null ? null : SEAT_COLOR[seat],
     ready: false,
   };
   room.players.push(p);
@@ -125,12 +126,7 @@ export function updateLobby(
     if (![0, 1, 2, 3].includes(patch.seat)) throw new RoomError('Capital no válida.');
     if (room.players.some((o) => o !== p && o.seat === patch.seat)) throw new RoomError('Esa Capital ya está ocupada.');
     p.seat = patch.seat;
-    p.ready = false;
-  }
-  if (patch.color !== undefined) {
-    if (!COLORS.includes(patch.color)) throw new RoomError('Color no válido.');
-    if (room.players.some((o) => o !== p && o.color === patch.color)) throw new RoomError('Ese color ya está elegido.');
-    p.color = patch.color;
+    p.color = SEAT_COLOR[patch.seat];
     p.ready = false;
   }
   if (patch.ready !== undefined) p.ready = !!patch.ready;

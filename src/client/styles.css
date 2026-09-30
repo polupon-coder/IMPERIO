@@ -1,3 +1,27 @@
+/* Fuentes medievales incluidas en el proyecto (licencia OFL) */
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('/assets/fonts/IMFellEnglish.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IM Fell English';
+  font-style: italic;
+  src: url('/assets/fonts/IMFellEnglish-Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IM Fell English SC';
+  src: url('/assets/fonts/IMFellEnglishSC.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('/assets/fonts/EBGaramond.ttf') format('truetype');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 :root {
   --paper: #f4ecd8;
   --paper-2: #ebe0c4;
@@ -1657,4 +1681,194 @@ details summary {
   top: -19px;
   height: 18px;
   opacity: 1;
+}
+
+/* ---------- Portada y sala sobre pergamino ---------- */
+.sc {
+  font-family: 'IM Fell English SC', 'EB Garamond', serif;
+  letter-spacing: 0.04em;
+}
+.center {
+  text-align: center;
+}
+.parchment {
+  border-style: solid;
+  border-width: 40px;
+  border-color: transparent;
+  border-image: url('/assets/ui/pergamino.webp') 90 fill / 40px stretch;
+  filter: drop-shadow(0 10px 22px #3a220f66);
+}
+.ink-input {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid #6e4b22 !important;
+  border-radius: 0 !important;
+  font-family: 'IM Fell English', serif;
+  font-size: 1.25rem;
+  padding: 4px 2px !important;
+  color: var(--ink);
+}
+.ink-input::placeholder {
+  color: #8a7250;
+  font-style: italic;
+}
+.ink-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent) !important;
+}
+/* Sellos de lacre */
+.seal {
+  display: inline-grid;
+  place-items: center;
+  width: 118px;
+  height: 118px;
+  padding: 16px;
+  border: none !important;
+  color: #f7e6c4 !important;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 1rem;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 1px 1px #0008;
+  background: radial-gradient(circle at 38% 32%, #c0392b, #8a1f17 55%, #5a120d) !important;
+  clip-path: polygon(50% 0%, 61% 4%, 72% 2%, 79% 10%, 90% 12%, 92% 23%, 100% 30%, 97% 41%, 100% 52%, 95% 62%, 98% 74%, 89% 80%, 86% 91%, 75% 92%, 66% 100%, 55% 96%, 45% 100%, 35% 95%, 24% 98%, 18% 89%, 8% 86%, 7% 75%, 0% 67%, 4% 56%, 0% 45%, 5% 35%, 2% 24%, 11% 18%, 13% 7%, 24% 7%, 33% 1%, 42% 4%);
+  box-shadow: inset 0 0 18px #0006;
+  transition: transform 0.1s, filter 0.1s;
+}
+.seal:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.08);
+}
+.seal.small {
+  width: 92px;
+  height: 92px;
+  font-size: 0.9rem;
+}
+.seal.green {
+  background: radial-gradient(circle at 38% 32%, #4f8a3f, #2e5c24 55%, #1b3a15) !important;
+}
+.seal:disabled {
+  opacity: 0.45;
+}
+
+/* Portada */
+.home {
+  max-width: none;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 56px;
+  padding: 24px;
+}
+.cover {
+  height: min(86vh, 820px);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  box-shadow: 0 16px 40px #3a220f88;
+  border-radius: 3px;
+}
+.home-form {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+}
+.home-form label {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1.05rem;
+}
+.home-form .ornament {
+  width: 90%;
+  margin: 6px 0 0;
+}
+.home-form p {
+  margin: 0;
+}
+.join-row {
+  width: 100%;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+.join-row .code-input {
+  width: 180px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+/* Sala */
+.lobby {
+  max-width: 1000px;
+  padding: 28px 16px;
+}
+.lobby-sheet {
+  padding: 10px 26px 6px;
+}
+.lobby-title {
+  font-family: 'IM Fell English SC', serif;
+  text-align: center;
+  font-size: 2.4rem;
+  color: var(--ink);
+  margin: 4px 0 8px;
+}
+.share {
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+.share .link-input {
+  max-width: 460px;
+  font-size: 1rem;
+}
+.lobby .seats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 30px;
+  margin: 10px 0;
+}
+.lobby .seat {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 10px;
+  border-left: 4px solid var(--owner);
+  background: rgba(255, 248, 230, 0.35);
+  border-radius: 4px;
+}
+.lobby .seat.free {
+  opacity: 0.8;
+}
+.lobby .seat-coat {
+  float: none;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+}
+.lobby .seat.free .seat-coat {
+  filter: grayscale(0.7) opacity(0.6);
+}
+.seat-label {
+  font-size: 1rem;
+  color: #6e4b22;
+}
+.seat-name {
+  font-family: 'IM Fell English', serif;
+  font-size: 1.7rem;
+  color: var(--owner);
+  line-height: 1.1;
+}
+.seat-meta {
+  font-size: 0.9rem;
+}
+.lobby-actions {
+  justify-content: center;
+  gap: 40px;
+  margin: 8px 0;
+}
+.lobby .seats .seat:nth-child(3) {
+  order: 0;
 }

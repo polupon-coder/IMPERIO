@@ -4,8 +4,8 @@ import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, type PublicRoom } from './socket';
 
-const COLORS: Color[] = ['rojo', 'azul', 'amarillo', 'verde'];
-const COLOR_NAME: Record<Color, string> = { rojo: 'Rojo', azul: 'Azul', amarillo: 'Amarillo', verde: 'Verde' };
+/** Cada Capital tiene siempre el mismo color (igual que en el servidor). */
+const SEAT_COLOR: Record<Seat, Color> = { 0: 'verde', 1: 'azul', 2: 'rojo', 3: 'amarillo' };
 
 function codeFromUrl() {
   return new URLSearchParams(location.search).get('sala')?.toUpperCase() ?? null;
@@ -89,33 +89,36 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
   };
   return (
     <div className="home">
-      <h1 className="title">IMPERIO</h1>
-      <p className="subtitle">Prototipo digital del juego de mesa · 4 jugadores</p>
-      <div className="card home-card">
-        <label>
+      <img className="cover" src="/assets/ui/portada.webp" alt="Imperio" />
+      <div className="parchment home-form">
+        <label className="sc">
           Tu nombre
-          <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="Nombre" />
+          <input className="ink-input" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="Nombre del señor del reino" />
         </label>
         <button
-          className="primary"
+          className="seal"
           disabled={!name.trim()}
           onClick={async () => {
             remember();
             onEnter(await call('createRoom', { name }));
           }}
         >
-          Crear partida
+          Crear
+          <br />
+          partida
         </button>
-        <div className="divider">o únete con un código</div>
-        <div className="row">
+        <div className="ornament" />
+        <p className="sc muted center">o únete con un código</p>
+        <div className="row join-row">
           <input
             value={code}
             maxLength={5}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="CÓDIGO"
-            className="code-input"
+            className="ink-input code-input"
           />
           <button
+            className="seal small"
             disabled={!name.trim() || code.length < 5}
             onClick={async () => {
               remember();
@@ -125,11 +128,14 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
             Unirse
           </button>
         </div>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error center">{error}</p>}
       </div>
     </div>
   );
 }
+
+/** Posición en pantalla de cada Capital (como en el tablero): NO, NE arriba; SO, SE abajo. */
+const SEAT_ORDER: Seat[] = [0, 1, 3, 2];
 
 function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players'][number]; onExit: () => void }) {
   const [error, setError] = useState('');
@@ -144,81 +150,85 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
 
   return (
     <div className="lobby">
-      <h1 className="title small">IMPERIO</h1>
-      <div className="card">
-        <h2>Sala {room.code}</h2>
-        <p>Comparte este enlace o el código con los demás jugadores:</p>
-        <div className="row">
-          <input readOnly value={link} className="link-input" onFocus={(e) => e.target.select()} />
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(link).then(() => setCopied(true));
-            }}
-          >
-            {copied ? 'Copiado' : 'Copiar'}
+      <div className="parchment lobby-sheet">
+        <h1 className="lobby-title">Sala {room.code}</h1>
+        <div className="row share">
+          <input readOnly value={link} className="ink-input link-input" onFocus={(e) => e.target.select()} />
+          <button onClick={() => navigator.clipboard?.writeText(link).then(() => setCopied(true))}>
+            {copied ? 'Copiado' : 'Copiar enlace'}
           </button>
         </div>
-      </div>
-
-      <div className="seats">
-        {([0, 1, 2, 3] as Seat[]).map((seat) => {
-          const p = room.players.find((x) => x.seat === seat);
-          return (
-            <div key={seat} className="card seat" style={{ borderColor: p?.color ? PLAYER_COLORS[p.color] : undefined }}>
-              <h3>
-                Capital {SEAT_LABEL[seat]} <small>{coordLabel(CAPITALS[seat])}</small>
-              </h3>
-              {p ? (
-                <>
-                  {p.color && <img className="seat-coat" src={coatOfArms(p.color)} alt="" />}
-                  <p className="seat-name">
-                    {p.name} {p.id === room.hostId && <em>(anfitrión)</em>} {p.id === me.id && <em>(tú)</em>}
-                  </p>
-                  <p className={p.ready ? 'ok' : 'muted'}>{p.ready ? '✔ Preparado' : 'Sin confirmar'}</p>
-                  {!p.online && <p className="muted">desconectado</p>}
-                </>
-              ) : me.seat !== seat ? (
-                <button onClick={() => update({ seat })}>Ocupar esta Capital</button>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-      <div className="card">
-        <h3>Tu color</h3>
-        <div className="row">
-          {COLORS.map((c) => {
-            const taken = room.players.some((p) => p.color === c && p.id !== me.id);
+        <div className="ornament" />
+        <div className="seats">
+          {SEAT_ORDER.map((seat) => {
+            const p = room.players.find((x) => x.seat === seat);
+            const color = SEAT_COLOR[seat];
             return (
-              <button
-                key={c}
-                className={`color-btn ${me.color === c ? 'selected' : ''}`}
-                disabled={taken}
-                style={{ background: PLAYER_COLORS[c] }}
-                onClick={() => update({ color: c })}
-              >
-                {COLOR_NAME[c]}
-              </button>
+              <div key={seat} className={`seat ${p ? 'taken' : 'free'}`} style={{ ['--owner' as string]: PLAYER_COLORS[color] }}>
+                <img className="seat-coat" src={coatOfArms(color)} alt="" />
+                <div className="seat-info">
+                  <div className="sc seat-label">
+                    Capital {SEAT_LABEL[seat]} <small>{coordLabel(CAPITALS[seat])}</small>
+                  </div>
+                  {p ? (
+                    <>
+                      <div className="seat-name">{p.name}</div>
+                      <div className="seat-meta">
+                        {p.id === room.hostId && <em>anfitrión</em>} {p.id === me.id && <em>(tú)</em>}
+                        {!p.online && <span className="offline"> desconectado</span>}
+                      </div>
+                      <div className={p.ready ? 'ok' : 'muted'}>{p.ready ? '✔ Preparado' : 'Sin confirmar'}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="seat-name muted">Trono vacante</div>
+                      {me.seat !== seat && (
+                        <button onClick={() => update({ seat })}>Ocupar esta Capital</button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className={me.ready ? '' : 'primary'} onClick={() => update({ ready: !me.ready })}>
-            {me.ready ? 'Ya no estoy preparado' : 'Estoy preparado'}
+        <div className="ornament" />
+        <div className="row lobby-actions">
+          <button className={`seal ${me.ready ? '' : 'green'}`} onClick={() => update({ ready: !me.ready })}>
+            {me.ready ? (
+              <>
+                No estoy
+                <br />
+                preparado
+              </>
+            ) : (
+              <>
+                Estoy
+                <br />
+                preparado
+              </>
+            )}
           </button>
           {isHost && (
             <button
-              className="primary"
+              className="seal"
               disabled={!allReady}
               onClick={async () => {
                 const r = await call('start');
                 setError(r.ok ? '' : r.error ?? '');
               }}
             >
-              Iniciar partida
+              Iniciar
+              <br />
+              partida
             </button>
           )}
+        </div>
+        <p className="muted center">
+          {room.players.length}/4 jugadores.{' '}
+          {isHost ? 'Podrás iniciar la partida cuando los 4 estén preparados.' : 'El anfitrión iniciará la partida.'}{' '}
           <button
+            className="link"
             onClick={async () => {
               await call('leave');
               onExit();
@@ -226,12 +236,8 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
           >
             Salir de la sala
           </button>
-        </div>
-        <p className="muted">
-          {room.players.length}/4 jugadores.{' '}
-          {isHost ? 'Podrás iniciar cuando los 4 estén preparados.' : 'El anfitrión iniciará la partida.'}
         </p>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error center">{error}</p>}
       </div>
     </div>
   );

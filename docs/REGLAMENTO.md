@@ -12,7 +12,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | # | Tema | Decisión |
 |---|------|----------|
 | A1 | Capitales y orden | Cada jugador ocupa una Capital (se elige en la sala). El primer jugador se decide con 1d6 (mayor resultado; empates repiten solo los empatados) y el orden sigue en **sentido horario**: NO (2,2) → NE (2,7) → SE (7,7) → SO (7,2). |
-| A2 | Colores | Rojo, Azul, Amarillo y Verde. |
+| A2 | Colores | Cada Capital tiene siempre el mismo color: **Noroeste verde** (dragón), **Noreste azul** (ciervo), **Sureste rojo** (serpiente) y **Suroeste amarillo** (león). |
 | A3 | Losetas iniciales | Los 4 jugadores colocan **a la vez** sus 4 losetas iniciales, con sus tropas y recursos. Después empiezan los turnos con la pila. |
 | A4 | Despliegue de recompensas | Las tropas se despliegan **al recibirlas**. Si en ese momento no hay casilla legal, la tropa queda en **reserva** (se muestra momentáneamente en una casilla vacía del anillo) y puede desplegarse después. Al terminar la Fase I, las que sigan sin casilla legal no se reciben (§20). |
 | A5 | Pila (§14–15) | Si la loseta superior no tiene posición legal va al fondo y se roba la siguiente. Si se recorre toda la pila sin encontrar ninguna colocable, hay bloqueo absoluto (§16). |

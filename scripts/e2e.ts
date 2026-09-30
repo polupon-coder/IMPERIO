@@ -21,9 +21,9 @@ async function main() {
   const tokens = [host.token];
   for (const [i, name] of ['Bea', 'Carlos', 'Dani'].entries())
     tokens.push((await ok(emit(clients[i + 1], 'joinRoom', { code: host.code, name }))).token);
-  // El segundo jugador cambia a verde → error si otro lo tiene
-  const bad = await emit(clients[1], 'lobby', { color: 'rojo' });
-  if (bad.ok) throw new Error('Debería rechazar color repetido');
+  // Una Capital ocupada no puede elegirse
+  const bad = await emit(clients[1], 'lobby', { seat: 0 });
+  if (bad.ok) throw new Error('Debería rechazar una Capital ocupada');
   for (const c of clients) await ok(emit(c, 'lobby', { ready: true }));
   await ok(emit(clients[0], 'start'));
   await new Promise((r) => setTimeout(r, 100));
