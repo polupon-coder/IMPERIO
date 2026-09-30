@@ -964,3 +964,78 @@ details summary {
     margin-top: 0;
   }
 }
+
+/* ---------- Panel de jugadores compacto: cabe entero en el alto del tablero ---------- */
+.card.players {
+  padding: 8px 10px;
+}
+.players .player {
+  margin-bottom: 6px;
+}
+.players .player:last-child {
+  margin-bottom: 0;
+}
+.players .player.mine {
+  padding: 5px 8px 6px;
+}
+.player-head {
+  line-height: 1.2;
+}
+.buildings-head {
+  margin-top: 3px;
+  font-size: 0.74rem;
+}
+.buildings {
+  gap: 3px 6px;
+  margin: 1px 0 2px;
+}
+.bld img {
+  aspect-ratio: 16 / 10;
+}
+.bld figcaption {
+  font-size: 0.68rem;
+  margin-top: 1px;
+}
+.mini-token {
+  width: 38px;
+  height: 38px;
+}
+.res-big {
+  width: 38px;
+  height: 38px;
+}
+.army-figures figcaption {
+  font-size: 0.66rem;
+}
+.player.summary {
+  padding: 4px 8px 5px;
+}
+.sum-row {
+  height: 26px;
+  margin-top: 3px;
+}
+.sum-row > .res,
+.sum-row > .bld-chip {
+  height: 24px;
+}
+.sum-row .res img,
+.sum-row .unit-pill img {
+  width: 18px;
+  height: 18px;
+}
+/* En pantallas bajas el panel de jugadores se escala para seguir cabiendo entero */
+@media (max-height: 880px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.9;
+  }
+}
+@media (max-height: 790px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.8;
+  }
+}
+@media (max-height: 710px) and (min-width: 901px) {
+  .card.players {
+    zoom: 0.72;
+  }
+}
