@@ -96,6 +96,7 @@ export function Game({
   const [mode, setMode] = useState<Mode>({ kind: 'none' });
   const [error, setError] = useState('');
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [victoryOpen, setVictoryOpen] = useState(true);
 
   // Si la selección deja de ser válida tras una actualización, se limpia.
   useEffect(() => {
@@ -248,6 +249,9 @@ export function Game({
       <RewardDialog state={s} mySeat={mySeat} send={send} />
       <CombatDialog state={s} mySeat={mySeat} send={send} />
       <Announcements state={s} mySeat={mySeat} />
+      {s.phase === 'GAME_OVER' && s.winner !== null && victoryOpen && (
+        <VictoryDialog state={s} mySeat={mySeat} onClose={() => setVictoryOpen(false)} onExit={onExit} />
+      )}
       <main className="layout">
         <section className="board-col">
           <Board
@@ -266,9 +270,9 @@ export function Game({
 
         <aside className="side">
           {s.phase === 'GAME_OVER' && s.winner !== null && (
-            <div className="card winner" style={{ borderColor: PLAYER_COLORS[s.players[s.winner].color] }}>
-              <h2>¡{s.players[s.winner].name} gana IMPERIO!</h2>
-              <p>8 edificios y {s.players[s.winner].conquests.length} Conquista(s).</p>
+            <div className="card winner">
+              <h2>¡{s.players[s.winner].name} gana Imperio!</h2>
+              <button onClick={() => setVictoryOpen(true)}>Ver la proclama</button>
             </div>
           )}
           {error && (
@@ -1372,5 +1376,60 @@ function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat })
         </Modal>
       )}
     </>
+  );
+}
+
+/** Proclama de victoria: escudo del león arriba y el rótulo «Imperio» abajo. */
+function VictoryDialog({
+  state: s,
+  mySeat,
+  onClose,
+  onExit,
+}: {
+  state: GameState;
+  mySeat: Seat;
+  onClose: () => void;
+  onExit: () => void;
+}) {
+  const w = s.players[s.winner!];
+  const color = PLAYER_COLORS[w.color];
+  const round = roman(Math.max(1, Math.ceil(s.turnNumber / 4)));
+  const conquered = w.conquests.map((c) => s.players[c].name);
+  return (
+    <Modal title="Proclama Real" onClose={onClose} wide>
+      <div className="victory">
+        <img className="victory-shield" src="/assets/ui/victoria-escudo.webp" alt="" />
+        <p className="victory-line">Sea sabido por todos los reinos que</p>
+        <div className="victory-name" style={{ color }}>
+          <img className="coat" src={coatOfArms(w.color)} alt="" /> {w.name}
+        </div>
+        <p className="victory-line">
+          ha alzado sus ocho edificios, ha conquistado la Capital de {conquered.join(' y ')}
+          <br />y reina desde hoy sobre el
+        </p>
+        <img className="victory-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
+        <div className="victory-buildings">
+          {BUILDINGS.map((b) => (
+            <img key={b} src={buildingImage(b)} alt={NAMES.building[b]} title={NAMES.building[b]} />
+          ))}
+        </div>
+        <p className="sc victory-stats">
+          8 edificios · {w.conquests.length} Conquista{w.conquests.length > 1 ? 's' : ''} · Ronda {round}
+          {w.seat === mySeat && ' · ¡Enhorabuena!'}
+        </p>
+        <div className="row victory-actions">
+          <button className="seal small green" onClick={onClose}>
+            Ver el
+            <br />
+            tablero
+          </button>
+          <button className="seal small" onClick={onExit}>
+            Volver a la
+            <br />
+            portada
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }

@@ -2006,3 +2006,64 @@ textarea {
 .unit-pill.locked:not(.zero) {
   color: #7a6a52;
 }
+
+/* ---------- Proclama de victoria ---------- */
+.victory {
+  text-align: center;
+  padding: 0 10px 4px;
+}
+.victory-shield {
+  height: min(24vh, 210px);
+  filter: drop-shadow(0 6px 10px #3a220f66);
+  margin: 2px 0 6px;
+}
+.victory-line {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  margin: 4px 0;
+}
+.victory-name {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 2.6rem;
+  line-height: 1.1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.victory-name .coat {
+  width: 46px;
+  height: 46px;
+}
+.victory-title {
+  width: min(70%, 380px);
+  margin: 4px auto 6px;
+  display: block;
+}
+.victory-buildings {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+.victory-buildings img {
+  width: 58px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px #3a220f55);
+}
+.victory-stats {
+  margin: 4px 0 8px;
+}
+.victory-actions {
+  justify-content: center;
+  gap: 40px;
+}
+.card.winner {
+  text-align: center;
+}
+.card.winner h2 {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 1.3rem;
+}
