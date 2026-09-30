@@ -156,14 +156,9 @@ function hashString(str: string) {
 }
 
 /**
- * Orientación aleatoria (pero igual para todos los jugadores) de cada loseta: volteos y giros.
- * La Montaña está dibujada en perspectiva, así que solo se voltea en horizontal.
+ * Variación aleatoria (pero igual para todos los jugadores) de cada loseta: solo se voltea en
+ * espejo izquierda-derecha; nunca se gira ni se invierte en vertical.
  */
-function tileTransform(pos: number, terrain: string, seed: number) {
-  const h = hashString(`${seed}:${pos}`);
-  const flipX = h & 1 ? -1 : 1;
-  if (terrain === 'montana') return `scaleX(${flipX})`;
-  const flipY = h & 2 ? -1 : 1;
-  const rot = ((h >>> 2) % 4) * 90;
-  return `rotate(${rot}deg) scale(${flipX}, ${flipY})`;
+function tileTransform(pos: number, _terrain: string, seed: number) {
+  return hashString(`${seed}:${pos}`) & 1 ? 'scaleX(-1)' : 'none';
 }

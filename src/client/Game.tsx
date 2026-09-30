@@ -243,13 +243,14 @@ export function Game({
             </div>
           )}
           <PromptPanel state={s} mySeat={mySeat} send={send} />
+          {/* El panel de jugadores establecido va siempre arriba; las acciones del turno, debajo. */}
+          <PlayersPanel state={s} room={room} mySeat={mySeat} />
           {s.phase === 'PHASE_1' && (
             <Phase1Panel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
           )}
           {s.phase === 'PHASE_2' && myTurn && (
             <TurnPanel state={s} mySeat={mySeat} mode={mode} setMode={setMode} send={send} />
           )}
-          <PlayersPanel state={s} room={room} mySeat={mySeat} />
           <LogPanel state={s} />
         </aside>
       </main>
