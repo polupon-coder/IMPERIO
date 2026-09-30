@@ -1,6 +1,7 @@
-"""Recorta las tropas de una hoja de ilustraciones (jugador rojo) y genera las variantes de color.
+"""Recorta las tropas (jugador rojo) de las ilustraciones del autor y genera las variantes de color.
 
-Uso: python3 scripts/recolor-units.py hoja.webp
+Uso: python3 scripts/recolor-units.py [vista_previa.png]
+Entradas: art/tropas-rojo.webp (hoja con las 5 tropas) y art/infanteria-rojo.jpg (Infantería con espada).
 Salida: public/assets/units/{rojo,azul,amarillo,verde}/{tipo}.webp
 Cuando existan ilustraciones propias de cada color, basta con sustituir los archivos generados.
 """
@@ -8,30 +9,36 @@ import sys
 import numpy as np
 from PIL import Image, ImageFilter
 
-src = np.asarray(Image.open(sys.argv[1]).convert('RGB')).astype(float)
-paper = np.median(np.concatenate([src[:20].reshape(-1, 3), src[-20:].reshape(-1, 3)]), axis=0)
-BOXES = {  # x0, x1, y0, y1
-    'caballeria': (972, 1392, 36, 564),
-    'lancero': (132, 476, 48, 500),
-    'arquero': (572, 872, 112, 500),
-    'infanteria': (300, 612, 482, 928),
-    'artilleria': (748, 1308, 608, 944),
+
+def load(path):
+    a = np.asarray(Image.open(path).convert('RGB')).astype(float)
+    paper = np.median(np.concatenate([a[:12].reshape(-1, 3), a[-12:].reshape(-1, 3)]), axis=0)
+    return a, paper
+
+
+SHEET = load('art/tropas-rojo.webp')
+SOURCES = {  # tipo: (imagen, recuadro x0, x1, y0, y1 o None = imagen completa)
+    'infanteria': (load('art/infanteria-rojo.jpg'), None),
+    'arquero': (SHEET, (572, 872, 112, 500)),
+    'lancero': (SHEET, (132, 476, 48, 500)),
+    'caballeria': (SHEET, (972, 1392, 36, 564)),
+    'artilleria': (SHEET, (748, 1308, 608, 944)),
 }
-EXCLUDE = {'infanteria': [(0, 476, 0, 502)]}  # restos de la figura vecina (coordenadas absolutas)
 TARGET = {'azul': (218, 1.0, 0.92), 'amarillo': (47, 1.0, 1.15), 'verde': (120, 0.85, 0.9)}
 
 
 def cut(name):
-    x0, x1, y0, y1 = BOXES[name]
-    p = 8
-    X0, Y0 = x0 - p, y0 - p
-    a = src[Y0:y1 + p, X0:x1 + p]
+    (src, paper), box = SOURCES[name]
+    if box is None:
+        a = src
+    else:
+        x0, x1, y0, y1 = box
+        p = 8
+        a = src[y0 - p:y1 + p, x0 - p:x1 + p]
     d = np.sqrt(((a - paper) ** 2).sum(-1))
     alpha = np.clip((d - 16) / (42 - 16), 0, 1)
-    for ex0, ex1, ey0, ey1 in EXCLUDE.get(name, []):
-        alpha[max(0, ey0 - Y0):max(0, ey1 - Y0), max(0, ex0 - X0):max(0, ex1 - X0)] = 0
     im = Image.fromarray(np.dstack([a, alpha * 255]).astype(np.uint8), 'RGBA')
-    im = im.crop(im.getchannel('A').point(lambda x: 255 if x > 40 else 0).getbbox())
+    im = im.crop(im.getchannel('A').point(lambda x: 255 if x > 60 else 0).getbbox())
     # Ficha circular: la figura centrada sobre el papel original, con margen para que quepa en el círculo.
     W, H = im.size
     side = round(max(max(W, H) * 0.98, (W * W + H * H) ** 0.5 * 0.74))
@@ -86,7 +93,7 @@ def recolor(im, color):
 
 if __name__ == '__main__':
     preview = Image.new('RGBA', (256 * 5, 256 * 4), (240, 232, 215, 255))
-    for i, name in enumerate(BOXES):
+    for i, name in enumerate(SOURCES):
         base = cut(name)
         base.save(f'public/assets/units/rojo/{name}.webp', quality=90)
         preview.alpha_composite(base, (i * 256, 0))
@@ -94,5 +101,5 @@ if __name__ == '__main__':
             r = recolor(base, c)
             r.save(f'public/assets/units/{c}/{name}.webp', quality=90)
             preview.alpha_composite(r, (i * 256, (j + 1) * 256))
-    if len(sys.argv) > 2:
-        preview.save(sys.argv[2])
+    if len(sys.argv) > 1:
+        preview.save(sys.argv[1])
