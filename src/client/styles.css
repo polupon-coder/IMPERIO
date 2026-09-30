@@ -505,7 +505,7 @@ select {
 }
 .grid-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 6px;
   margin: 6px 0 10px;
 }
@@ -883,6 +883,20 @@ details summary {
   vertical-align: -6px;
 }
 
-.grid-buttons.recruit {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+/* Tropas de los rivales en pastillas enmarcadas, como los recursos */
+.army-pills {
+  margin-top: 4px;
+}
+.unit-pill {
+  background: rgba(255, 250, 240, 0.7);
+}
+.unit-pill.zero {
+  opacity: 0.45;
+}
+.res img.pill-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--owner);
+  object-fit: cover;
 }

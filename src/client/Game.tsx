@@ -865,18 +865,17 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 ))}
                 <span className="muted"> {p.buildings.length}/8</span>
               </div>
-              <div className="army">
+              <div className="resources army-pills">
                 {UNIT_TYPES.map((u) => {
                   const n = units.filter((x) => x.type === u).length;
                   return (
-                    <span key={u} title={NAMES.unit[u]} className={n ? '' : 'zero'}>
-                      <img className="icon" src={UNIT_IMAGES[u]} alt="" />
-                      {n}
+                    <span key={u} title={NAMES.unit[u]} className={`res unit-pill ${n ? '' : 'zero'}`}>
+                      <img className="pill-token" src={unitFigure(p.color, u)} alt={NAMES.unit[u]} /> <b>{n}</b>
                     </span>
                   );
                 })}
-                <span title="Murallas intactas / originales">
-                  <img className="icon wall-icon" src={WALL_ICON} alt="Murallas" /> {p.walls.length}/{p.originalWalls.length}
+                <span title="Murallas intactas / originales" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
+                  <img src={WALL_ICON} alt="Murallas" /> <b>{p.walls.length}</b>/{p.originalWalls.length}
                 </span>
               </div>
             </div>
