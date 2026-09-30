@@ -92,50 +92,65 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
       /* nada */
     }
   };
+  const invited = codeFromUrl();
+  const join = async () => {
+    remember();
+    onEnter(await call('joinRoom', { code: invited ?? code, name }));
+  };
   return (
     <div className="home">
-      <img className="cover" src="/assets/ui/portada.webp" alt="Imperio" />
-      <div className="parchment home-form">
-        <label className="sc">
-          Tu nombre
-          <input className="ink-input" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="Nombre del señor del reino" />
-        </label>
-        <button
-          className="seal"
-          disabled={!name.trim()}
-          onClick={async () => {
-            remember();
-            onEnter(await call('createRoom', { name }));
-          }}
-        >
-          Crear
-          <br />
-          partida
-        </button>
-        <div className="ornament" />
-        <p className="sc muted center">o únete con un código</p>
-        <div className="row join-row">
+      <div className="parchment home-sheet">
+        <img className="home-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
+        <img className="home-shield" src="/assets/ui/victoria-escudo.webp" alt="" />
+        <div className="home-form">
           <input
-            value={code}
-            maxLength={5}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Código"
-            className="ink-input code-input"
+            className="ink-input name-input"
+            value={name}
+            maxLength={20}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Tu nombre"
+            aria-label="Tu nombre"
           />
-          <button
-            className="seal small"
-            disabled={!name.trim() || code.length < 5}
-            onClick={async () => {
-              remember();
-              onEnter(await call('joinRoom', { code, name }));
-            }}
-          >
-            Unirse
-          </button>
+          {invited ? (
+            <div className="home-actions">
+              <button className="seal" disabled={!name.trim()} onClick={join}>
+                Entrar al
+                <br />
+                Mundo {invited}
+              </button>
+            </div>
+          ) : (
+            <div className="home-actions">
+              <button
+                className="seal"
+                disabled={!name.trim()}
+                onClick={async () => {
+                  remember();
+                  onEnter(await call('createRoom', { name }));
+                }}
+              >
+                Crear
+                <br />
+                partida
+              </button>
+              <span className="home-or">o</span>
+              <input
+                value={code}
+                maxLength={5}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="Código"
+                aria-label="Código del Mundo"
+                className="ink-input code-input"
+              />
+              <button className="seal" disabled={!name.trim() || code.length < 5} onClick={join}>
+                Unirse
+              </button>
+            </div>
+          )}
+          {error && <p className="error center">{error}</p>}
         </div>
-        {error && <p className="error center">{error}</p>}
+        <p className="credit">Un juego de Pol Lupon</p>
       </div>
-      <p className="credit">Un juego de Pol Lupon</p>
     </div>
   );
 }
