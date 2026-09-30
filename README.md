@@ -63,6 +63,7 @@ npm run dev:client   # interfaz en http://localhost:5173 (con proxy al servidor)
 npm test             # tests del motor de reglas
 npm run typecheck
 npx tsx scripts/simulate-phase1.ts 1 500   # simula Fases I aleatorias y busca bloqueos
+npx tsx scripts/simulate-games.ts 1 100    # partidas completas aleatorias: errores, bloqueos y estados ilegales
 ```
 
 Para producción, `npm run build` genera `dist/client` y `npm start` sirve la web y el WebSocket en `PORT` (3001 por defecto). Las partidas se guardan como JSON en `data/rooms/`; `DATA_DIR` permite cambiar esa ruta. Hace falta un alojamiento con disco persistente y WebSockets, por ejemplo Render, Railway o Fly.io.
