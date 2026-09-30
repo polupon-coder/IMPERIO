@@ -46,11 +46,12 @@ export function saveSession(code: string, token: string) {
     }
   }
 }
-export function forgetSession(code: string) {
+/** Olvida el Mundo. Con `keepToken`, conserva el acceso para volver a entrar con el enlace. */
+export function forgetSession(code: string, keepToken = false) {
   for (const store of [sessionStorage, localStorage]) {
     try {
       const s = read(store);
-      delete s[code];
+      if (!keepToken) delete s[code];
       store.setItem(KEY, JSON.stringify(s));
       store.removeItem('imperio:last');
     } catch {

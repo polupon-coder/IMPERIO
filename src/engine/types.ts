@@ -183,4 +183,5 @@ export type Action =
   | { type: 'convert'; give: Resource; get: Resource }
   | { type: 'proposeTrade'; to: Seat; give: Resources; receive: Resources }
   | { type: 'respondTrade'; accept: boolean }
+  | { type: 'cancelTrade' }
   | { type: 'endTurn' };

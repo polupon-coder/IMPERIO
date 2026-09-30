@@ -1,5 +1,37 @@
 // Juego automático aleatorio de la Fase I (tests y simulaciones de robustez).
-import { SIDES, applyAction, createGame, exchangeOptions, initialPlacements, legalPlacements, ringSpots } from './index';
+import {
+  BUILDINGS,
+  BUILDING_COST,
+  MAX_PER_TYPE,
+  MAX_STACK,
+  MAX_WALLS,
+  RESOURCES,
+  RINGS,
+  SEATS,
+  SIDES,
+  UNIT_COST,
+  UNIT_TYPES,
+  applyAction,
+  attackTargets,
+  canActivate,
+  canAfford,
+  canUseCivil,
+  canUseMilitary,
+  capitalsConnectable,
+  createGame,
+  exchangeOptions,
+  groupCandidates,
+  hasBuilding,
+  initialPlacements,
+  isCapital,
+  isLand,
+  isUnlocked,
+  legalPlacements,
+  moveTargets,
+  ringSpots,
+  unitCount,
+  unitsAt,
+} from './index';
 import type { Action, GameState, Seat } from './types';
 
 export const TEST_PLAYERS = [
@@ -64,3 +96,160 @@ export function playPhase1(seed: number): GameState {
   return s;
 }
 
+
+// ---------------------------------------------------------------------------------------------
+// Partida completa con jugadores aleatorios (Fase I + Fase II) y comprobación de invariantes.
+// ---------------------------------------------------------------------------------------------
+
+/** Comprueba que el estado respeta los límites del reglamento. Devuelve la lista de problemas. */
+export function checkInvariants(s: GameState): string[] {
+  const out: string[] = [];
+  for (const p of s.players) {
+    for (const r of RESOURCES) if (p.resources[r] < 0 || !Number.isInteger(p.resources[r])) out.push(`${p.name}: ${r}=${p.resources[r]}`);
+    if (new Set(p.buildings).size !== p.buildings.length) out.push(`${p.name}: edificio repetido`);
+    if (p.walls.some((w) => !p.originalWalls.includes(w))) out.push(`${p.name}: Muralla no original`);
+    if (p.originalWalls.length > MAX_WALLS || new Set(p.originalWalls).size !== p.originalWalls.length) out.push(`${p.name}: Murallas originales`);
+    if (new Set(p.conquests).size !== p.conquests.length || p.conquests.includes(p.seat)) out.push(`${p.name}: Conquistas`);
+    for (const t of UNIT_TYPES) if (unitCount(s, p.seat, t) > MAX_PER_TYPE) out.push(`${p.name}: más de 5 ${t}`);
+  }
+  const ids = new Set<string>();
+  for (const u of s.units) {
+    if (ids.has(u.id)) out.push(`id repetido ${u.id}`);
+    ids.add(u.id);
+    const t = s.cells[u.pos]?.terrain;
+    if (isCapital(u.pos) || !isLand(t)) out.push(`${u.id} en casilla no terrestre ${u.pos}`);
+    if (u.type === 'artilleria' && t === 'montana') out.push(`${u.id} Artillería en Montaña`);
+  }
+  for (let pos = 0; pos < 64; pos++) {
+    const here = unitsAt(s, pos);
+    if (here.length > MAX_STACK) out.push(`más de 3 tropas en ${pos}`);
+    if (new Set(here.map((u) => u.owner)).size > 1) out.push(`tropas enemigas juntas en ${pos}`);
+  }
+  if (s.phase === 'PHASE_2' || s.phase === 'GAME_OVER') {
+    if (s.cells.some((c, i) => !isCapital(i) && c.terrain === null)) out.push('casilla vacía en Fase II');
+    if (!capitalsConnectable(s.cells)) out.push('Capitales sin conexión terrestre');
+    for (const seat of SEATS) if (RINGS[seat].filter((i) => s.cells[i].terrain === 'agua').length !== 1) out.push(`anillo ${seat} sin exactamente 1 Agua`);
+  }
+  if (s.combat && !s.prompt) out.push('combate abierto sin decisión pendiente');
+  return out;
+}
+
+export type Candidate = { seat: Seat; action: Action };
+
+/** Todas las acciones que la interfaz ofrecería ahora mismo en la Fase II. */
+export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
+  const pr = s.prompt;
+  if (pr) {
+    const seat = pr.seat;
+    switch (pr.kind) {
+      case 'library':
+        return RESOURCES.map((resource) => ({ seat, action: { type: 'libraryChoice', resource } }));
+      case 'defenderChoice':
+        return pr.options.map((unit) => ({ seat, action: { type: 'defenderChoice', unit } }));
+      case 'faith':
+        return [true, false].map((use) => ({ seat, action: { type: 'faith', use } }));
+      case 'advance':
+        return [true, false].map((accept) => ({ seat, action: { type: 'advance', accept } }));
+      case 'trade':
+        return [true, false].map((accept) => ({ seat, action: { type: 'respondTrade', accept } }));
+    }
+  }
+  const t = s.turn!;
+  const seat = t.seat;
+  const p = s.players[seat];
+  const out: Candidate[] = [{ seat, action: { type: 'endTurn' } }];
+  const add = (action: Action) => out.push({ seat, action });
+  if (canUseCivil(s))
+    for (const b of BUILDINGS)
+      if (!p.buildings.includes(b) && !(b === 'ayuntamiento' && p.buildings.length < 2) && canAfford(p.resources, BUILDING_COST[b]))
+        add({ type: 'build', building: b });
+  if (canUseMilitary(s) && !t.military)
+    for (const u of UNIT_TYPES)
+      if (isUnlocked(s, seat, u) && unitCount(s, seat, u) < MAX_PER_TYPE && canAfford(p.resources, UNIT_COST[u]))
+        for (const pos of ringSpots(s, seat, u)) add({ type: 'recruit', unit: u, pos });
+  if (t.military?.open) add({ type: 'endMilitary' });
+  for (const u of s.units.filter((x) => x.owner === seat)) {
+    if (!canActivate(s, u)) continue;
+    for (const to of moveTargets(s, u.id).keys()) add({ type: 'move', unitId: u.id, to });
+    const tg = attackTargets(s, u.id);
+    const acts = Object.keys(s.turn?.military?.activations ?? {}).length;
+    const group = groupCandidates(s, u.id).filter(() => r() < 0.6);
+    const ids = [u.id];
+    for (const g of group) {
+      const fresh = [...ids, g].filter((id) => !s.turn?.military?.activations[id]).length;
+      if (acts + fresh <= 3) ids.push(g);
+    }
+    for (const target of tg.troops) add({ type: 'attack', unitIds: ids, target });
+    for (const w of tg.walls) add({ type: 'attackWall', unitIds: ids, capital: w.capital, side: w.side });
+    for (const capital of tg.capitals) add({ type: 'conquer', unitId: u.id, capital });
+  }
+  if (hasBuilding(s, seat, 'mercado')) {
+    for (const give of RESOURCES)
+      if (p.resources[give] >= 2) for (const get of RESOURCES) if (get !== give) add({ type: 'convert', give, get });
+    if (!t.tradeDone)
+      for (const to of SEATS)
+        if (to !== seat)
+          for (const g of RESOURCES)
+            for (const rc of RESOURCES)
+              if (p.resources[g] >= 1 && s.players[to].resources[rc] >= 1) {
+                const give = { comida: 0, madera: 0, piedra: 0, agua: 0, [g]: 1 };
+                const receive = { comida: 0, madera: 0, piedra: 0, agua: 0, [rc]: 1 };
+                add({ type: 'proposeTrade', to, give, receive });
+              }
+  }
+  return out;
+}
+
+const WEIGHT: Partial<Record<Action['type'], number>> = {
+  conquer: 1000,
+  build: 60,
+  attack: 12,
+  attackWall: 12,
+  recruit: 6,
+  move: 4,
+  convert: 0.4,
+  proposeTrade: 0.05,
+  endMilitary: 1,
+  endTurn: 1,
+};
+
+function weightedPick(r: () => number, cands: Candidate[]): Candidate {
+  const w = cands.map((c) => WEIGHT[c.action.type] ?? 1);
+  let x = r() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < cands.length; i++) if ((x -= w[i]) <= 0) return cands[i];
+  return cands.at(-1)!;
+}
+
+export interface GameReport {
+  state: GameState;
+  actions: number;
+  turns: number;
+  problems: string[];
+}
+
+/** Juega una partida completa. Cada acción que la interfaz ofrecería debe ser aceptada por el motor. */
+export function playGame(seed: number, maxTurns = 600): GameReport {
+  const r = lcg(seed * 7919 + 1);
+  let s = playPhase1(seed);
+  const problems = checkInvariants(s).map((x) => 'fin de Fase I: ' + x);
+  let actions = 0;
+  while (s.phase === 'PHASE_2' && s.turnNumber <= maxTurns) {
+    const cands = phase2Candidates(s, r);
+    const c = weightedPick(r, cands);
+    try {
+      s = applyAction(s, c.seat, c.action);
+    } catch (e) {
+      problems.push(`turno ${s.turnNumber}: acción ofrecida rechazada ${JSON.stringify(c.action)}: ${(e as Error).message}`);
+      // Para no quedar en bucle, termina el turno si se puede.
+      if (s.prompt || s.combat) break;
+      s = applyAction(s, s.turn!.seat, { type: 'endTurn' });
+    }
+    actions++;
+    const bad = checkInvariants(s);
+    if (bad.length) {
+      problems.push(...bad.map((x) => `turno ${s.turnNumber} tras ${c.action.type}: ${x}`));
+      break;
+    }
+  }
+  return { state: s, actions, turns: s.turnNumber, problems };
+}

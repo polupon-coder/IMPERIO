@@ -21,7 +21,7 @@ import {
   type Seat,
 } from './index';
 
-import { TEST_PLAYERS as PLAYERS, playPhase1 } from './sim';
+import { TEST_PLAYERS as PLAYERS, playGame, playPhase1 } from './sim';
 
 describe('Primer jugador y orden', () => {
   it('orden horario empezando por el ganador de la tirada', () => {
@@ -30,6 +30,14 @@ describe('Primer jugador y orden', () => {
     expect(s.order).toEqual([0, 1, 2, 3].map((k) => (first + k) % 4));
     const last = s.firstPlayerRolls.at(-1)!;
     expect(Object.keys(last)).toContain(String(first));
+  });
+});
+
+describe('Partidas completas (jugadores aleatorios)', () => {
+  const seeds = Array.from({ length: 6 }, (_, i) => i + 1);
+  it.each(seeds)('semilla %i: toda acción ofrecida es legal y el estado respeta el reglamento', (seed) => {
+    const rep = playGame(seed, 250);
+    expect(rep.problems).toEqual([]);
   });
 });
 
@@ -322,6 +330,26 @@ describe('Economía y turno', () => {
     const none = { comida: 0, madera: 0, piedra: 0, agua: 0 };
     expect(() => applyAction(s, 0, { type: 'proposeTrade', to: 1, give: two, receive: one })).toThrow();
     expect(() => applyAction(s, 0, { type: 'proposeTrade', to: 1, give: none, receive: one })).toThrow();
+  });
+
+  it('quien propone puede retirar una oferta sin respuesta', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['mercado'];
+    const give = { comida: 1, madera: 0, piedra: 0, agua: 0 };
+    const receive = { comida: 0, madera: 1, piedra: 0, agua: 0 };
+    s = applyAction(s, 0, { type: 'proposeTrade', to: 1, give, receive });
+    expect(() => applyAction(s, 0, { type: 'endTurn' })).toThrow();
+    expect(() => applyAction(s, 2, { type: 'cancelTrade' })).toThrow();
+    s = applyAction(s, 0, { type: 'cancelTrade' });
+    expect(s.prompt).toBeNull();
+    expect(s.turn!.tradeDone).toBe(false);
+    s = applyAction(s, 0, { type: 'endTurn' });
+  });
+
+  it('el Mercado no convierte un recurso en sí mismo', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['mercado'];
+    expect(() => applyAction(s, 0, { type: 'convert', give: 'comida', get: 'comida' })).toThrow();
   });
 
   it('victoria inmediata con 8 edificios y 1 Conquista', () => {

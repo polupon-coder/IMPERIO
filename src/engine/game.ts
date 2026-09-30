@@ -32,6 +32,7 @@ import {
   SIDES,
   TERRAIN_RESOURCE,
   UNIT_COST,
+  UNIT_TYPES,
   canAfford,
   coordLabel,
   emptyResources,
@@ -620,6 +621,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       requireTurn(s, seat);
       if (!canUseMilitary(s) || s.turn!.military) fail('No puedes reclutar ahora.');
       const t = action.unit;
+      if (!UNIT_TYPES.includes(t)) fail('Tropa desconocida.');
       if (!isUnlocked(s, seat, t)) fail('Falta el edificio necesario.');
       if (unitCount(s, seat, t) >= MAX_PER_TYPE) fail('Ya tienes 5 unidades de ese tipo.');
       if (!canAfford(p.resources, UNIT_COST[t])) fail('Recursos insuficientes.');
@@ -649,6 +651,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
     case 'attack':
     case 'attackWall': {
       requireTurn(s, seat);
+      if (!Array.isArray(action.unitIds)) fail('Selecciona al menos una tropa.');
       const ids = [...new Set(action.unitIds)];
       if (!ids.length) fail('Selecciona al menos una tropa.');
       const units = ids.map((id) => unitById(s, id));
@@ -789,6 +792,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       requireTurn(s, seat);
       if (!hasBuilding(s, seat, 'mercado')) fail('Necesitas Mercado.');
       if (!RESOURCES.includes(action.give) || !RESOURCES.includes(action.get)) fail('Recurso no válido.');
+      if (action.give === action.get) fail('Elige un recurso distinto.');
       if (p.resources[action.give] < 2) fail('Necesitas 2 recursos iguales.');
       p.resources[action.give] -= 2;
       p.resources[action.get] += 1;
@@ -828,6 +832,14 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         s.turn!.tradeDone = true;
         log(s, `${p.name} acepta el intercambio de ${from.name}.`, seat);
       } else log(s, `${p.name} rechaza el intercambio de ${from.name}.`, seat);
+      break;
+    }
+    case 'cancelTrade': {
+      // Quien propone puede retirar la oferta mientras no se responda (evita que la partida quede parada).
+      const pr = s.prompt;
+      if (pr?.kind !== 'trade' || pr.from !== seat) fail('No tienes ninguna oferta pendiente.');
+      s.prompt = null;
+      log(s, `${p.name} retira su oferta de intercambio.`, seat);
       break;
     }
     case 'endTurn': {

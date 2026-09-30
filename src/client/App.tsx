@@ -54,7 +54,8 @@ export function App() {
   };
 
   const exit = () => {
-    if (room) forgetSession(room.code);
+    // Con la partida empezada se conserva el acceso: el enlace del Mundo devuelve a su sitio.
+    if (room) forgetSession(room.code, !!room.game);
     setRoom(null);
     setMyId(null);
     history.replaceState(null, '', location.pathname);

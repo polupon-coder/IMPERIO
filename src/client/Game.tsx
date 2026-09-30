@@ -341,6 +341,11 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
     return (
       <div className="card waiting">
         Esperando a <b>{who.name}</b>: {what[pr.kind]}…
+        {pr.kind === 'trade' && pr.from === mySeat && (
+          <button className="link" onClick={() => send({ type: 'cancelTrade' })}>
+            Retirar oferta
+          </button>
+        )}
       </div>
     );
   }
@@ -1069,7 +1074,7 @@ function ConvertRow({ state: s, mySeat, send }: { state: GameState; mySeat: Seat
       <h4>Convertir (2 iguales → 1 cualquiera)</h4>
       <div className="row">
         2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
-        <button disabled={my.resources[give] < 2} onClick={() => send({ type: 'convert', give, get }, true)}>
+        <button disabled={my.resources[give] < 2 || give === get} onClick={() => send({ type: 'convert', give, get }, true)}>
           Convertir
         </button>
       </div>

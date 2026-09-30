@@ -54,7 +54,7 @@ h1,
 h2,
 h3,
 .brand {
-  font-family: 'Cinzel', Georgia, serif;
+  font-family: 'IM Fell English', Georgia, serif;
   letter-spacing: 0.04em;
   margin: 0 0 0.4em;
 }
@@ -297,7 +297,7 @@ select {
   position: absolute;
   display: flex;
   color: var(--ink-soft);
-  font-family: 'Cinzel', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 0.8rem;
 }
 .axis.cols {
@@ -548,7 +548,7 @@ select {
 }
 details summary {
   cursor: pointer;
-  font-family: 'Cinzel', serif;
+  font-family: 'IM Fell English', serif;
   margin: 8px 0 4px;
 }
 .end-turn {
@@ -1100,7 +1100,7 @@ details summary {
 }
 .modal h4 {
   margin: 10px 0 4px;
-  font-family: 'Cinzel', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 0.9rem;
 }
 .modal-close {
@@ -1183,7 +1183,7 @@ details summary {
 .chat-bar > button {
   flex: 0 0 auto;
   padding: 0 12px;
-  font-family: 'Cinzel', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 0.8rem;
 }
 .chat-line {
@@ -1472,7 +1472,7 @@ details summary {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  font-family: 'Cinzel', serif;
+  font-family: 'IM Fell English', serif;
 }
 
 /* ---------- Dados ---------- */
