@@ -38,7 +38,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage, resourceIcon } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, buildingImage, resourceIcon, unitFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { call, type PublicRoom } from './socket';
 
@@ -820,13 +820,57 @@ function CombatView({ state: s }: { state: GameState }) {
 function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: PublicRoom; mySeat: Seat }) {
   return (
     <div className="card players">
-      {s.order.map((seat) => {
+      {/* Tu panel primero y con ilustraciones; los rivales, en resumen. */}
+      {[mySeat, ...s.order.filter((x) => x !== mySeat)].map((seat) => {
         const p = s.players[seat];
         const lobby = room.players.find((x) => x.seat === seat);
         const units = s.units.filter((u) => u.owner === seat);
         const active = s.order[s.current] === seat && s.phase !== 'GAME_OVER';
+        const mine = seat === mySeat;
+        if (!mine)
+          return (
+            <div key={seat} className={`player summary ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color] }}>
+              <div className="player-head">
+                <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
+                <b>{p.name}</b>
+                {lobby && !lobby.online && <span className="offline">desconectado</span>}
+                <span className="conquests" title="Conquistas">
+                  ⚑ {p.conquests.length}
+                </span>
+              </div>
+              <div className="resources">
+                {RESOURCES.map((r) => (
+                  <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
+                    <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
+                  </span>
+                ))}
+              </div>
+              <div className="bld-chips">
+                {BUILDINGS.map((b) => (
+                  <span key={b} className={`bld-chip ${p.buildings.includes(b) ? 'on' : ''}`} title={NAMES.building[b]}>
+                    {NAMES.building[b]}
+                  </span>
+                ))}
+                <span className="muted"> {p.buildings.length}/8</span>
+              </div>
+              <div className="army">
+                {UNIT_TYPES.map((u) => {
+                  const n = units.filter((x) => x.type === u).length;
+                  return (
+                    <span key={u} title={NAMES.unit[u]} className={n ? '' : 'zero'}>
+                      <img className="icon" src={UNIT_IMAGES[u]} alt="" />
+                      {n}
+                    </span>
+                  );
+                })}
+                <span title="Murallas intactas / originales">
+                  🧱 {p.walls.length}/{p.originalWalls.length}
+                </span>
+              </div>
+            </div>
+          );
         return (
-          <div key={seat} className={`player ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color] }}>
+          <div key={seat} className={`player mine ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color] }}>
             <div className="player-head">
               <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} />
               <b>{p.name}</b>
@@ -859,19 +903,27 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                 );
               })}
             </div>
-            <div className="army">
+            <div className="buildings-head muted">Ejército</div>
+            <div className="army-figures">
               {UNIT_TYPES.map((u) => {
                 const n = units.filter((x) => x.type === u).length;
                 return (
-                  <span key={u} title={NAMES.unit[u]} className={n ? '' : 'zero'}>
-                    <img className="icon" src={UNIT_IMAGES[u]} alt="" />
-                    {n}
-                  </span>
+                  <figure key={u} className={n ? 'on' : ''} title={`${NAMES.unit[u]}: ${n}/5`}>
+                    <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                      <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
+                    </span>
+                    <figcaption>
+                      {NAMES.unit[u]} <b>{n}</b>/5
+                    </figcaption>
+                  </figure>
                 );
               })}
-              <span title="Murallas intactas / originales">
-                🧱 {p.walls.length}/{p.originalWalls.length}
-              </span>
+              <figure className={p.walls.length ? 'on' : ''} title="Murallas intactas / originales">
+                <span className="mini-token wall-token" style={{ borderColor: PLAYER_COLORS[p.color], background: PLAYER_COLORS[p.color] }} />
+                <figcaption>
+                  Murallas <b>{p.walls.length}</b>/{p.originalWalls.length}
+                </figcaption>
+              </figure>
             </div>
           </div>
         );

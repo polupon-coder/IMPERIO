@@ -750,6 +750,75 @@ details summary {
 .army .zero {
   opacity: 0.4;
 }
+
+/* Tu ejército con las fichas ilustradas */
+.army-figures {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.army-figures figure {
+  margin: 0;
+}
+.mini-token {
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 3px solid;
+  overflow: hidden;
+  background: #f4ebdc;
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.mini-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wall-token {
+  border-radius: 6px;
+  background-image: repeating-linear-gradient(90deg, #fff3 0 8px, #0004 8px 10px) !important;
+}
+.army-figures figure.on .mini-token {
+  opacity: 1;
+  filter: none;
+}
+.army-figures figcaption {
+  font-size: 0.7rem;
+  line-height: 1.15;
+  color: var(--ink-soft);
+}
+.army-figures figure.on figcaption {
+  color: var(--ink);
+}
+
+/* Resumen de los rivales */
+.player.summary {
+  padding: 5px 8px;
+}
+.bld-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 5px 0;
+  font-size: 0.72rem;
+  align-items: center;
+}
+.bld-chip {
+  padding: 0 5px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  color: #0005;
+}
+.bld-chip.on {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
 .log ol {
   list-style: none;
   padding: 0;
