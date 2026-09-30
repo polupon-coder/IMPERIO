@@ -857,7 +857,6 @@ function PlayersPanel({ state: s, room, mySeat }: { state: GameState; room: Publ
                     {NAMES.building[b]}
                   </span>
                 ))}
-                <span className="muted"> {p.buildings.length}/8</span>
               </div>
               <div className="sum-row">
                 {UNIT_TYPES.map((u) => {
