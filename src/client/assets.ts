@@ -3,10 +3,10 @@
 import type { Terrain, UnitType } from '../engine';
 
 export const TILE_IMAGES: Record<Terrain | 'capital', string> = {
-  llanura: '/assets/tiles/llanura.svg',
-  bosque: '/assets/tiles/bosque.svg',
-  montana: '/assets/tiles/montana.svg',
-  agua: '/assets/tiles/agua.svg',
+  llanura: '/assets/tiles/llanura.webp',
+  bosque: '/assets/tiles/bosque.webp',
+  montana: '/assets/tiles/montana.webp',
+  agua: '/assets/tiles/agua.webp',
   capital: '/assets/tiles/capital.svg',
 };
 
