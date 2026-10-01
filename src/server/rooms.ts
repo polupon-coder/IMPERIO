@@ -236,7 +236,8 @@ export type PublicRoom = ReturnType<typeof publicRoom>;
 // Jugadores máquina
 // ---------------------------------------------------------------------------------------------
 
-const BOT_NAMES = ['Sir Aldric', 'Doña Urraca', 'Don Rodrigo', 'Lady Isolda', 'Sir Godofredo', 'Doña Jimena', 'Don Pelayo', 'Lady Brunilda'];
+/** Nombre de la máquina según su Capital. */
+const BOT_NAME: Record<Seat, string> = { 0: 'Rey del Noroeste', 1: 'Rey del Noreste', 2: 'Rey del Sureste', 3: 'Rey del Suroeste' };
 
 function requireHost(room: Room, token: string) {
   const p = playerByToken(room, token);
@@ -251,8 +252,7 @@ export function addBot(room: Room, token: string, seat: Seat, level: BotLevel) {
   if (level !== 'facil' && level !== 'normal') throw new RoomError('Nivel no válido.');
   if (room.players.some((p) => p.seat === seat)) throw new RoomError('Esa Capital ya está ocupada.');
   if (room.players.length >= 4) throw new RoomError('El Mundo está completo (4 jugadores).');
-  const used = new Set(room.players.map((p) => p.name));
-  const name = BOT_NAMES.find((n) => !used.has(n)) ?? `Máquina ${seat + 1}`;
+  const name = BOT_NAME[seat];
   room.players.push({
     id: room.players.reduce((m, x) => Math.max(m, x.id), -1) + 1,
     token: randomBytes(16).toString('hex'),
