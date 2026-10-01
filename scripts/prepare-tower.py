@@ -43,9 +43,34 @@ def figure(src_path, crop):
     return np.array(img).astype(float), ndimage.gaussian_filter(np.array(mask).astype(float) / 255, 1.0)[..., None]
 
 
+def ground(a, m):
+    """Suelo pintado bajo la figura: la franja inferior de la mancha (bajo la base), en tonos
+    claros; no tiñe la piedra ni la hierba."""
+    H, W = a.shape[:2]
+    mx = a.max(2)
+    sat = (mx - a.min(2)) / np.maximum(mx, 1)
+    r, g = a[..., 0], a[..., 1]
+    light = (mx > 150) & (sat < 0.6) & (r >= g)
+    inside = m[..., 0] > 0.5
+    gm = np.zeros((H, W), bool)
+    band = int(H * 0.07)
+    for x in range(W):
+        ys = np.where(inside[:, x])[0]
+        if not len(ys):
+            continue
+        bottom = ys.max()
+        gm[max(bottom - band, int(H * 0.55)) : bottom + 1, x] = True
+    gm &= light & inside
+    return ndimage.gaussian_filter(gm.astype(float), 1.5)[..., None]
+
+
 def tinted(a, m, rgb, seed):
     rng = np.random.default_rng(seed)
     base = np.array(rgb, float) * MIX + PAPER * (1 - MIX)
+    # El suelo se tiñe del color suave conservando su textura
+    gm = ground(a, m)
+    lum = a.mean(2, keepdims=True) / PAPER.mean()
+    a = a * (1 - gm) + np.clip(base * (0.45 + 0.55 * lum), 0, 255) * gm
     wash = ndimage.gaussian_filter(rng.normal(size=(S, S)), 7)[..., None]
     wash = wash / (np.abs(wash).max() + 1e-6) * 14
     return np.clip(a * m + np.clip(base + wash, 0, 255) * (1 - m), 0, 255).astype(np.uint8)
