@@ -2483,3 +2483,14 @@ textarea {
 .lobby-sheet .lobby-actions {
   margin-bottom: 26px;
 }
+
+/* Tablero y lateral: más separados y centrados como un bloque en el eje de la pantalla */
+@media (min-width: 901px) {
+  :root {
+    --cell: min(calc((100vh - 115px) / 8), calc((100vw - 475px) / 8));
+  }
+  .layout {
+    justify-content: center;
+    gap: 40px;
+  }
+}
