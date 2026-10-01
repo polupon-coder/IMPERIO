@@ -10,7 +10,7 @@ import {
   type Side,
   type Unit,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, TOWER_SILHOUETTE, UNIT_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -82,6 +82,7 @@ export function Board(p: BoardProps) {
                   }}
                 >
                   <img src={towerFigure(pl.color)} alt="Torreón" draggable={false} />
+                  <img className="icon-alt" src={TOWER_SILHOUETTE} alt="" draggable={false} />
                 </button>
               ))}
               {units.length > 0 && (

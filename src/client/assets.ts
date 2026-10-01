@@ -34,6 +34,8 @@ export const WALL_TOKEN = '/assets/ui/muralla.webp';
 export const WALL_ICON = '/assets/ui/muralla-icono.webp';
 /** Silueta simplificada de Muralla, a juego con las siluetas de tropas. */
 export const WALL_SILHOUETTE = '/assets/ui/muralla.svg';
+/** Silueta sencilla del Torreón (iconos del móvil). */
+export const TOWER_SILHOUETTE = '/assets/ui/torreon.svg';
 
 /** Escudo de armas de cada color y separador ornamental (scripts/prepare-heraldry.py). */
 export const coatOfArms = (color: string) => `/assets/ui/escudo-${color}.webp`;

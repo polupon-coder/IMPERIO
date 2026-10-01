@@ -2735,7 +2735,7 @@ textarea {
   display: none !important;
 }
 @media (max-width: 900px) {
-  .token:not(.tower-token) > img:not(.icon-alt),
+  .token > img:not(.icon-alt),
   .mini-token > img:not(.icon-alt):has(+ .icon-alt) {
     display: none !important;
   }
@@ -2753,7 +2753,7 @@ textarea {
     transform: scale(1.35);
   }
   /* Fondo con el color suave del jugador, como las fichas ilustradas */
-  .token:not(.tower-token),
+  .token,
   .mini-token:has(.icon-alt) {
     background: color-mix(in srgb, var(--owner) 30%, #f4ebdc);
   }

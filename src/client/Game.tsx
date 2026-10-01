@@ -50,7 +50,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
 import { call, type PublicRoom } from './socket';
@@ -1010,8 +1010,9 @@ function PlayersPanel({
                   title={towerTitle(s, mySeat, myTurnNow)}
                   onClick={() => myTurnNow && onTower()}
                 >
-                  <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                  <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                     <img src={p.tower != null ? towerFigure(p.color) : TOWER_ICON} alt="Torreón" draggable={false} />
+                    <img className="icon-alt" src={TOWER_SILHOUETTE} alt="" draggable={false} />
                   </span>
                   <figcaption>
                     Torreón <b>{p.tower != null ? 1 : 0}</b>/1
