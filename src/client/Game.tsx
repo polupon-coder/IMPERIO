@@ -1408,8 +1408,6 @@ function VictoryDialog({
 }) {
   const w = s.players[s.winner!];
   const color = PLAYER_COLORS[w.color];
-  const round = roman(Math.max(1, Math.ceil(s.turnNumber / 4)));
-  const conquered = w.conquests.map((c) => s.players[c].name);
   return (
     <Modal title="Proclama Real" onClose={onClose} wide>
       <div className="victory">
@@ -1418,20 +1416,8 @@ function VictoryDialog({
         <div className="victory-name" style={{ color }}>
           <img className="coat" src={coatOfArms(w.color)} alt="" /> {w.name}
         </div>
-        <p className="victory-line">
-          ha alzado sus ocho edificios, ha conquistado la Capital de {conquered.join(' y ')}
-          <br />y reina desde hoy sobre el
-        </p>
+        <p className="victory-line">reina desde hoy sobre el</p>
         <img className="victory-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
-        <div className="victory-buildings">
-          {BUILDINGS.map((b) => (
-            <img key={b} src={buildingImage(b)} alt={NAMES.building[b]} title={NAMES.building[b]} />
-          ))}
-        </div>
-        <p className="sc victory-stats">
-          8 edificios · {w.conquests.length} Conquista{w.conquests.length > 1 ? 's' : ''} · Ronda {round}
-          {w.seat === mySeat && ' · ¡Enhorabuena!'}
-        </p>
         <div className="row victory-actions">
           <button className="seal small green" onClick={onClose}>
             Ver el
