@@ -10,7 +10,7 @@ import {
   type Side,
   type Unit,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, capitalImage, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -24,6 +24,8 @@ export interface BoardProps {
   onCell: (pos: number) => void;
   onUnit: (u: Unit) => void;
   onWall: (capital: Seat, side: Side) => void;
+  onTower: (owner: Seat, pos: number) => void;
+  selectedTower: boolean;
 }
 
 const MARK_TITLE: Record<Mark, string> = {
@@ -68,6 +70,20 @@ export function Board(p: BoardProps) {
                 />
               )}
               {cap !== null && <Walls state={s} seat={cap} targets={p.wallTargets} onWall={p.onWall} />}
+              {s.players.filter((pl) => pl.tower === pos).map((pl) => (
+                <button
+                  key={'t' + pl.seat}
+                  className={`token tower-token ${p.selectedTower && pl.seat === s.turn?.seat ? 'sel' : ''}`}
+                  style={{ ['--owner' as string]: colorOf(pl.seat) }}
+                  title={`Torreón de ${pl.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    p.onTower(pl.seat, pos);
+                  }}
+                >
+                  <img src={towerFigure(pl.color)} alt="Torreón" draggable={false} />
+                </button>
+              ))}
               {units.length > 0 && (
                 <div className="stack">
                   {stackLayout(units).map(({ u, left, top }) => (

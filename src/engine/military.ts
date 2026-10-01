@@ -1,5 +1,5 @@
 // Fase II — movimiento, objetivos de ataque y dados.
-import { canStand, unitsAt } from './phase1';
+import { canStand, towerAt, unitsAt } from './phase1';
 import {
   CAPITALS,
   RANGED,
@@ -15,6 +15,7 @@ import {
   rowOf,
   sideCell,
   sideTowards,
+  towerKey,
 } from './rules';
 import type { Activation, GameState, Seat, Side, Unit, UnitType } from './types';
 
@@ -116,6 +117,7 @@ export function moveTargets(s: GameState, unitId: string): Map<number, number> {
         if (isCapital(n) || t === null || t === 'agua') continue; // §75, Capital bloqueada
         if (u.type === 'artilleria' && t === 'montana') continue; // §74
         if (unitsAt(s, n).some((o) => o.owner !== u.owner)) continue; // §62
+        if (towerAt(s, n) !== null) continue; // A23: el Torreón bloquea el paso a todos
         seen.add(n);
         if (canStand(s, u.owner, u.type, n, u.id)) out.set(n, step);
         if (t === 'llanura') next.push(n); // entrar en terreno lento termina la activación
@@ -167,13 +169,15 @@ export function bombardPositions(capital: Seat, side: Side): number[] {
 
 export interface AttackTargets {
   troops: number[];
+  /** Torreones enemigos atacables (A23). */
+  towers: number[];
   walls: Array<{ capital: Seat; side: Side }>;
   capitals: Seat[];
 }
 
 /** Objetivos legales de un ataque desde la posición y tipo de la tropa líder. */
 export function attackTargets(s: GameState, unitId: string): AttackTargets {
-  const res: AttackTargets = { troops: [], walls: [], capitals: [] };
+  const res: AttackTargets = { troops: [], towers: [], walls: [], capitals: [] };
   const u = unitById(s, unitId);
   if (!u || !canActivate(s, u) || !canAttackNow(s, u)) return res;
   const ranged = RANGED.includes(u.type);
@@ -186,6 +190,11 @@ export function attackTargets(s: GameState, unitId: string): AttackTargets {
       if (u.type === 'arquero' && shots.includes(`${u.pos}>${p}`)) continue; // §87
       res.troops.push(p);
     }
+  }
+  for (const pl of s.players) {
+    if (pl.seat === u.owner || pl.tower == null) continue;
+    const d = manhattan(u.pos, pl.tower);
+    if (d === 1 || (ranged && d === 2 && hasLineOfFire(s, u.pos, pl.tower))) res.towers.push(pl.tower);
   }
   for (const c of SEATS) {
     if (c === u.owner) continue;
@@ -200,6 +209,31 @@ export function attackTargets(s: GameState, unitId: string): AttackTargets {
       res.capitals.push(c);
   }
   return res;
+}
+
+/** A23: ¿puede el Torreón del jugador activo atacar ahora? (gasta una activación) */
+export function canTowerAttack(s: GameState): boolean {
+  const t = s.turn;
+  if (!t || !canUseMilitary(s)) return false;
+  const p = s.players[t.seat];
+  if (p.tower == null) return false;
+  const acts = t.military?.activations ?? {};
+  if (acts[towerKey(t.seat)]) return false;
+  return Object.keys(acts).length < activationLimit(s);
+}
+
+/** Casillas con tropas enemigas a las que puede disparar el Torreón (alcance 2, como un Arquero). */
+export function towerTargets(s: GameState, seat: Seat): number[] {
+  const from = s.players[seat].tower;
+  if (from == null) return [];
+  const out: number[] = [];
+  for (let pos = 0; pos < s.cells.length; pos++) {
+    const here = unitsAt(s, pos);
+    if (!here.length || here[0].owner === seat) continue;
+    const d = manhattan(from, pos);
+    if (d === 1 || (d === 2 && hasLineOfFire(s, from, pos))) out.push(pos);
+  }
+  return out;
 }
 
 /** Figuras del mismo tipo en la misma loseta que pueden unirse al ataque de la líder (§58). */

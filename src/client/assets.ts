@@ -17,6 +17,10 @@ export const capitalImage = (color: string) => `/assets/tiles/capital-${color}.w
 /** Figura de la tropa sobre fondo de acuarela del color del jugador (scripts/token-backgrounds.py). */
 export const unitFigure = (color: string, type: UnitType) => `/assets/fichas/${color}/${type}.webp`;
 
+/** Ficha del Torreón con el fondo del color del jugador (scripts/prepare-tower.py). */
+export const towerFigure = (color: string) => `/assets/fichas/${color}/torreon.webp`;
+export const TOWER_ICON = '/assets/ui/torreon.webp';
+
 /** Ilustración de cada edificio (scripts/prepare-buildings.py). */
 export const buildingImage = (b: string) => `/assets/buildings/${b}.webp`;
 

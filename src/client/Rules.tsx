@@ -12,7 +12,7 @@ import {
 } from '../engine';
 import { UNIT_IMAGES, buildingImage, resourceIcon } from './assets';
 
-const TABS = ['Objetivo', 'Fase I', 'Fase II', 'Edificios', 'Tropas', 'Combate', 'Murallas y Capitales'] as const;
+const TABS = ['Objetivo', 'Fase I', 'Fase II', 'Edificios', 'Tropas', 'Combate', 'Murallas, Torreón y Capitales'] as const;
 type Tab = (typeof TABS)[number];
 
 const BUILDING_EFFECT: Record<string, string> = {
@@ -309,7 +309,7 @@ export function RulesSheet() {
           </>
         )}
 
-        {tab === 'Murallas y Capitales' && (
+        {tab === 'Murallas, Torreón y Capitales' && (
           <>
             <h4>Murallas</h4>
             <ul>
@@ -333,6 +333,24 @@ export function RulesSheet() {
                 siempre tienen una ronda para entrar por la brecha.
               </li>
               <li>Al conquistar una Capital, todas sus Murallas (también las levantadas después) vuelven a su sitio.</li>
+            </ul>
+            <h4>Torreón</h4>
+            <ul>
+              <li>
+                Con <b>Herrería y Ayuntamiento</b>, la <b>Acción Civil</b> puede levantar <b>1 Torreón</b> (4 Piedra + 2
+                Madera) en una loseta de tierra vacía junto (por un lado) a una tropa tuya. Nunca en las casillas que
+                rodean por los lados a una Capital. Pulsa «Torreón» en tu panel.
+              </li>
+              <li>Ocupa su loseta: ninguna tropa puede entrar ni pasar por ella, tampoco las tuyas.</li>
+              <li>
+                <b>Ataca como un Arquero</b> (alcance 2, 1 dado contra 1), gastando una de las activaciones de la Acción
+                Militar. Solo cae si le gana un Arquero o una Artillería.
+              </li>
+              <li>
+                <b>Defiende con 2 dados</b> contra 1 (+1 por figura agrupada). Si gana, el atacante no sufre baja; si pierde,
+                queda destruido. No tiene Fe.
+              </li>
+              <li>Si te lo destruyen, no puedes levantar otro hasta que pase una ronda.</li>
             </ul>
             <h4>Conquista</h4>
             <ul>

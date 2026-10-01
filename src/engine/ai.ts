@@ -9,6 +9,8 @@ import {
   bombardPositions,
   canActivate,
   canAttackNow,
+  canTowerAttack,
+  towerTargets,
   canUseCivil,
   canUseMilitary,
   groupCandidates,
@@ -16,7 +18,7 @@ import {
   isUnlocked,
   moveTargets,
 } from './military';
-import { exchangeOptions, initialPlacements, legalPlacements, ringSpots, unitsAt } from './phase1';
+import { exchangeOptions, initialPlacements, legalPlacements, ringSpots, towerAt, unitsAt } from './phase1';
 import {
   BUILDINGS,
   BUILDING_COST,
@@ -40,7 +42,7 @@ import {
   sideTowards,
 } from './rules';
 import type { Action, Building, GameState, Resource, Resources, Seat, Side, Terrain, UnitType } from './types';
-import { unitCount, wallBuildCheck } from './game';
+import { towerBuildSpots, unitCount, wallBuildCheck } from './game';
 
 export type BotLevel = 'facil' | 'normal';
 type Rand = () => number;
@@ -127,7 +129,9 @@ function distanceMap(s: GameState, seat: Seat, type: UnitType, goals: number[]):
       if (isCapital(n) || !isLand(t) || (type === 'artilleria' && t === 'montana')) continue;
       // El terreno lento cuesta más (entrar termina la activación); las casillas con enemigos
       // se pueden despejar atacando, pero cuestan bastante más.
-      const enemy = unitsAt(s, n).some((u) => u.owner !== seat);
+      const tw = towerAt(s, n);
+      if (tw === seat) continue; // el propio Torreón no se atraviesa
+      const enemy = unitsAt(s, n).some((u) => u.owner !== seat) || tw !== null;
       const nd = dist[cur] + (t === 'llanura' ? 1 : 1.6) + (enemy ? 3 : 0);
       if (nd < dist[n]) {
         dist[n] = nd;
@@ -432,7 +436,9 @@ function goalsFor(s: GameState, seat: Seat, target: Seat, type: UnitType): numbe
   const out = new Set<number>();
   const ok = (pos: number) => {
     const t = s.cells[pos].terrain;
-    return !isCapital(pos) && isLand(t) && !(type === 'artilleria' && t === 'montana') && !unitsAt(s, pos).some((u) => u.owner !== seat);
+    return (
+      !isCapital(pos) && isLand(t) && !(type === 'artilleria' && t === 'montana') && towerAt(s, pos) === null && !unitsAt(s, pos).some((u) => u.owner !== seat)
+    );
   };
   for (const side of SIDES) {
     const front = sideCell(target, side);
@@ -487,12 +493,33 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
       const value = w * killValue - l * lossValue - (n - 1) * 0.08;
       out.push({ action: { type: 'attack', unitIds: ids, target: pos }, value });
     }
+    for (const pos of tg.towers) {
+      const [w] = duel(n, 2);
+      // Un Torreón enemigo cerca de la propia Capital o en el camino hacia la objetivo vale más
+      const near = Math.min(...myOpen.map((p) => manhattan(p, pos)), 9);
+      const value = w * (2.2 + (near <= 2 ? 1.5 : 0)) - (n - 1) * 0.08;
+      out.push({ action: { type: 'attackTower', unitIds: ids, target: pos }, value });
+    }
     for (const wl of tg.walls) {
       const art = u.type === 'artilleria';
       const [w, l] = art ? duel(2 + n - 1, 1) : duel(n, 2);
       const goal = wl.capital === plan.target ? 2.2 : 0.8;
       const value = w * goal - (art ? l * UNIT_VALUE.artilleria : 0);
       out.push({ action: { type: 'attackWall', unitIds: ids, capital: wl.capital, side: wl.side }, value });
+    }
+  }
+  if (canTowerAttack(s)) {
+    const from = s.players[seat].tower!;
+    for (const pos of towerTargets(s, seat)) {
+      const d = manhattan(from, pos) as 1 | 2;
+      const t = defenderBest(s, pos, 'arquero', 1, d);
+      const m = unitsAt(s, pos).filter((x) => x.type === t).length;
+      const [ba, bb] = baseDice('arquero', t, d);
+      const [w, l] = duel(ba, bb + m - 1);
+      const near = Math.min(...myOpen.map((p) => manhattan(p, pos)), 9);
+      const lossValue = t === 'arquero' || t === 'artilleria' ? 3 : 0; // solo una tropa con alcance lo derriba
+      const value = w * (UNIT_VALUE[t] + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0)) - l * lossValue;
+      out.push({ action: { type: 'towerAttack', target: pos }, value });
     }
   }
   return out;
@@ -601,6 +628,20 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
   if (canUseCivil(s)) {
     const wall = wallChoice(s, seat, level);
     if (wall) return wall;
+  }
+
+  // 2c. Torreón: cuando ya no hay edificio asequible, en la casilla con más enemigos al alcance
+  if (canUseCivil(s)) {
+    const spots = towerBuildSpots(s, seat);
+    if (spots.length && !(sloppy && r() < 0.5)) {
+      const myCap = CAPITALS[seat];
+      const best = pickBest(spots, (pos) => {
+        const enemies = enemyUnits(s, seat).filter((e) => manhattan(e.pos, pos) <= 2).length;
+        return enemies * 2 + (manhattan(pos, myCap) <= 3 ? 1 : 0) + r() * 0.3;
+      })!;
+      const worth = enemyUnits(s, seat).some((e) => manhattan(e.pos, best) <= 3) || p.buildings.length >= 8;
+      if (worth) return { type: 'buildTower', pos: best };
+    }
   }
 
   // 3. Acción militar

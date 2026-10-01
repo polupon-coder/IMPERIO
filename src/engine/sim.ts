@@ -13,6 +13,10 @@ import {
   UNIT_TYPES,
   applyAction,
   activationLimit,
+  towerBuildSpots,
+  canTowerAttack,
+  towerTargets,
+  isCapitalSide,
   canRecruitNow,
   wallBuildCheck,
   CONVERT_RATE,
@@ -138,6 +142,12 @@ export function checkInvariants(s: GameState): string[] {
     for (const seat of SEATS) if (RINGS[seat].filter((i) => s.cells[i].terrain === 'agua').length !== 1) out.push(`anillo ${seat} sin exactamente 1 Agua`);
   }
   if (s.combat && !s.prompt) out.push('combate abierto sin decisión pendiente');
+  for (const p of s.players) {
+    if (p.tower == null) continue;
+    if (unitsAt(s, p.tower).length) out.push(`${p.name}: tropas sobre el Torreón`);
+    if (isCapitalSide(p.tower) || isCapital(p.tower) || !isLand(s.cells[p.tower].terrain)) out.push(`${p.name}: Torreón en casilla no válida`);
+    if (s.players.some((o) => o !== p && o.tower === p.tower)) out.push('dos Torreones en la misma casilla');
+  }
   return out;
 }
 
@@ -171,6 +181,8 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
       if (!p.buildings.includes(b) && !(b === 'ayuntamiento' && p.buildings.length < 2) && canAfford(p.resources, BUILDING_COST[b]))
         add({ type: 'build', building: b });
   if (canUseCivil(s)) for (const side of SIDES) if (wallBuildCheck(s, seat, side).ok) add({ type: 'buildWall', side });
+  if (canUseCivil(s)) for (const pos of towerBuildSpots(s, seat)) add({ type: 'buildTower', pos });
+  if (canTowerAttack(s)) for (const target of towerTargets(s, seat)) add({ type: 'towerAttack', target });
   if (canRecruitNow(s))
     for (const u of UNIT_TYPES)
       if (isUnlocked(s, seat, u) && unitCount(s, seat, u) < MAX_PER_TYPE && canAfford(p.resources, UNIT_COST[u]))
@@ -189,6 +201,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
     }
     for (const target of tg.troops) add({ type: 'attack', unitIds: ids, target });
     for (const w of tg.walls) add({ type: 'attackWall', unitIds: ids, capital: w.capital, side: w.side });
+    for (const target of tg.towers) add({ type: 'attackTower', unitIds: ids, target });
     for (const capital of tg.capitals) add({ type: 'conquer', unitId: u.id, capital });
   }
   if (hasBuilding(s, seat, 'mercado')) {
@@ -212,6 +225,9 @@ const WEIGHT: Partial<Record<Action['type'], number>> = {
   conquer: 1000,
   build: 60,
   buildWall: 3,
+  buildTower: 2,
+  towerAttack: 10,
+  attackTower: 10,
   attack: 12,
   attackWall: 12,
   recruit: 6,

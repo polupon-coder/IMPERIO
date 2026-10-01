@@ -64,6 +64,10 @@ export interface PlayerState {
   faithTurn: number | null;
   /** Turno en que se destruyó cada Muralla (para la espera antes de repararla, A20). */
   wallDestroyedTurn?: Partial<Record<Side, number>>;
+  /** Casilla del Torreón del jugador (A23), si lo tiene. */
+  tower?: number | null;
+  /** Turno en que le destruyeron el Torreón (espera de una ronda para levantar otro). */
+  towerDestroyedTurn?: number | null;
 }
 
 export interface Activation {
@@ -92,7 +96,9 @@ export type Prompt =
 export interface Combat {
   attacker: Seat;
   defender: Seat;
-  target: { kind: 'troops'; pos: number } | { kind: 'wall'; capital: Seat; side: Side };
+  target: { kind: 'troops'; pos: number } | { kind: 'wall'; capital: Seat; side: Side } | { kind: 'tower'; pos: number };
+  /** El atacante es un Torreón (A23): ataca como un Arquero. */
+  attackerTower?: boolean;
   from: number;
   distance: 1 | 2;
   attackerType: UnitType;
@@ -176,6 +182,9 @@ export type Action =
   | { type: 'libraryChoice'; resource: Resource }
   | { type: 'build'; building: Building }
   | { type: 'buildWall'; side: Side }
+  | { type: 'buildTower'; pos: number }
+  | { type: 'towerAttack'; target: number }
+  | { type: 'attackTower'; unitIds: string[]; target: number }
   | { type: 'recruit'; unit: UnitType; pos: number }
   | { type: 'move'; unitId: string; to: number }
   | { type: 'attack'; unitIds: string[]; target: number }

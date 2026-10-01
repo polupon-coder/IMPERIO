@@ -128,6 +128,15 @@ export const WALL_REPAIR_COST: Resources = R(0, 3, 0, 0);
 /** Una Muralla destruida en el turno T solo se repara a partir del turno T + 5 (pasa una ronda). */
 export const WALL_REPAIR_WAIT = 4;
 
+/** Aclaración A23: Torreón (Acción Civil, requiere Herrería y Ayuntamiento, 1 por jugador). */
+export const TOWER_COST: Resources = R(2, 4, 0, 0);
+export const TOWER_REQUIRES: Building[] = ['herreria', 'ayuntamiento'];
+export const MAX_TOWERS = 1;
+/** Clave de activación del Torreón dentro de la Acción Militar. */
+export const towerKey = (seat: Seat) => `torreon:${seat}`;
+/** Casillas laterales de todas las Capitales: el Torreón nunca puede levantarse en ellas. */
+export const isCapitalSide = (pos: number) => SEATS.some((c) => SIDES.some((side) => sideCell(c, side) === pos));
+
 /** §49–53 */
 export const UNIT_COST: Record<UnitType, Resources> = {
   infanteria: R(0, 0, 2, 1),

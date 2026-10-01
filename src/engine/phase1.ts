@@ -88,11 +88,15 @@ export function initialPlacements(s: GameState, seat: Seat, terrain: Terrain): n
 
 export const unitsAt = (s: GameState, pos: number) => s.units.filter((u) => u.pos === pos);
 
+/** Dueño del Torreón que ocupa la casilla (A23), o null. */
+export const towerAt = (s: GameState, pos: number): Seat | null => s.players.find((p) => p.tower === pos)?.seat ?? null;
+
 /** Una tropa puede estar en la casilla (terreno, pila de 3, sin enemigos). */
 export function canStand(s: GameState, seat: Seat, type: UnitType, pos: number, ignoreUnit?: string): boolean {
   const t = s.cells[pos]?.terrain;
   if (isCapital(pos) || !isLand(t)) return false;
   if (type === 'artilleria' && t === 'montana') return false;
+  if (towerAt(s, pos) !== null) return false; // A23: nadie entra en la casilla de un Torreón
   const here = unitsAt(s, pos).filter((u) => u.id !== ignoreUnit);
   if (here.some((u) => u.owner !== seat)) return false;
   return here.length < MAX_STACK;

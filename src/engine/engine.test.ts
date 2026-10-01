@@ -16,6 +16,7 @@ import {
   legalPlacements,
   moveTargets,
   ringSpots,
+  towerBuildSpots,
   type Action,
   type GameState,
   type Seat,
@@ -181,6 +182,67 @@ describe('Acción Militar: reclutar + activar (A21)', () => {
     s.players[0].buildings = ['cuartel'];
     s = applyAction(s, 0, { type: 'recruit', unit: 'infanteria', pos: RINGS[0][0] });
     expect(s.turn!.military!.open).toBe(false); // se cierra sola: no hay nada que activar
+  });
+});
+
+describe('Torreón (A23)', () => {
+  const ready = () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['herreria', 'ayuntamiento', 'cuartel', 'arqueria'];
+    return s;
+  };
+
+  it('se levanta junto a una tropa propia, nunca al lado de una Capital, y solo 1', () => {
+    let s = ready();
+    put(s, 0, 'infanteria', 3, 3);
+    expect(towerBuildSpots(s, 0)).toContain(idx(3, 4));
+    expect(towerBuildSpots(s, 0)).not.toContain(idx(5, 5));
+    expect(() => applyAction(s, 0, { type: 'buildTower', pos: idx(2, 1) })).toThrow(); // lado de la Capital 0
+    s = applyAction(s, 0, { type: 'buildTower', pos: idx(3, 4) });
+    expect(s.players[0].tower).toBe(idx(3, 4));
+    expect(s.players[0].resources.piedra).toBe(16);
+    expect(s.players[0].resources.madera).toBe(18);
+    expect(towerBuildSpots(s, 0)).toEqual([]); // máximo 1
+  });
+
+  it('sin Herrería y Ayuntamiento no se puede', () => {
+    const s = phase2Board();
+    put(s, 0, 'infanteria', 3, 3);
+    expect(towerBuildSpots(s, 0)).toEqual([]);
+  });
+
+  it('bloquea el paso a todas las tropas', () => {
+    const s = ready();
+    const inf = put(s, 0, 'infanteria', 3, 3);
+    s.players[0].tower = idx(3, 4);
+    const t = moveTargets(s, inf);
+    expect(t.has(idx(3, 4))).toBe(false);
+    expect(t.has(idx(3, 5))).toBe(false); // no se pasa a través
+  });
+
+  it('atacar al Torreón: 1 dado contra 2, nunca hay baja del atacante y cae si pierde', () => {
+    let s = ready();
+    s.players[1].tower = idx(3, 4);
+    const inf = put(s, 0, 'infanteria', 3, 3);
+    expect(attackTargets(s, inf).towers).toContain(idx(3, 4));
+    s = applyAction(s, 0, { type: 'attackTower', unitIds: [inf], target: idx(3, 4) });
+    const c = s.lastCombat!;
+    expect(c.attackerDice.length).toBe(1);
+    expect(c.defenderDice.length).toBe(2);
+    expect(s.units.some((u) => u.id === inf)).toBe(true);
+    if (c.result === 'attacker') expect(s.players[1].tower).toBeNull();
+    else expect(s.players[1].tower).toBe(idx(3, 4));
+  });
+
+  it('el Torreón ataca como un Arquero (alcance 2) y gasta una activación', () => {
+    let s = ready();
+    s.players[0].tower = idx(3, 4);
+    put(s, 1, 'infanteria', 3, 6);
+    s = applyAction(s, 0, { type: 'towerAttack', target: idx(3, 6) });
+    expect(s.lastCombat!.attackerTower).toBe(true);
+    expect(Object.keys(s.turn!.military!.activations)).toContain('torreon:0');
+    expect(() => applyAction(s, 0, { type: 'towerAttack', target: idx(3, 6) })).toThrow(); // una vez por turno
+    expect(s.players[0].tower).toBe(idx(3, 4)); // una Infantería no puede destruirlo
   });
 });
 

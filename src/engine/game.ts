@@ -10,6 +10,8 @@ import {
   canActivate,
   canRecruitNow,
   canAttackNow,
+  canTowerAttack,
+  towerTargets,
   canUseCivil,
   canUseMilitary,
   hasBuilding,
@@ -18,7 +20,7 @@ import {
   stepsLeft,
   unitById,
 } from './military';
-import { canStand, exchangeOptions, initialPlacements, legalPlacements, ringSpots, unitsAt } from './phase1';
+import { canStand, exchangeOptions, initialPlacements, legalPlacements, ringSpots, towerAt, unitsAt } from './phase1';
 import {
   BUILDING_COST,
   CAPITALS,
@@ -48,6 +50,14 @@ import {
   pay,
   ringOwner,
   sideCell,
+  RANGED,
+  TOWER_COST,
+  TOWER_REQUIRES,
+  MAX_TOWERS,
+  towerKey,
+  isCapital,
+  isCapitalSide,
+  orthoNeighbors,
 } from './rules';
 import { rollD6, rollDice, shuffle } from './rng';
 import type {
@@ -357,7 +367,9 @@ function maybeCloseMilitary(s: GameState) {
   if (!m || !m.open) return;
   const ids = Object.keys(m.activations);
   // Se cierra sola si ya no queda nada útil: límite de activaciones agotado (o ninguna tropa activable)
-  const canStillActivate = s.units.some((u) => u.owner === s.turn!.seat && !m.activations[u.id] && canActivate(s, u));
+  const canStillActivate =
+    s.units.some((u) => u.owner === s.turn!.seat && !m.activations[u.id] && canActivate(s, u)) ||
+    (canTowerAttack(s) && towerTargets(s, s.turn!.seat).length > 0);
   if (ids.length < activationLimit(s) && canStillActivate) return;
   if (!m.recruited && canRecruitNow(s) && ids.length <= 2) return; // aún puede reclutar
   const allDone = ids.every((id) => {
@@ -400,9 +412,14 @@ function rollCombat(s: GameState) {
     const pos = c.target.pos;
     const m = unitsAt(s, pos).filter((u) => u.type === c.defenderType).length;
     const [ba, bb, canLose] = baseDice(c.attackerType, c.defenderType!, c.distance);
-    a = ba + n - 1; // §59
+    a = (c.attackerTower ? ba : ba + n - 1); // §59
     b = bb + m - 1;
-    c.attackerCanLose = canLose;
+    // A23: el Torreón ataca como un Arquero; solo cae si le gana una tropa con alcance
+    c.attackerCanLose = c.attackerTower ? RANGED.includes(c.defenderType!) : canLose;
+  } else if (c.target.kind === 'tower') {
+    a = 1 + n - 1; // A23: 1 dado (+1 por figura agrupada) contra 2 del Torreón
+    b = 2;
+    c.attackerCanLose = false; // el Torreón nunca mata al atacante
   } else if (c.attackerType === 'artilleria') {
     a = 2 + n - 1; // §101
     b = 1;
@@ -420,14 +437,14 @@ function rollCombat(s: GameState) {
 function combatStage(s: GameState, stage: 'attacker' | 'defender' | 'resolve') {
   const c = s.combat!;
   if (stage === 'attacker') {
-    if (faithEligible(s, c.attacker)) {
+    if (!c.attackerTower && faithEligible(s, c.attacker)) {
       s.prompt = { kind: 'faith', seat: c.attacker, role: 'attacker' };
       return;
     }
     stage = 'defender';
   }
   if (stage === 'defender') {
-    // aclaración 13: la Muralla no tiene Fe
+    // aclaración 13: la Muralla no tiene Fe (ni el Torreón, A23)
     if (c.target.kind === 'troops' && faithEligible(s, c.defender)) {
       s.prompt = { kind: 'faith', seat: c.defender, role: 'defender' };
       return;
@@ -447,7 +464,7 @@ function resolveCombat(s: GameState) {
   c.result = a > b ? 'attacker' : b > a ? 'defender' : 'tie';
   const att = pname(s, c.attacker);
   const def = pname(s, c.defender);
-  const aName = `${c.attackerUnits.length} ${NAMES.unit[c.attackerType]}`;
+  const aName = c.attackerTower ? 'Torreón' : `${c.attackerUnits.length} ${NAMES.unit[c.attackerType]}`;
   let text = '';
   if (c.target.kind === 'troops') {
     const pos = c.target.pos;
@@ -459,13 +476,23 @@ function resolveCombat(s: GameState) {
       c.casualty = victim.id;
       text += `Gana el atacante: ${def} pierde 1 ${defName}.`;
     } else if (c.result === 'defender') {
-      if (c.attackerCanLose) {
+      if (c.attackerCanLose && c.attackerTower) {
+        destroyTower(s, c.attacker);
+        text += `Gana el defensor: el Torreón de ${att} queda destruido.`;
+      } else if (c.attackerCanLose) {
         const victim = c.attackerUnits.filter((id) => unitById(s, id)).at(-1)!;
         removeUnit(s, victim);
         c.casualty = victim;
         text += `Gana el defensor: ${att} pierde 1 ${NAMES.unit[c.attackerType]}.`;
       } else text += 'Gana el defensor, pero no puede causar daño al atacante.';
     } else text += 'Empate: no ocurre nada.';
+  } else if (c.target.kind === 'tower') {
+    text = `${att} (${aName}) ataca el Torreón de ${def} en ${coordLabel(c.target.pos)}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
+    if (c.result === 'attacker') {
+      destroyTower(s, c.defender);
+      text += 'Torreón destruido.';
+    } else if (c.result === 'defender') text += 'El Torreón resiste.';
+    else text += 'Empate: no ocurre nada.';
   } else {
     const { capital, side } = c.target;
     text = `${att} (${aName}) ataca la Muralla ${NAMES.side[side]} de la Capital de ${def}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
@@ -487,7 +514,7 @@ function resolveCombat(s: GameState) {
   s.lastCombat = structuredClone(c);
 
   // §63 + aclaración 10: avance de toda la formación tras vaciar la loseta en cuerpo a cuerpo.
-  if (c.target.kind === 'troops' && c.distance === 1 && c.result === 'attacker') {
+  if ((c.target.kind === 'troops' || c.target.kind === 'tower') && c.distance === 1 && c.result === 'attacker' && !c.attackerTower) {
     const to = c.target.pos;
     if (!unitsAt(s, to).length && advancers(s, c.attacker, c.from, to).length) {
       s.prompt = { kind: 'advance', seat: c.attacker, from: c.from, to };
@@ -496,6 +523,34 @@ function resolveCombat(s: GameState) {
   }
   s.combat = null;
   maybeCloseMilitary(s);
+}
+
+function destroyTower(s: GameState, seat: Seat) {
+  s.players[seat].tower = null;
+  s.players[seat].towerDestroyedTurn = s.turnNumber;
+}
+
+/** A23: casillas donde el jugador puede levantar su Torreón ahora (vacío si no puede). */
+export function towerBuildSpots(s: GameState, seat: Seat): number[] {
+  if (towerBuildBlock(s, seat)) return [];
+  const out: number[] = [];
+  for (let pos = 0; pos < s.cells.length; pos++) {
+    if (isCapital(pos) || !isLand(s.cells[pos].terrain) || isCapitalSide(pos)) continue;
+    if (unitsAt(s, pos).length || towerAt(s, pos) !== null) continue;
+    if (orthoNeighbors(pos).some((n) => unitsAt(s, n).some((u) => u.owner === seat))) out.push(pos);
+  }
+  return out;
+}
+
+/** Motivo por el que no puede levantar un Torreón (sin mirar la casilla), o null. */
+export function towerBuildBlock(s: GameState, seat: Seat): string | null {
+  const p = s.players[seat];
+  if (!TOWER_REQUIRES.every((b) => p.buildings.includes(b))) return 'Necesitas Herrería y Ayuntamiento.';
+  if (p.tower != null) return `Ya tienes ${MAX_TOWERS} Torreón.`;
+  if (p.towerDestroyedTurn != null && s.turnNumber <= p.towerDestroyedTurn + WALL_REPAIR_WAIT)
+    return 'Te lo destruyeron hace poco: podrás levantar otro en tu próximo turno.';
+  if (!canAfford(p.resources, TOWER_COST)) return 'Recursos insuficientes.';
+  return null;
 }
 
 function advancers(s: GameState, seat: Seat, from: number, to: number) {
@@ -648,6 +703,52 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       s.turn!.civilUsed = true;
       break;
     }
+    case 'buildTower': {
+      requireTurn(s, seat);
+      if (!canUseCivil(s)) fail('No te queda Acción Civil disponible.');
+      const block = towerBuildBlock(s, seat);
+      if (block) fail(block);
+      if (!towerBuildSpots(s, seat).includes(action.pos))
+        fail('El Torreón va en una loseta de tierra vacía junto a una tropa tuya, nunca al lado de una Capital.');
+      pay(p.resources, TOWER_COST);
+      p.tower = action.pos;
+      s.turn!.civilUsed = true;
+      log(s, `${p.name} levanta un Torreón en ${coordLabel(action.pos)}.`, seat);
+      break;
+    }
+    case 'towerAttack': {
+      requireTurn(s, seat);
+      if (!canTowerAttack(s)) fail('Tu Torreón no puede atacar ahora.');
+      if (!towerTargets(s, seat).includes(action.target)) fail('Objetivo fuera del alcance del Torreón.');
+      const defenders = unitsAt(s, action.target);
+      const types = [...new Set(defenders.map((u) => u.type))];
+      ensureMilitary(s).activations[towerKey(seat)] = { startTerrain: s.cells[p.tower!].terrain!, moves: 0, attacked: true, done: true };
+      s.combat = {
+        attacker: seat,
+        defender: defenders[0].owner,
+        target: { kind: 'troops', pos: action.target },
+        from: p.tower!,
+        distance: manhattan(p.tower!, action.target) as 1 | 2,
+        attackerType: 'arquero',
+        attackerTower: true,
+        attackerUnits: [],
+        defenderType: types.length === 1 ? types[0] : null,
+        attackerDice: [],
+        defenderDice: [],
+        attackerFaith: false,
+        defenderFaith: false,
+        attackerCanLose: false,
+        result: null,
+        casualty: null,
+        summary: '',
+      };
+      if (!s.combat.defenderType) {
+        s.prompt = { kind: 'defenderChoice', seat: s.combat.defender, options: types };
+        break;
+      }
+      rollCombat(s);
+      break;
+    }
     case 'recruit': {
       requireTurn(s, seat);
       if (!canRecruitNow(s)) fail('No puedes reclutar ahora.');
@@ -682,7 +783,8 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       break;
     }
     case 'attack':
-    case 'attackWall': {
+    case 'attackWall':
+    case 'attackTower': {
       requireTurn(s, seat);
       if (!Array.isArray(action.unitIds)) fail('Selecciona al menos una tropa.');
       const ids = [...new Set(action.unitIds)];
@@ -714,7 +816,18 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         casualty: null,
         summary: '',
       };
-      if (action.type === 'attack') {
+      if (action.type === 'attackTower') {
+        if (!targets.towers.includes(action.target)) fail('Ese Torreón no está a tu alcance.');
+        combat = {
+          ...base,
+          defender: towerAt(s, action.target)!,
+          target: { kind: 'tower', pos: action.target },
+          distance: manhattan(lead.pos, action.target) as 1 | 2,
+          defenderType: null,
+        };
+        s.combat = combat;
+        for (const id of ids) Object.assign(activate(s, id), { attacked: true, done: true });
+      } else if (action.type === 'attack') {
         if (!targets.troops.includes(action.target)) fail('Objetivo no legal.');
         const defenders = unitsAt(s, action.target);
         const types = [...new Set(defenders.map((u) => u.type))];

@@ -14,6 +14,10 @@ import {
   CONVERT_RATE,
   FAITH_COST,
   wallBuildCheck,
+  towerBuildSpots,
+  towerBuildBlock,
+  canTowerAttack,
+  towerTargets,
   activationLimit,
   canRecruitNow,
   activationOf,
@@ -45,7 +49,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure, coatOfArms } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
 import { call, type PublicRoom } from './socket';
@@ -56,7 +60,9 @@ type Mode =
   | { kind: 'reserve'; index: number }
   | { kind: 'exchangeTo'; from: number }
   | { kind: 'unit'; unitId: string; group: string[] }
-  | { kind: 'recruit'; unit: UnitType };
+  | { kind: 'recruit'; unit: UnitType }
+  | { kind: 'towerBuild' }
+  | { kind: 'tower' };
 
 const STEP_LABEL: Record<string, string> = {
   INITIAL_PLACEMENT: 'Losetas iniciales',
@@ -112,7 +118,8 @@ export function Game({
     if (mode.kind === 'unit' && !unitById(s, mode.unitId)) setMode({ kind: 'none' });
     if (mode.kind === 'initial' && !my.initialTiles.includes(mode.terrain)) setMode({ kind: 'none' });
     if (mode.kind === 'reserve' && !my.reserve[mode.index]) setMode({ kind: 'none' });
-    if (!myTurn && (mode.kind === 'unit' || mode.kind === 'recruit' || mode.kind === 'exchangeTo'))
+    if (mode.kind === 'tower' && my.tower == null) setMode({ kind: 'none' });
+    if (!myTurn && (mode.kind === 'unit' || mode.kind === 'recruit' || mode.kind === 'exchangeTo' || mode.kind === 'tower' || mode.kind === 'towerBuild'))
       setMode({ kind: 'none' });
   }, [room.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -152,10 +159,13 @@ export function Game({
       }
     } else if (s.phase === 'PHASE_2' && myTurn && !s.prompt && !s.combat) {
       if (mode.kind === 'recruit') mark(ringSpots(s, mySeat, mode.unit), 'legal');
+      if (mode.kind === 'towerBuild') mark(towerBuildSpots(s, mySeat), 'legal');
+      if (mode.kind === 'tower' && canTowerAttack(s)) mark(towerTargets(s, mySeat), 'attack');
       if (mode.kind === 'unit') {
         mark(moveTargets(s, mode.unitId).keys(), 'move');
         const t = attackTargets(s, mode.unitId);
         mark(t.troops, 'attack');
+        mark(t.towers, 'attack');
         for (const c of t.capitals) marks.set(capitalPos(c), 'conquer');
         wallTargets = t.walls;
       }
@@ -192,6 +202,8 @@ export function Game({
       return;
     }
     if (mode.kind === 'recruit' && m) return send({ type: 'recruit', unit: mode.unit, pos });
+    if (mode.kind === 'towerBuild' && m) return send({ type: 'buildTower', pos });
+    if (mode.kind === 'tower' && m === 'attack') return send({ type: 'towerAttack', target: pos });
     if (mode.kind === 'unit') {
       const lead = mode.unitId;
       if (m === 'move') {
@@ -203,7 +215,9 @@ export function Game({
         return runMove([lead]);
       }
       if (m === 'attack') {
-        const runAttack = (ids: string[]) => send({ type: 'attack', unitIds: ids, target: pos });
+        const isTower = s.players.some((pl) => pl.tower === pos);
+        const runAttack = (ids: string[]) =>
+          send(isTower ? { type: 'attackTower', unitIds: ids, target: pos } : { type: 'attack', unitIds: ids, target: pos });
         const others = attackCompanions(s, lead);
         if (others.length) return setGroupAsk({ kind: 'attack', lead, ids: others, run: runAttack });
         return runAttack([lead]);
@@ -222,6 +236,14 @@ export function Game({
       return setMode({ kind: 'unit', unitId: u.id, group: [] });
     }
     onCell(u.pos);
+  };
+
+  const onTower = (owner: Seat, pos: number) => {
+    if (owner === mySeat && s.phase === 'PHASE_2' && myTurn && !marks.get(pos)) {
+      if (mode.kind === 'tower') return setMode({ kind: 'none' });
+      return setMode({ kind: 'tower' });
+    }
+    onCell(pos);
   };
 
   const onWall = (capital: Seat, side: Side) => {
@@ -333,6 +355,8 @@ export function Game({
             onCell={onCell}
             onUnit={onUnit}
             onWall={onWall}
+            onTower={onTower}
+            selectedTower={mode.kind === 'tower'}
           />
           {s.phase === 'PHASE_2' && myTurn && <TurnHint state={s} mode={mode} setMode={setMode} />}
         </section>
@@ -361,6 +385,13 @@ export function Game({
             onBuild={(b) => send({ type: 'build', building: b })}
             onRecruit={(u) => setMode({ kind: 'recruit', unit: u })}
             onWalls={() => setWallsOpen(true)}
+            onTower={() => {
+              if (my.tower != null) return setMode({ kind: 'tower' });
+              const block = towerBuildBlock(s, mySeat) ?? (!canUseCivil(s) ? 'No te queda Acción Civil en este turno.' : null);
+              if (block) return setError(block);
+              if (!towerBuildSpots(s, mySeat).length) return setError('No hay losetas libres junto a tus tropas (y lejos de las Capitales).');
+              setMode({ kind: 'towerBuild' });
+            }}
             recruiting={mode.kind === 'recruit' ? mode.unit : null}
           />
           <ChatBar room={room} state={s} mySeat={mySeat} onTrade={() => setTradeOpen(true)} />
@@ -569,9 +600,30 @@ function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][num
 
 /** Aviso flotante sobre el tablero: tropa seleccionada o reclutamiento en curso. */
 function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; setMode: (m: Mode) => void }) {
-  if (mode.kind !== 'unit' && mode.kind !== 'recruit') return null;
+  if (mode.kind !== 'unit' && mode.kind !== 'recruit' && mode.kind !== 'towerBuild' && mode.kind !== 'tower') return null;
   return (
     <div className="card turn-hint">
+      {mode.kind === 'towerBuild' && (
+        <p>
+          Elige dónde levantar el Torreón: loseta vacía junto a una tropa tuya, nunca al lado de una Capital.{' '}
+          <button className="link" onClick={() => setMode({ kind: 'none' })}>
+            cancelar
+          </button>
+        </p>
+      )}
+      {mode.kind === 'tower' && (
+        <p>
+          <b>Torreón</b> seleccionado ·{' '}
+          {canTowerAttack(s)
+            ? towerTargets(s, s.turn!.seat).length
+              ? 'dispara como un Arquero (alcance 2): pulsa un objetivo en rojo. Gasta una activación.'
+              : 'no hay enemigos a su alcance.'
+            : 'ya no puede atacar en este turno.'}{' '}
+          <button className="link" onClick={() => setMode({ kind: 'none' })}>
+            cancelar
+          </button>
+        </p>
+      )}
       {mode.kind === 'unit' && <UnitPanel state={s} mode={mode} setMode={setMode} />}
       {mode.kind === 'recruit' && (
         <p>
@@ -619,6 +671,13 @@ function attackCompanions(s: GameState, leadId: string): string[] {
     if (fresh) budget--;
   }
   return out;
+}
+
+function towerTitle(s: GameState, seat: Seat, myTurn: boolean) {
+  const p = s.players[seat];
+  if (p.tower != null) return 'Tu Torreón: pulsa para dispararle con él (como un Arquero)';
+  const block = towerBuildBlock(s, seat);
+  return block ? `Torreón (4 Piedra + 2 Madera, Acción Civil): ${block}` : myTurn ? 'Levantar Torreón (4 Piedra + 2 Madera, Acción Civil)' : 'Torreón';
 }
 
 /** Barra superior: Civil y Militar en verde si aún se pueden usar este turno; apagadas si no. */
@@ -776,6 +835,7 @@ function PlayersPanel({
   onBuild,
   onRecruit,
   onWalls,
+  onTower,
   recruiting,
 }: {
   state: GameState;
@@ -784,6 +844,7 @@ function PlayersPanel({
   onBuild: (b: Building) => void;
   onRecruit: (u: UnitType) => void;
   onWalls: () => void;
+  onTower: () => void;
   recruiting: UnitType | null;
 }) {
   const [confirm, setConfirm] = useState<{ kind: 'build'; b: Building } | { kind: 'recruit'; u: UnitType } | null>(null);
@@ -943,6 +1004,20 @@ function PlayersPanel({
                   Murallas <b>{p.walls.length}</b>/4
                 </figcaption>
               </figure>
+              {mine && (
+                <figure
+                  className={`${p.tower != null ? 'on' : ''} ${myTurnNow ? 'clickable' : ''}`}
+                  title={towerTitle(s, mySeat, myTurnNow)}
+                  onClick={() => myTurnNow && onTower()}
+                >
+                  <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                    <img src={p.tower != null ? towerFigure(p.color) : TOWER_ICON} alt="Torreón" draggable={false} />
+                  </span>
+                  <figcaption>
+                    Torreón <b>{p.tower != null ? 1 : 0}</b>/1
+                  </figcaption>
+                </figure>
+              )}
             </div>
             <div className="army-figures resource-figures">
               {RESOURCES.map((r) => (
@@ -1426,7 +1501,7 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
             <span className="dot" style={{ background: PLAYER_COLORS[A.color] }} /> <b>{A.name}</b>
             <br />
             <small>
-              {c.attackerUnits.length} {NAMES.unit[c.attackerType]}
+              {c.attackerTower ? 'Torreón' : `${c.attackerUnits.length} ${NAMES.unit[c.attackerType]}`}
             </small>
           </p>
           {c.attackerDice.length > 0 ? <Dice values={c.attackerDice} big /> : <p className="muted">…</p>}
@@ -1438,7 +1513,13 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
             <span className="dot" style={{ background: PLAYER_COLORS[D.color] }} /> <b>{D.name}</b>
             <br />
             <small>
-              {c.target.kind === 'wall' ? `Muralla ${NAMES.side[c.target.side]}` : c.defenderType ? NAMES.unit[c.defenderType] : 'elige defensor…'}
+              {c.target.kind === 'wall'
+                ? `Muralla ${NAMES.side[c.target.side]}`
+                : c.target.kind === 'tower'
+                  ? 'Torreón'
+                  : c.defenderType
+                    ? NAMES.unit[c.defenderType]
+                    : 'elige defensor…'}
             </small>
           </p>
           {c.defenderDice.length > 0 ? <Dice values={c.defenderDice} big /> : <p className="muted">…</p>}
