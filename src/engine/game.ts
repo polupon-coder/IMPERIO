@@ -367,7 +367,7 @@ function checkVictory(s: GameState, seat: Seat) {
     s.step = 'END';
     s.winner = seat;
     s.prompt = null;
-    log(s, `¡${p.name} completa 8 edificios y tiene ${p.conquests.length} Conquista(s): gana IMPERIO!`, seat);
+    log(s, `¡${p.name} completa 8 edificios y tiene ${p.conquests.length} Conquista(s): gana Imperio!`, seat);
   }
 }
 

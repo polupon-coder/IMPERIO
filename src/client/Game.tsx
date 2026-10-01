@@ -260,7 +260,7 @@ export function Game({
         </Modal>
       )}
       {s.phase === 'GAME_OVER' && s.winner !== null && victoryOpen && (
-        <VictoryDialog state={s} mySeat={mySeat} onClose={() => setVictoryOpen(false)} onExit={onExit} />
+        <VictoryDialog room={room} state={s} onClose={() => setVictoryOpen(false)} onExit={onExit} />
       )}
       <main className="layout">
         <section className="board-col">
@@ -1396,22 +1396,23 @@ function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat })
 
 /** Proclama de victoria: escudo del león arriba y el rótulo «Imperio» abajo. */
 function VictoryDialog({
+  room,
   state: s,
-  mySeat,
   onClose,
   onExit,
 }: {
+  room: PublicRoom;
   state: GameState;
-  mySeat: Seat;
   onClose: () => void;
   onExit: () => void;
 }) {
   const w = s.players[s.winner!];
   const color = PLAYER_COLORS[w.color];
+  const [chatOpen, setChatOpen] = useState(false);
+  const feed = useFeed(room, s);
   return (
     <Modal title="Proclama Real" onClose={onClose} wide>
       <div className="victory">
-        <img className="victory-shield" src="/assets/ui/victoria-escudo.webp" alt="" />
         <p className="victory-line">Sea sabido por todos los reinos que</p>
         <div className="victory-name" style={{ color }}>
           <img className="coat" src={coatOfArms(w.color)} alt="" /> {w.name}
@@ -1424,12 +1425,16 @@ function VictoryDialog({
             <br />
             tablero
           </button>
+          <button className="seal small" onClick={() => setChatOpen(true)}>
+            Chat
+          </button>
           <button className="seal small" onClick={onExit}>
             Volver a la
             <br />
             portada
           </button>
         </div>
+        {chatOpen && <ChatHistory feed={feed} onClose={() => setChatOpen(false)} />}
       </div>
     </Modal>
   );
