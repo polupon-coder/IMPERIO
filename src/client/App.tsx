@@ -95,17 +95,29 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
   };
   const invited = codeFromUrl();
   const [joining, setJoining] = useState(false);
+  const [open, setOpen] = useState(false);
   const join = async () => {
     remember();
     onEnter(await call('joinRoom', { code: invited ?? code, name }));
   };
   return (
     <div className="home">
-      <div className="parchment home-sheet">
+      <div className="home-sheet home-battle">
         <img className="home-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
-        <img className="home-shield" src="/assets/ui/victoria-escudo.webp" alt="" />
+        <p className="home-credit">Un juego de Pol Lupon</p>
+        <button className="seal home-play" onClick={() => setOpen(true)}>
+          Jugar
+        </button>
+      </div>
+      {(open || !!error) && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal card home-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Jugar">
+            <button className="modal-close" onClick={() => setOpen(false)} aria-label="Cerrar" title="Cerrar">
+              ×
+            </button>
         <div className="home-form">
           <input
+            autoFocus
             className="ink-input name-input"
             value={name}
             maxLength={20}
@@ -161,8 +173,9 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
           )}
           {error && <p className="error center">{error}</p>}
         </div>
-        <p className="credit">Un juego de Pol Lupon</p>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

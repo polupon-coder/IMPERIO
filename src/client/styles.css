@@ -2404,3 +2404,49 @@ textarea {
 .players-fit > .player:not(.summary) .army-figures:not(.resource-figures) {
   grid-template-columns: repeat(7, 1fr);
 }
+
+/* Portada: la ilustración de la batalla a todo el ancho; título, autor y «Jugar» en el cielo */
+.home:has(.home-battle) {
+  padding: 0;
+  background: #ece5da url('/assets/ui/portada-batalla.webp') center bottom / 100% auto no-repeat;
+  overflow: hidden;
+}
+.home-battle {
+  justify-content: flex-start;
+  padding-top: 5vh;
+  gap: 0.6vh;
+  height: 100%;
+}
+.home-battle .home-title {
+  height: 17vh;
+}
+.home-credit {
+  margin: 0 0 1.6vh;
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #4a3420;
+}
+.home-play.seal {
+  width: 112px;
+  height: 128px;
+  padding: 8px 10px 34px;
+  font-size: 1.35rem;
+}
+/* Ventana de pergamino con el nombre y los escudos */
+.home-modal {
+  width: min(520px, 92vw);
+}
+.home-modal .home-form {
+  padding: 18px 8px 8px;
+  gap: 18px;
+}
+
+/* Mundo (sala de espera): el mismo fondo de la portada bajo el pergamino */
+.app:has(.lobby) {
+  min-height: 100vh;
+  background: #ece5da url('/assets/ui/portada-batalla.webp') center bottom / 100% auto no-repeat fixed;
+}
+.app:has(.lobby) .lobby {
+  padding-top: 4vh;
+}
