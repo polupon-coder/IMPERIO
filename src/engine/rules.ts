@@ -137,6 +137,9 @@ export const towerKey = (seat: Seat) => `torreon:${seat}`;
 /** Casillas laterales de todas las Capitales: el Torreón nunca puede levantarse en ellas. */
 export const isCapitalSide = (pos: number) => SEATS.some((c) => SIDES.some((side) => sideCell(c, side) === pos));
 
+/** §1/§120: Conquistas necesarias para ganar (1 según el reglamento; configurable para simular). */
+export const VICTORY = { conquests: 1 };
+
 /** §49–53 */
 export const UNIT_COST: Record<UnitType, Resources> = {
   infanteria: R(0, 0, 2, 1),

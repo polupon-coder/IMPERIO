@@ -33,6 +33,7 @@ import {
   canAfford,
   CONVERT_RATE,
   FAITH_COST,
+  VICTORY,
   isCapital,
   isLand,
   manhattan,
@@ -417,7 +418,7 @@ function makePlan(s: GameState, seat: Seat, level: BotLevel): Plan {
     }) ?? null;
   const army = ownUnits(s, seat).length;
   const marching =
-    p.conquests.length === 0 &&
+    p.conquests.length < VICTORY.conquests &&
     (level === 'normal' ? p.buildings.length >= 4 || army >= 9 : p.buildings.length >= 6 || army >= 12);
   const guards = new Set<string>();
   for (const { pos } of openSides(s, seat)) {

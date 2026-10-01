@@ -50,6 +50,7 @@ import {
   pay,
   ringOwner,
   sideCell,
+  VICTORY,
   RANGED,
   TOWER_COST,
   TOWER_REQUIRES,
@@ -386,7 +387,7 @@ function maybeCloseMilitary(s: GameState) {
 
 function checkVictory(s: GameState, seat: Seat) {
   const p = s.players[seat];
-  if (p.buildings.length === 8 && p.conquests.length >= 1) {
+  if (p.buildings.length === 8 && p.conquests.length >= VICTORY.conquests) {
     s.phase = 'GAME_OVER';
     s.step = 'END';
     s.winner = seat;
