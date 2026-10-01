@@ -2272,3 +2272,21 @@ textarea {
   outline: none;
   border-color: #8a6b43 !important;
 }
+
+/* Lateral: menos hueco entre el panel de jugadores y la barra del chat… */
+@media (min-width: 901px) {
+  .side > .card.players {
+    margin-bottom: 2px !important;
+    padding-bottom: 0 !important;
+  }
+}
+/* …y ese espacio se reparte en el panel propio, que respira más entre filas */
+.players-fit > .player:not(.summary) .buildings {
+  margin-bottom: 8px;
+}
+.players-fit > .player:not(.summary) .army-figures {
+  margin-top: 4px;
+}
+.players-fit > .player:not(.summary) .resource-figures {
+  margin-top: 10px;
+}

@@ -3,7 +3,8 @@
 Uso: python3 scripts/token-backgrounds.py
 Entrada: public/assets/units/<color>/<tipo>.webp (figura sobre papel)
 Salida:  public/assets/fichas/<color>/<tipo>.webp
-El papel que rodea la figura se sustituye por el color del jugador mezclado con papel.
+El papel que rodea la figura se sustituye por el color del jugador mezclado con papel, y el
+suelo pintado bajo los pies se tiñe del mismo color conservando su textura.
 Además del papel conectado con el borde, se tratan como fondo los huecos grandes y claros
 encerrados por la figura (por ejemplo, entre el arco y la cuerda del Arquero).
 """
@@ -32,6 +33,20 @@ def background_mask(a):
     return ndimage.gaussian_filter((~bg).astype(float), 1.0)
 
 
+def ground_mask(a, bg):
+    """Suelo claro (poco saturado) conectado con el fondo: la mancha de tierra bajo la figura."""
+    mx = a.max(2)
+    mn = a.min(2)
+    sat = (mx - mn) / np.maximum(mx, 1)
+    light = (mx > 120) & (sat < 0.45)
+    lab, _ = ndimage.label(light)
+    touching = set(np.unique(lab[ndimage.binary_dilation(bg, iterations=2) & light])) - {0}
+    g = np.isin(lab, list(touching)) & ~bg
+    # solo la mitad inferior: el suelo, nunca brillos de la armadura o el casco
+    g[: int(a.shape[0] * 0.55)] = False
+    return ndimage.gaussian_filter(g.astype(float), 1.2)
+
+
 for color, rgb in COLORS.items():
     os.makedirs(f'public/assets/fichas/{color}', exist_ok=True)
     rng = np.random.default_rng(sum(rgb))
@@ -39,8 +54,14 @@ for color, rgb in COLORS.items():
         im = Image.open(f'public/assets/units/{color}/{t}.webp').convert('RGB')
         a = np.array(im).astype(float)
         h, w = a.shape[:2]
-        m = background_mask(a)[..., None]
+        fig = background_mask(a)
+        m = fig[..., None]
         base = np.array(rgb, float) * MIX + PAPER * (1 - MIX)
+        # Suelo teñido: luminancia del suelo original aplicada al color base
+        g = ground_mask(a, fig < 0.5)[..., None]
+        lum = a.mean(2, keepdims=True) / PAPER.mean()
+        tinted = np.clip(base * (0.45 + 0.55 * lum), 0, 255)
+        a = a * (1 - g) + tinted * g
         wash = ndimage.gaussian_filter(rng.normal(size=(h, w)), 7)[..., None]
         wash = wash / (np.abs(wash).max() + 1e-6) * 14  # textura de acuarela sutil
         bg = np.clip(base + wash, 0, 255)
