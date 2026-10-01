@@ -112,6 +112,7 @@ Las imágenes están en `public/assets/`:
   - Las rojas son las ilustraciones del autor.
   - Las azules, amarillas y verdes se generan recoloreando las rojas con `python3 scripts/recolor-units.py`. Las fuentes son `art/tropas-rojo.webp` y, para la Infantería con espada, `art/infanteria-rojo.jpg`.
   - Para usar ilustraciones propias de cada color, sustituye esos archivos.
+- **Fichas:** `fichas/<color>/<tipo>.webp` son las figuras de `units/` con el papel sustituido por una acuarela suave del color del jugador (`python3 scripts/token-backgrounds.py`).
 - **Iconos de los paneles:** siluetas en `units/<tipo>.svg`.
 
-Para usar archivos PNG u otros nombres, cambia las rutas en `src/client/assets.ts`. Las losetas se recortan en cuadrado (`object-fit: cover`). Las tropas se muestran en fichas circulares con el fondo de papel original y un borde del color del jugador.
+Para usar archivos PNG u otros nombres, cambia las rutas en `src/client/assets.ts`. Las losetas se recortan en cuadrado (`object-fit: cover`). Las tropas se muestran en fichas circulares con fondo y borde del color del jugador.

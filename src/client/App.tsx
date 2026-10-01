@@ -154,7 +154,6 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
                 <br />
                 partida
               </button>
-              <span className="home-or">o</span>
               <button className="seal" disabled={!name.trim()} onClick={() => setJoining(true)}>
                 Unirse
               </button>

@@ -2228,3 +2228,47 @@ textarea {
 .seal::after {
   display: none;
 }
+
+/* Portada: la línea bajo el nombre (y el código) es el separador ornamental */
+.home-form .ink-input {
+  border-bottom: none !important;
+  padding-bottom: 16px !important;
+  background: url('/assets/ui/separador-linea.webp') center bottom / 100% auto no-repeat !important;
+}
+.home-actions {
+  gap: 34px;
+}
+
+/* Historial del chat: fondo más velado, sin blanco intenso */
+.chat-history {
+  background: rgba(236, 222, 190, 0.35) !important;
+}
+.chat-modal-input input,
+.chat-line {
+  background: rgba(236, 222, 190, 0.35) !important;
+}
+
+/* Proclama con más aire */
+.victory {
+  padding: 18px 24px 14px;
+}
+.victory-line {
+  margin: 10px 0;
+}
+.victory-name {
+  margin: 6px 0;
+}
+.victory-title {
+  margin: 22px auto 30px;
+}
+.victory-actions {
+  gap: 48px;
+  margin-bottom: 6px;
+}
+.chat-modal-input input {
+  border: 1px solid #b59a6e !important;
+}
+.chat-modal-input input:focus {
+  outline: none;
+  border-color: #8a6b43 !important;
+}
