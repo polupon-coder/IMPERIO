@@ -442,22 +442,20 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
     );
   }
   if (pr.kind === 'trade') return null; // se muestra en el panel flotante OfferDialog
+  if (pr.kind !== 'library') return null;
+  // Ventana flotante: al elegir el recurso, el aviso desaparece solo.
   return (
-    <div className="card prompt">
-      {pr.kind === 'library' && (
-        <>
-          <h3>Biblioteca</h3>
-          <p>Elige 1 recurso cualquiera.</p>
-          <div className="row">
-            {RESOURCES.map((r) => (
-              <button key={r} onClick={() => send({ type: 'libraryChoice', resource: r })}>
-                {NAMES.resource[r]}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <Modal title="Biblioteca" onClose={() => {}} noClose>
+      <p>Tu Biblioteca te da 1 recurso. ¿Cuál quieres?</p>
+      <div className="reward-options">
+        {RESOURCES.map((r) => (
+          <button key={r} onClick={() => send({ type: 'libraryChoice', resource: r })}>
+            <img className="res-big" src={resourceIcon(r)} alt="" draggable={false} />
+            <span>{NAMES.resource[r]}</span>
+          </button>
+        ))}
+      </div>
+    </Modal>
   );
 }
 
