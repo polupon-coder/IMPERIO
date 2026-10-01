@@ -2703,10 +2703,29 @@ textarea {
     padding: 3px 10px;
   }
   .add-bot {
-    flex-wrap: wrap;
-    gap: 4px 6px;
+    flex-wrap: nowrap;
+    gap: 5px;
   }
   .add-bot button {
     padding: 2px 8px;
+  }
+}
+@media (max-width: 380px) {
+  /* Móviles estrechos (o con letra grande): todo en una fila sin salirse */
+  .lobby .seat,
+  .lobby-sheet .seat {
+    gap: 6px;
+    padding: 8px 6px;
+  }
+  .lobby .seat-coat {
+    width: 44px;
+    height: 44px;
+  }
+  .add-bot {
+    gap: 4px;
+    font-size: 0.9rem;
+  }
+  .add-bot button {
+    padding: 2px 6px;
   }
 }

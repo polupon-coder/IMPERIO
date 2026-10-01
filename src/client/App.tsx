@@ -245,7 +245,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                         {me.seat !== seat && <button onClick={() => update({ seat })}>Ocupar esta Capital</button>}
                         {isHost && (
                           <span className="add-bot">
-                            Sistema:
+                            COM:
                             <button onClick={() => botCall('addBot', { seat, level: 'facil' })}>fácil</button>
                             <button onClick={() => botCall('addBot', { seat, level: 'normal' })}>normal</button>
                           </span>
