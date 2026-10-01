@@ -2731,35 +2731,48 @@ textarea {
   }
 }
 
-/* ---------- Tropas como símbolos sencillos (móvil) ---------- */
+/* ---------- Tropas como símbolos sencillos en el tablero y en el panel lateral ---------- */
 .icon-alt {
   display: none !important;
 }
+.token > img:not(.icon-alt) {
+  display: none !important;
+}
+.token .icon-alt {
+  display: block !important;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 13%;
+  box-sizing: border-box;
+}
+/* Panel lateral: las mismas fichas con símbolo (las ventanas de elegir conservan las ilustraciones) */
+.mini-token > img:not(.icon-alt):has(+ .icon-alt) {
+  display: none !important;
+}
+.mini-token .icon-alt {
+  display: block !important;
+  width: 100%;
+  height: 100%;
+  padding: 6%;
+  box-sizing: border-box;
+  object-fit: contain;
+}
+.mini-token:has(.icon-alt) {
+  background: color-mix(in srgb, var(--owner) 30%, #f4ebdc);
+}
+/* Fondo con el color suave del jugador, como las fichas ilustradas */
+.token {
+  background: color-mix(in srgb, var(--owner) 30%, #f4ebdc);
+}
+.token.locked .icon-alt {
+  opacity: 0.45;
+}
 @media (max-width: 900px) {
-  .token > img:not(.icon-alt),
-  .mini-token > img:not(.icon-alt):has(+ .icon-alt) {
-    display: none !important;
-  }
-  .token .icon-alt,
-  .mini-token .icon-alt {
-    display: block !important;
-    width: 100%;
-    height: 100%;
-    padding: 6%;
-    box-sizing: border-box;
-    object-fit: contain;
-  }
+  /* Móvil: mismo tamaño de símbolo que antes */
   .token .icon-alt {
     padding: 0;
     transform: scale(1.35);
-  }
-  /* Fondo con el color suave del jugador, como las fichas ilustradas */
-  .token,
-  .mini-token:has(.icon-alt) {
-    background: color-mix(in srgb, var(--owner) 30%, #f4ebdc);
-  }
-  .token.locked .icon-alt {
-    opacity: 0.45;
   }
   /* Losetas iniciales: 2 filas de 2 a todo el ancho */
   .tile-choices {
