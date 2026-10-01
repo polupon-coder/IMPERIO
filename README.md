@@ -11,8 +11,19 @@ en tiempo real y el servidor aplica automáticamente todas las reglas.
 1. Un jugador entra en la web, escribe su nombre y pulsa **Crear partida**.
 2. Comparte el enlace (`…/?sala=CÓDIGO`) o el código de 5 letras.
 3. Cada jugador elige su Capital (Noroeste, Noreste, Sureste o Suroeste) y su color, y pulsa **Estoy preparado**.
-4. Cuando están los 4 preparados, el anfitrión pulsa **Iniciar partida**.
-5. Si alguien cierra el navegador, al volver a abrir el enlace entra automáticamente en su sitio. La sesión se guarda en el navegador y la partida en el servidor.
+4. Las Capitales vacías se pueden completar con **jugadores máquina** (nivel fácil o normal): el anfitrión pulsa *Máquina: fácil / normal* en el trono vacante. Así se puede jugar 1 contra 3, 2 contra 2, etc.
+5. Cuando están los 4 preparados, el anfitrión pulsa **Iniciar partida**.
+6. Si alguien cierra el navegador, al volver a abrir el enlace entra automáticamente en su sitio. La sesión se guarda en el navegador y la partida en el servidor.
+7. Si un jugador se desconecta, el anfitrión puede pulsar **ceder a la máquina** junto a su nombre: la máquina juega por él hasta que vuelve, y entonces recupera su sitio.
+
+### Jugadores máquina
+
+Juegan en el servidor con las mismas reglas y solo con acciones legales; nunca ven los dados por adelantado (calculan probabilidades). Hacen una acción por segundo para que se vea lo que hacen (`BOT_DELAY_MS` lo cambia).
+
+- **Normal:** construye siguiendo un plan (Mercado, Ayuntamiento, Biblioteca…), usa el Mercado para completar costes, custodia los lados abiertos de su Capital, ataca cuando los dados le favorecen, desgasta a distancia con Arqueros y Artillería y marcha sobre la Capital rival más débil.
+- **Fácil:** el mismo criterio con errores y menos agresividad.
+
+En simulación, una máquina normal gana el 70 % de las partidas contra tres fáciles, y una fácil el 80 % contra tres jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`).
 
 Durante la partida, el tablero resalta siempre lo que es legal:
 
@@ -64,6 +75,7 @@ npm test             # tests del motor de reglas
 npm run typecheck
 npx tsx scripts/simulate-phase1.ts 1 500   # simula Fases I aleatorias y busca bloqueos
 npx tsx scripts/simulate-games.ts 1 100    # partidas completas aleatorias: errores, bloqueos y estados ilegales
+npx tsx scripts/simulate-bots.ts 20 normal,facil,azar,azar   # partidas entre jugadores máquina
 ```
 
 Para producción, `npm run build` genera `dist/client` y `npm start` sirve la web y el WebSocket en `PORT` (3001 por defecto). Las partidas se guardan como JSON en `data/rooms/`; `DATA_DIR` permite cambiar esa ruta. Hace falta un alojamiento con disco persistente y WebSockets, por ejemplo Render, Railway o Fly.io.
@@ -76,6 +88,7 @@ src/engine/   Motor de reglas puro (TypeScript, sin red): estado, validación, c
   phase1.ts     colocación de losetas, conectividad, reserva de Agua, intercambio de emergencia
   military.ts   movimiento, objetivos de ataque, línea de tiro, dados base
   game.ts       createGame / applyAction: la máquina de estados completa
+  ai.ts         jugadores máquina (niveles fácil y normal)
 src/server/   Express + Socket.IO: salas, lobby, persistencia y reconexión. Es la única autoridad.
 src/client/   React: inicio, lobby, tablero y panel de acciones. Usa el mismo motor para resaltar lo legal.
 public/assets Ilustraciones (provisionales).

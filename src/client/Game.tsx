@@ -488,6 +488,25 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
   );
 }
 
+/** Máquina, desconectado y, para el anfitrión, ceder a la máquina el sitio de un desconectado. */
+function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; mySeat: Seat }) {
+  if (!lobby) return null;
+  if (lobby.bot) return <span className="bot-tag" title={`Juega la máquina (${lobby.bot === 'facil' ? 'fácil' : 'normal'})`}>máquina</span>;
+  if (lobby.online) return null;
+  const me = room.players.find((x) => x.seat === mySeat);
+  const host = me && me.id === room.hostId && room.game?.phase !== 'GAME_OVER';
+  return (
+    <>
+      <span className="offline">desconectado</span>
+      {host && (
+        <button className="link takeover" title="La máquina jugará por este jugador hasta que vuelva" onClick={() => call('takeover', { playerId: lobby.id, level: 'normal' })}>
+          ceder a la máquina
+        </button>
+      )}
+    </>
+  );
+}
+
 /** Aviso flotante sobre el tablero: tropa seleccionada o reclutamiento en curso. */
 function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; setMode: (m: Mode) => void }) {
   if (mode.kind !== 'unit' && mode.kind !== 'recruit') return null;
@@ -690,7 +709,7 @@ function PlayersPanel({
               <div className="player-head">
                 <img className="coat" src={coatOfArms(p.color)} alt="" />
                 <b>{p.name}</b>
-                {lobby && !lobby.online && <span className="offline">desconectado</span>}
+                <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
                 <span className="conquests" title="Conquistas">
                   ⚑ {p.conquests.length}
                 </span>
@@ -734,7 +753,7 @@ function PlayersPanel({
               <img className="coat coat-big" src={coatOfArms(p.color)} alt="" />
               <b>{p.name}</b>
               {seat === mySeat && <em> (tú)</em>}
-              {lobby && !lobby.online && <span className="offline">desconectado</span>}
+              <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
               <span className="conquests" title="Conquistas">
                 ⚑ {p.conquests.length}
               </span>

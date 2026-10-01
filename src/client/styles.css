@@ -2290,3 +2290,37 @@ textarea {
 .players-fit > .player:not(.summary) .resource-figures {
   margin-top: 10px;
 }
+
+/* Jugadores máquina */
+.seat-free-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.add-bot {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: #6e4b22;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.add-bot button {
+  padding: 2px 10px;
+  font-style: normal;
+}
+.bot-tag {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 0.8em;
+  color: #6e4b22;
+  border: 1px solid #b59a6e;
+  border-radius: 8px;
+  padding: 0 6px;
+  margin-left: 6px;
+}
+.takeover {
+  font-size: 0.8em;
+  margin-left: 6px;
+}

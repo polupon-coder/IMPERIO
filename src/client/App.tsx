@@ -179,6 +179,10 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
     setError(r.ok ? '' : r.error ?? '');
   };
   const isHost = me.id === room.hostId;
+  const botCall = async (event: string, data: object) => {
+    const r = await call(event, data);
+    setError(r.ok ? '' : r.error ?? '');
+  };
   const allReady = room.players.length === 4 && room.players.every((p) => p.ready);
 
   return (
@@ -203,7 +207,20 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                   <div className="sc seat-label">
                     Capital {SEAT_LABEL[seat]} <small>{coordLabel(CAPITALS[seat])}</small>
                   </div>
-                  {p ? (
+                  {p?.bot ? (
+                    <>
+                      <div className="seat-name">{p.name}</div>
+                      <div className="seat-meta">
+                        <em>máquina · {p.bot === 'facil' ? 'fácil' : 'normal'}</em>
+                      </div>
+                      <div className="ok">✔ Preparado</div>
+                      {isHost && (
+                        <button className="link" onClick={() => botCall('removeBot', { playerId: p.id })}>
+                          Quitar máquina
+                        </button>
+                      )}
+                    </>
+                  ) : p ? (
                     <>
                       <div className="seat-name">{p.name}</div>
                       <div className="seat-meta">
@@ -215,9 +232,16 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                   ) : (
                     <>
                       <div className="seat-name muted">Trono vacante</div>
-                      {me.seat !== seat && (
-                        <button onClick={() => update({ seat })}>Ocupar esta Capital</button>
-                      )}
+                      <div className="seat-free-actions">
+                        {me.seat !== seat && <button onClick={() => update({ seat })}>Ocupar esta Capital</button>}
+                        {isHost && (
+                          <span className="add-bot">
+                            Máquina:
+                            <button onClick={() => botCall('addBot', { seat, level: 'facil' })}>fácil</button>
+                            <button onClick={() => botCall('addBot', { seat, level: 'normal' })}>normal</button>
+                          </span>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -259,7 +283,9 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
         </div>
         <p className="muted center">
           {room.players.length}/4 jugadores.{' '}
-          {isHost ? 'Podrás iniciar la partida cuando los 4 estén preparados.' : 'El anfitrión iniciará la partida.'}{' '}
+          {isHost
+            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con máquinas.'
+            : 'El anfitrión iniciará la partida.'}{' '}
           <button
             className="link"
             onClick={async () => {

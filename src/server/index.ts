@@ -6,7 +6,14 @@ import { join } from 'node:path';
 import { Server, type Socket } from 'socket.io';
 import {
   act,
+  addBot,
   addChat,
+  allRooms,
+  botStep,
+  pendingBot,
+  releaseTakeover,
+  removeBot,
+  takeover,
   createRoom,
   getRoom,
   joinRoom,
@@ -38,6 +45,30 @@ const onlineSet = (code: string) => new Set([...(online.get(code) ?? new Map()).
 
 function broadcast(room: Room) {
   io.to(room.code).emit('room', publicRoom(room, onlineSet(room.code)));
+  scheduleBots(room);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Jugadores máquina: actúan solos, con una pausa para que se vea lo que hacen
+// ---------------------------------------------------------------------------------------------
+const BOT_DELAY = Number(process.env.BOT_DELAY_MS ?? 1000);
+const botTimers = new Map<string, NodeJS.Timeout>();
+
+function scheduleBots(room: Room) {
+  if (botTimers.has(room.code) || !pendingBot(room)) return;
+  const phase1 = room.game?.phase === 'PHASE_1';
+  const delay = phase1 ? BOT_DELAY * 0.6 : room.game?.prompt ? BOT_DELAY * 0.7 : BOT_DELAY;
+  const timer = setTimeout(() => {
+    botTimers.delete(room.code);
+    if (!allRooms().includes(room)) return; // Mundo borrado entretanto
+    try {
+      if (botStep(room)) broadcast(room);
+    } catch (e) {
+      console.error('Error de la máquina', e);
+    }
+  }, delay);
+  timer.unref();
+  botTimers.set(room.code, timer);
 }
 
 type Ack = (res: { ok: boolean; error?: string; [k: string]: unknown }) => void;
@@ -95,6 +126,7 @@ io.on('connection', (socket: Socket) => {
   const attach = (room: Room, token: string) => {
     detach();
     const p = playerByToken(room, token);
+    if (p.takeover) releaseTakeover(room, token); // el humano recupera su sitio
     session = { code: room.code, token, id: p.id };
     socket.join(room.code);
     const m = online.get(room.code) ?? new Map<number, number>();
@@ -163,6 +195,30 @@ io.on('connection', (socket: Socket) => {
     }),
   );
 
+  socket.on('addBot', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      addBot(room, token, data?.seat, data?.level);
+      broadcast(room);
+    }),
+  );
+
+  socket.on('removeBot', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      removeBot(room, token, Number(data?.playerId));
+      broadcast(room);
+    }),
+  );
+
+  socket.on('takeover', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      takeover(room, token, Number(data?.playerId), data?.level, onlineSet(room.code));
+      broadcast(room);
+    }),
+  );
+
   socket.on('leave', (_d, ack) =>
     handle(ack, () => {
       const { room, token } = current();
@@ -201,6 +257,8 @@ io.on('connection', (socket: Socket) => {
 });
 
 const n = loadRooms();
+// Las partidas con máquinas continúan solas tras un reinicio del servidor
+for (const room of allRooms()) scheduleBots(room);
 const purged = purgeOldRooms();
 if (purged) console.log(`${purged} Mundos antiguos borrados`);
 setInterval(() => {

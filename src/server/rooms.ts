@@ -2,7 +2,8 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { applyAction, createGame, RuleError, type Action, type Color, type GameState, type Seat } from '../engine';
+import { applyAction, chooseAction, createGame, pendingSeats, RuleError, type Action, type BotLevel, type Color, type GameState, type Seat } from '../engine';
+import { phase2Candidates } from '../engine/sim';
 
 export interface LobbyPlayer {
   id: number;
@@ -11,6 +12,10 @@ export interface LobbyPlayer {
   seat: Seat | null;
   color: Color | null;
   ready: boolean;
+  /** Jugador máquina (o humano cuyo sitio se ha cedido a la máquina). */
+  bot?: BotLevel | null;
+  /** Sitio de un humano cedido a la máquina: lo recupera al volver. */
+  takeover?: boolean;
 }
 
 export interface Room {
@@ -165,7 +170,8 @@ export function leaveLobby(room: Room, token: string) {
   if (room.game) return;
   const p = playerByToken(room, token);
   room.players = room.players.filter((x) => x !== p);
-  if (room.hostId === p.id && room.players.length) room.hostId = room.players[0].id;
+  const human = room.players.find((x) => !x.bot);
+  if (room.hostId === p.id && human) room.hostId = human.id;
   save(room);
 }
 
@@ -218,9 +224,113 @@ export function publicRoom(room: Room, online: Set<number>) {
       color: p.color,
       ready: p.ready,
       online: online.has(p.id),
+      bot: p.bot ?? null,
     })),
     game,
     chat: room.chat ?? [],
   };
 }
 export type PublicRoom = ReturnType<typeof publicRoom>;
+
+// ---------------------------------------------------------------------------------------------
+// Jugadores máquina
+// ---------------------------------------------------------------------------------------------
+
+const BOT_NAMES = ['Sir Aldric', 'Doña Urraca', 'Don Rodrigo', 'Lady Isolda', 'Sir Godofredo', 'Doña Jimena', 'Don Pelayo', 'Lady Brunilda'];
+
+function requireHost(room: Room, token: string) {
+  const p = playerByToken(room, token);
+  if (p.id !== room.hostId) throw new RoomError('Solo quien creó el Mundo puede hacerlo.');
+  return p;
+}
+
+export function addBot(room: Room, token: string, seat: Seat, level: BotLevel) {
+  requireHost(room, token);
+  if (room.game) throw new RoomError('La partida ya ha empezado.');
+  if (![0, 1, 2, 3].includes(seat)) throw new RoomError('Capital no válida.');
+  if (level !== 'facil' && level !== 'normal') throw new RoomError('Nivel no válido.');
+  if (room.players.some((p) => p.seat === seat)) throw new RoomError('Esa Capital ya está ocupada.');
+  if (room.players.length >= 4) throw new RoomError('El Mundo está completo (4 jugadores).');
+  const used = new Set(room.players.map((p) => p.name));
+  const name = BOT_NAMES.find((n) => !used.has(n)) ?? `Máquina ${seat + 1}`;
+  room.players.push({
+    id: room.players.reduce((m, x) => Math.max(m, x.id), -1) + 1,
+    token: randomBytes(16).toString('hex'),
+    name,
+    seat,
+    color: SEAT_COLOR[seat],
+    ready: true,
+    bot: level,
+  });
+  save(room);
+}
+
+export function removeBot(room: Room, token: string, playerId: number) {
+  requireHost(room, token);
+  if (room.game) throw new RoomError('La partida ya ha empezado.');
+  const p = room.players.find((x) => x.id === playerId);
+  if (!p?.bot) throw new RoomError('Ese jugador no es una máquina.');
+  room.players = room.players.filter((x) => x !== p);
+  save(room);
+}
+
+/** El anfitrión cede a la máquina el sitio de un jugador desconectado (lo recupera al volver). */
+export function takeover(room: Room, token: string, playerId: number, level: BotLevel, online: Set<number>) {
+  requireHost(room, token);
+  if (!room.game) throw new RoomError('La partida no ha empezado.');
+  const p = room.players.find((x) => x.id === playerId);
+  if (!p) throw new RoomError('Jugador desconocido.');
+  if (p.bot) throw new RoomError('Ese sitio ya lo juega la máquina.');
+  if (online.has(p.id)) throw new RoomError('Ese jugador está conectado.');
+  p.bot = level === 'facil' ? 'facil' : 'normal';
+  p.takeover = true;
+  save(room);
+}
+
+/** Al volver, el humano recupera su sitio. Devuelve true si estaba cedido. */
+export function releaseTakeover(room: Room, token: string) {
+  const p = playerByToken(room, token);
+  if (!p.takeover) return false;
+  p.bot = null;
+  p.takeover = false;
+  save(room);
+  return true;
+}
+
+/** Máquina que debe actuar ahora (si la hay). */
+export function pendingBot(room: Room) {
+  const g = room.game;
+  if (!g || g.phase === 'GAME_OVER') return null;
+  const seats = pendingSeats(g);
+  return room.players.find((p) => p.bot && p.seat !== null && seats.includes(p.seat)) ?? null;
+}
+
+/**
+ * Hace que la máquina pendiente realice una acción. Si su elección fuese rechazada, prueba una
+ * acción legal cualquiera y, en último caso, termina el turno, para que la partida nunca se pare.
+ */
+export function botStep(room: Room) {
+  const bot = pendingBot(room);
+  if (!bot || !room.game) return false;
+  const g = room.game;
+  const seat = bot.seat!;
+  const tries: Action[] = [];
+  const choice = chooseAction(g, seat, bot.bot!);
+  if (choice) tries.push(choice);
+  if (g.phase === 'PHASE_2') {
+    const cands = phase2Candidates(g, Math.random).filter((c) => c.seat === seat).map((c) => c.action);
+    tries.push(...cands.sort(() => Math.random() - 0.5).slice(0, 5));
+    tries.push({ type: 'endTurn' });
+  }
+  for (const a of tries) {
+    try {
+      act(room, bot.token, a);
+      return true;
+    } catch (e) {
+      console.error(`Máquina ${bot.name} en ${room.code}:`, (e as Error).message, JSON.stringify(a));
+    }
+  }
+  return false;
+}
+
+export const allRooms = () => [...rooms.values()];

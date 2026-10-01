@@ -13,6 +13,9 @@ import {
   UNIT_TYPES,
   applyAction,
   attackTargets,
+  chooseAction,
+  pendingSeats,
+  type BotLevel,
   canActivate,
   canAfford,
   canUseCivil,
@@ -252,4 +255,83 @@ export function playGame(seed: number, maxTurns = 600): GameReport {
     }
   }
   return { state: s, actions, turns: s.turnNumber, problems };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Partidas entre jugadores máquina
+// ---------------------------------------------------------------------------------------------
+
+export type SimPlayer = BotLevel | 'azar';
+
+export interface BotReport {
+  state: GameState;
+  turns: number;
+  winner: Seat | null;
+  problems: string[];
+}
+
+/** Juega una partida completa (Fase I incluida) con un tipo de jugador por asiento. */
+export function playBots(seed: number, players: SimPlayer[], maxTurns = 800): BotReport {
+  const r = lcg(seed * 104729 + 7);
+  let s = createGame(TEST_PLAYERS, seed);
+  const problems: string[] = [];
+  let guard = 0;
+  while (s.phase !== 'GAME_OVER' && s.turnNumber <= maxTurns) {
+    if (++guard > 200000) {
+      problems.push('demasiadas acciones');
+      break;
+    }
+    const seats = pendingSeats(s);
+    if (!seats.length) {
+      problems.push(`nadie puede actuar en ${s.phase}/${s.step}`);
+      break;
+    }
+    const seat = seats[Math.floor(r() * seats.length)];
+    const kind = players[seat];
+    let action: Action | null;
+    if (kind === 'azar') {
+      if (s.phase === 'PHASE_1') {
+        const next = resolveQueue(s, seat, r) ?? phase1Random(s, seat, r);
+        if (!next) {
+          problems.push('azar sin acción en Fase I');
+          break;
+        }
+        s = next;
+        continue;
+      }
+      action = weightedPick(r, phase2Candidates(s, r)).action;
+    } else action = chooseAction(s, seat, kind, r);
+    if (!action) {
+      problems.push(`máquina ${kind} sin acción con decisión pendiente (${s.phase}/${s.step}, prompt ${s.prompt?.kind})`);
+      break;
+    }
+    try {
+      s = applyAction(s, seat, action);
+    } catch (e) {
+      problems.push(`turno ${s.turnNumber}: ${kind} propone ${JSON.stringify(action)} y el motor lo rechaza: ${(e as Error).message}`);
+      break;
+    }
+    const bad = checkInvariants(s);
+    if (bad.length) {
+      problems.push(...bad);
+      break;
+    }
+  }
+  return { state: s, turns: s.turnNumber, winner: s.winner, problems };
+}
+
+function phase1Random(s: GameState, seat: Seat, r: () => number): GameState | null {
+  const p = s.players[seat];
+  const ri = p.reserve.findIndex((t) => ringSpots(s, seat, t).length);
+  if (ri >= 0) return applyAction(s, seat, { type: 'deployReserve', index: ri, pos: pick(r, ringSpots(s, seat, p.reserve[ri])) });
+  if (s.step === 'INITIAL_PLACEMENT' && p.initialTiles.length) {
+    const t = pick(r, p.initialTiles);
+    return applyAction(s, seat, { type: 'placeInitial', terrain: t, pos: pick(r, initialPlacements(s, seat, t)) });
+  }
+  if (s.step === 'PILE_PLACEMENT') return applyAction(s, seat, { type: 'placeTile', pos: pick(r, legalPlacements(s, seat, s.pile[0])) });
+  if (s.step === 'EXCHANGE') {
+    const o = pick(r, exchangeOptions(s, seat, s.exchangeTile!));
+    return applyAction(s, seat, { type: 'exchange', from: o.from, to: o.to });
+  }
+  return null;
 }
