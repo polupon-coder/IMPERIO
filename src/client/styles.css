@@ -2450,3 +2450,13 @@ textarea {
 .app:has(.lobby) .lobby {
   padding-top: 4vh;
 }
+/* «Jugar» abajo, sobre la paja de la ilustración */
+.home-battle .home-play {
+  position: absolute;
+  left: 50%;
+  bottom: 9vh;
+  transform: translateX(-50%);
+}
+.home-battle .home-play:hover:not(:disabled) {
+  transform: translateX(-50%) scale(1.05);
+}
