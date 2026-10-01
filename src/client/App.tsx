@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CAPITALS, SEAT_LABEL, coordLabel, type Color, type Seat } from '../engine';
+import { SEAT_LABEL, type Color, type Seat } from '../engine';
 import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
@@ -208,7 +208,6 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
             {copied ? 'Copiado' : 'Copiar enlace'}
           </button>
         </div>
-        <div className="ornament" />
         <div className="seats">
           {SEAT_ORDER.map((seat) => {
             const p = room.players.find((x) => x.seat === seat);
@@ -218,18 +217,18 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                 <img className="seat-coat" src={coatOfArms(color)} alt="" />
                 <div className="seat-info">
                   <div className="sc seat-label">
-                    Capital {SEAT_LABEL[seat]} <small>{coordLabel(CAPITALS[seat])}</small>
+                    Capital {SEAT_LABEL[seat]}
                   </div>
                   {p?.bot ? (
                     <>
                       <div className="seat-name">{p.name}</div>
                       <div className="seat-meta">
-                        <em>máquina · {p.bot === 'facil' ? 'fácil' : 'normal'}</em>
+                        <em>sistema · {p.bot === 'facil' ? 'fácil' : 'normal'}</em>
                       </div>
                       <div className="ok">✔ Preparado</div>
                       {isHost && (
                         <button className="link" onClick={() => botCall('removeBot', { playerId: p.id })}>
-                          Quitar máquina
+                          Quitar sistema
                         </button>
                       )}
                     </>
@@ -249,7 +248,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                         {me.seat !== seat && <button onClick={() => update({ seat })}>Ocupar esta Capital</button>}
                         {isHost && (
                           <span className="add-bot">
-                            Máquina:
+                            Sistema:
                             <button onClick={() => botCall('addBot', { seat, level: 'facil' })}>fácil</button>
                             <button onClick={() => botCall('addBot', { seat, level: 'normal' })}>normal</button>
                           </span>
@@ -262,7 +261,6 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
             );
           })}
         </div>
-        <div className="ornament" />
         <div className="row lobby-actions">
           <button
             className={`seal ${me.ready ? 'dim' : 'green'}`}
@@ -301,7 +299,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
         <p className="muted center">
           {room.players.length}/4 jugadores.{' '}
           {isHost
-            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con máquinas.'
+            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con el sistema.'
             : 'El anfitrión iniciará la partida.'}{' '}
           <button
             className="link"

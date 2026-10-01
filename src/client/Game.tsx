@@ -583,7 +583,7 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
 /** Máquina, desconectado y, para el anfitrión, ceder a la máquina el sitio de un desconectado. */
 function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; mySeat: Seat }) {
   if (!lobby) return null;
-  if (lobby.bot) return <span className="bot-tag" title={`Juega la máquina (${lobby.bot === 'facil' ? 'fácil' : 'normal'})`}>máquina</span>;
+  if (lobby.bot) return <span className="bot-tag" title={`Juega el sistema (${lobby.bot === 'facil' ? 'fácil' : 'normal'})`}>sistema</span>;
   if (lobby.online) return null;
   const me = room.players.find((x) => x.seat === mySeat);
   const host = me && me.id === room.hostId && room.game?.phase !== 'GAME_OVER';
@@ -591,8 +591,8 @@ function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][num
     <>
       <span className="offline">desconectado</span>
       {host && (
-        <button className="link takeover" title="La máquina jugará por este jugador hasta que vuelva" onClick={() => call('takeover', { playerId: lobby.id, level: 'normal' })}>
-          ceder a la máquina
+        <button className="link takeover" title="El sistema jugará por este jugador hasta que vuelva" onClick={() => call('takeover', { playerId: lobby.id, level: 'normal' })}>
+          ceder al sistema
         </button>
       )}
     </>
