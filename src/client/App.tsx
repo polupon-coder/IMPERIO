@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SEAT_LABEL, type Color, type Seat } from '../engine';
+import { type Color, type Seat } from '../engine';
 import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
@@ -216,9 +216,6 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
               <div key={seat} className={`seat ${p ? 'taken' : 'free'}`} style={{ ['--owner' as string]: PLAYER_COLORS[color] }}>
                 <img className="seat-coat" src={coatOfArms(color)} alt="" />
                 <div className="seat-info">
-                  <div className="sc seat-label">
-                    Capital {SEAT_LABEL[seat]}
-                  </div>
                   {p?.bot ? (
                     <>
                       <div className="seat-name">{p.name}</div>

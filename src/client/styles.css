@@ -2460,3 +2460,26 @@ textarea {
 .home-battle .home-play:hover:not(:disabled) {
   transform: translateX(-50%) scale(1.05);
 }
+
+/* Mundo: más aire entre título, enlace, Capitales y escudos */
+.lobby-sheet {
+  padding-top: 26px !important;
+  padding-bottom: 22px !important;
+}
+.lobby-sheet .lobby-title {
+  margin: 0 0 22px;
+}
+.lobby-sheet .share {
+  margin-bottom: 30px;
+}
+.lobby-sheet .seats {
+  gap: 18px;
+  margin-bottom: 34px;
+}
+.lobby-sheet .seat {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.lobby-sheet .lobby-actions {
+  margin-bottom: 26px;
+}
