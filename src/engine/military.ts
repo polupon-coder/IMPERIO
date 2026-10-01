@@ -52,12 +52,29 @@ export function canUseCivil(s: GameState): boolean {
   return hasBuilding(s, t.seat, 'ayuntamiento') || !t.militaryUsed;
 }
 
-/** §57: hasta 3 figuras distintas por Acción Militar. */
+/** §57 y A21: hasta 3 figuras por Acción Militar, o 2 si en ella se ha reclutado. */
+export const activationLimit = (s: GameState) => (s.turn?.military?.recruited ? 2 : 3);
+
+/**
+ * A21: solo se activan (mover/atacar) tropas activas, es decir, con su edificio construido.
+ * La tropa recién reclutada no actúa ese turno.
+ */
 export function canActivate(s: GameState, u: Unit, extra = 0): boolean {
   if (!canUseMilitary(s) || u.owner !== s.turn!.seat) return false;
-  const acts = s.turn!.military?.activations ?? {};
+  if (!isUnlocked(s, u.owner, u.type)) return false;
+  const m = s.turn!.military;
+  if (m?.recruited === u.id) return false;
+  const acts = m?.activations ?? {};
   if (acts[u.id]) return true;
-  return Object.keys(acts).length + extra < 3;
+  return Object.keys(acts).length + extra < activationLimit(s);
+}
+
+/** A21: reclutar 1 tropa por Acción Militar, antes o después de activar (si se han activado 2 como mucho). */
+export function canRecruitNow(s: GameState): boolean {
+  if (!canUseMilitary(s)) return false;
+  const m = s.turn!.military;
+  if (!m) return true;
+  return m.open && !m.recruited && Object.keys(m.activations).length <= 2;
 }
 
 /** Pasos de movimiento que le quedan a la tropa (§64–75). */

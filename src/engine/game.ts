@@ -6,7 +6,9 @@ import {
   attackAvailable,
   attackTargets,
   baseDice,
+  activationLimit,
   canActivate,
+  canRecruitNow,
   canAttackNow,
   canUseCivil,
   canUseMilitary,
@@ -337,7 +339,7 @@ function requireTurn(s: GameState, seat: Seat) {
 function ensureMilitary(s: GameState) {
   const t = s.turn!;
   if (!t.military) {
-    t.military = { open: true, activations: {}, archerShots: [] };
+    t.military = { open: true, activations: {}, archerShots: [], recruited: null };
     t.militaryUsed = true;
   }
   return t.military;
@@ -354,7 +356,10 @@ function maybeCloseMilitary(s: GameState) {
   const m = s.turn?.military;
   if (!m || !m.open) return;
   const ids = Object.keys(m.activations);
-  if (ids.length < 3) return;
+  // Se cierra sola si ya no queda nada útil: límite de activaciones agotado (o ninguna tropa activable)
+  const canStillActivate = s.units.some((u) => u.owner === s.turn!.seat && !m.activations[u.id] && canActivate(s, u));
+  if (ids.length < activationLimit(s) && canStillActivate) return;
+  if (!m.recruited && canRecruitNow(s) && ids.length <= 2) return; // aún puede reclutar
   const allDone = ids.every((id) => {
     const u = unitById(s, id);
     if (!u) return true;
@@ -645,7 +650,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
     }
     case 'recruit': {
       requireTurn(s, seat);
-      if (!canUseMilitary(s) || s.turn!.military) fail('No puedes reclutar ahora.');
+      if (!canRecruitNow(s)) fail('No puedes reclutar ahora.');
       const t = action.unit;
       if (!UNIT_TYPES.includes(t)) fail('Tropa desconocida.');
       if (!isUnlocked(s, seat, t)) fail('Falta el edificio necesario.');
@@ -653,9 +658,11 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!canAfford(p.resources, UNIT_COST[t])) fail('Recursos insuficientes.');
       if (!ringSpots(s, seat, t).includes(action.pos)) fail('Casilla no válida para reclutar.');
       pay(p.resources, UNIT_COST[t]);
+      const newId = `u${s.nextUnitId}`;
       addUnit(s, seat, t, action.pos);
-      s.turn!.militaryUsed = true;
+      ensureMilitary(s).recruited = newId;
       log(s, `${p.name} recluta ${NAMES.unit[t]} en ${coordLabel(action.pos)}.`, seat);
+      maybeCloseMilitary(s);
       break;
     }
     case 'move': {
@@ -687,8 +694,9 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         fail('Un ataque agrupado exige tropas del mismo tipo en la misma loseta.');
       const acts = s.turn!.military?.activations ?? {};
       const fresh = ids.filter((id) => !acts[id]).length;
-      if (!canUseMilitary(s) || Object.keys(acts).length + fresh > 3)
-        fail('Solo puedes activar 3 figuras por Acción Militar.');
+      if (!canUseMilitary(s) || Object.keys(acts).length + fresh > activationLimit(s))
+        fail(`Solo puedes activar ${activationLimit(s)} figuras en esta Acción Militar.`);
+      if (units.some((u) => !canActivate(s, u!))) fail('Alguna tropa no puede activarse (falta su edificio o acaba de reclutarse).');
       if (units.some((u) => !canAttackNow(s, u!))) fail('Alguna tropa no puede atacar (activación o edificio).');
       const targets = attackTargets(s, lead.id);
       let combat: Combat;

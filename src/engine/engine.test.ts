@@ -102,6 +102,7 @@ const put = (s: GameState, owner: Seat, type: any, r: number, c: number) => {
 describe('Movimiento', () => {
   it('Infantería en Llanura mueve hasta 2 y no atraviesa enemigos, Agua ni Capitales', () => {
     const s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
     const inf = put(s, 0, 'infanteria', 3, 3);
     s.cells[idx(3, 4)].terrain = 'agua';
     put(s, 1, 'infanteria', 4, 3);
@@ -137,11 +138,49 @@ describe('Movimiento', () => {
 
   it('Máximo 3 figuras activadas por Acción Militar', () => {
     let s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
     const ids = [put(s, 0, 'infanteria', 3, 3), put(s, 0, 'infanteria', 3, 4), put(s, 0, 'infanteria', 4, 3), put(s, 0, 'infanteria', 4, 4)];
     s = applyAction(s, 0, { type: 'move', unitId: ids[0], to: idx(3, 2) });
     s = applyAction(s, 0, { type: 'move', unitId: ids[1], to: idx(3, 5) });
     s = applyAction(s, 0, { type: 'move', unitId: ids[2], to: idx(5, 3) });
     expect(() => applyAction(s, 0, { type: 'move', unitId: ids[3], to: idx(4, 5) })).toThrow();
+  });
+});
+
+describe('Acción Militar: reclutar + activar (A21)', () => {
+  it('las tropas sin su edificio no se mueven ni atacan', () => {
+    const s = phase2Board();
+    const inf = put(s, 0, 'infanteria', 3, 3);
+    expect(moveTargets(s, inf).size).toBe(0);
+    expect(() => applyAction(s, 0, { type: 'move', unitId: inf, to: idx(3, 4) })).toThrow();
+  });
+
+  it('reclutar y después activar hasta 2 figuras; la reclutada no actúa', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    const ids = [put(s, 0, 'infanteria', 3, 3), put(s, 0, 'infanteria', 3, 4), put(s, 0, 'infanteria', 4, 4)];
+    s = applyAction(s, 0, { type: 'recruit', unit: 'infanteria', pos: RINGS[0][0] });
+    const recruited = s.units.at(-1)!.id;
+    expect(moveTargets(s, recruited).size).toBe(0);
+    s = applyAction(s, 0, { type: 'move', unitId: ids[0], to: idx(3, 2) });
+    s = applyAction(s, 0, { type: 'move', unitId: ids[1], to: idx(3, 5) });
+    expect(() => applyAction(s, 0, { type: 'move', unitId: ids[2], to: idx(5, 4) })).toThrow();
+  });
+
+  it('activar y después reclutar (si se han activado 2 como mucho), una sola vez', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    const a = put(s, 0, 'infanteria', 3, 3);
+    s = applyAction(s, 0, { type: 'move', unitId: a, to: idx(3, 4) });
+    s = applyAction(s, 0, { type: 'recruit', unit: 'infanteria', pos: RINGS[0][0] });
+    expect(() => applyAction(s, 0, { type: 'recruit', unit: 'infanteria', pos: RINGS[0][1] })).toThrow();
+  });
+
+  it('sin tropas activas, la Acción Militar solo sirve para reclutar', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    s = applyAction(s, 0, { type: 'recruit', unit: 'infanteria', pos: RINGS[0][0] });
+    expect(s.turn!.military!.open).toBe(false); // se cierra sola: no hay nada que activar
   });
 });
 

@@ -14,6 +14,8 @@ import {
   CONVERT_RATE,
   FAITH_COST,
   wallBuildCheck,
+  activationLimit,
+  canRecruitNow,
   activationOf,
   attackAvailable,
   attackTargets,
@@ -537,7 +539,7 @@ function buildable(s: GameState, seat: Seat, b: Building) {
 }
 function recruitable(s: GameState, seat: Seat, u: UnitType) {
   const my = s.players[seat];
-  if (s.turn?.seat !== seat || s.prompt || s.combat || !canUseMilitary(s) || s.turn.military) return false;
+  if (s.turn?.seat !== seat || s.prompt || s.combat || !canRecruitNow(s)) return false;
   return (
     isUnlocked(s, seat, u) &&
     unitCount(s, seat, u) < MAX_PER_TYPE &&
@@ -588,7 +590,7 @@ function moveCompanions(s: GameState, leadId: string, to: number): string[] {
   const u = unitById(s, leadId);
   if (!u) return [];
   const acts = s.turn?.military?.activations ?? {};
-  let budget = 3 - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
+  let budget = activationLimit(s) - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
   let room = 3 - s.units.filter((x) => x.pos === to && x.owner === u.owner).length - 1;
   const out: string[] = [];
   for (const o of s.units) {
@@ -608,7 +610,7 @@ function attackCompanions(s: GameState, leadId: string): string[] {
   const u = unitById(s, leadId);
   if (!u) return [];
   const acts = s.turn?.military?.activations ?? {};
-  let budget = 3 - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
+  let budget = activationLimit(s) - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
   const out: string[] = [];
   for (const id of groupCandidates(s, leadId)) {
     const fresh = !acts[id];
@@ -695,8 +697,11 @@ function UnitPanel({
     <div className="unit-panel">
       <p>
         <img className="icon" src={UNIT_IMAGES[u.type]} alt="" /> <b>{NAMES.unit[u.type]}</b> seleccionada ·{' '}
-        {steps ? `puede mover ${steps}` : 'sin movimiento'} ·{' '}
-        {canAtt ? (unlocked ? 'puede atacar' : 'no puede atacar (falta edificio)') : 'sin ataque'}
+        {!unlocked
+          ? 'inactiva: falta su edificio, solo defiende'
+          : s.turn?.military?.recruited === u.id
+            ? 'recién reclutada: actuará el próximo turno'
+            : `${steps ? `puede mover ${steps}` : 'sin movimiento'} · ${canAtt ? 'puede atacar' : 'sin ataque'}`}
       </p>
       <p className="legend">
         <span className="lg move" /> mover <span className="lg attack" /> atacar <span className="lg conquer" /> conquistar

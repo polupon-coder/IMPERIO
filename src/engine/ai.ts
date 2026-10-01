@@ -1,6 +1,8 @@
 // Jugadores máquina. Eligen siempre entre las acciones legales del motor (las mismas que la
 // interfaz ofrece) y nunca miran el generador de dados: las probabilidades de combate se calculan.
 import {
+  activationLimit,
+  canRecruitNow,
   activeSeat,
   attackTargets,
   baseDice,
@@ -467,7 +469,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
     const ids = [u.id];
     for (const g of groupCandidates(s, u.id)) {
       const fresh = [...ids, g].filter((id) => !acts[id]).length;
-      if (used + fresh <= 3) ids.push(g);
+      if (used + fresh <= activationLimit(s)) ids.push(g);
     }
     const n = ids.length;
     const tg = attackTargets(s, u.id);
@@ -611,8 +613,8 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
     let best = pickBest([...attacks.filter((a) => a.value > thresholdAttack), ...moves.filter((m) => m.value > 0.5)], (x) => x.value + (sloppy ? r() * 1.5 : r() * 0.05));
     if (sloppy && best && r() < 0.2) best = undefined;
 
-    if (!started) {
-      // ¿Reclutar en vez de activar? Si hay amenaza o el ejército es pequeño y no hay nada mejor que hacer
+    // A21: se puede reclutar 1 tropa y además activar hasta 2 (recluta primero, si conviene)
+    if (canRecruitNow(s)) {
       const army = ownUnits(s, seat).length;
       const wantArmy =
         (threat > 0 && openSides(s, seat).length > 0 && army < 20) || army < (sloppy ? 4 : 6) || (plan.marching && army < 12);
@@ -622,16 +624,15 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
         const cost = BUILDING_COST[b];
         return RESOURCES.reduce((n, x) => n + Math.max(0, cost[x] - p.resources[x]), 0) <= 2;
       });
-      const bestValue = best?.value ?? 0;
-      if (wantArmy && !savingForBuild && bestValue < 2.5) {
+      // Un gran ataque de 3 figuras vale más que reclutar (reclutar deja solo 2 activaciones)
+      const bigAttack = (best?.value ?? 0) >= 2.5 && best?.action.type === 'attack' && best.action.unitIds.length >= 3;
+      if (wantArmy && !savingForBuild && !bigAttack) {
         const rec = recruitChoice(s, seat, plan, r);
         if (rec) return rec;
       }
-      if (best) return best.action;
-    } else {
-      if (best) return best.action;
-      if (t.military?.open) return { type: 'endMilitary' };
     }
+    if (best) return best.action;
+    if (started && t.military?.open) return { type: 'endMilitary' };
   }
 
   // 4. Construir después de la acción militar (con Ayuntamiento)

@@ -12,6 +12,8 @@ import {
   UNIT_COST,
   UNIT_TYPES,
   applyAction,
+  activationLimit,
+  canRecruitNow,
   wallBuildCheck,
   CONVERT_RATE,
   attackTargets,
@@ -169,7 +171,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
       if (!p.buildings.includes(b) && !(b === 'ayuntamiento' && p.buildings.length < 2) && canAfford(p.resources, BUILDING_COST[b]))
         add({ type: 'build', building: b });
   if (canUseCivil(s)) for (const side of SIDES) if (wallBuildCheck(s, seat, side).ok) add({ type: 'buildWall', side });
-  if (canUseMilitary(s) && !t.military)
+  if (canRecruitNow(s))
     for (const u of UNIT_TYPES)
       if (isUnlocked(s, seat, u) && unitCount(s, seat, u) < MAX_PER_TYPE && canAfford(p.resources, UNIT_COST[u]))
         for (const pos of ringSpots(s, seat, u)) add({ type: 'recruit', unit: u, pos });
@@ -183,7 +185,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
     const ids = [u.id];
     for (const g of group) {
       const fresh = [...ids, g].filter((id) => !s.turn?.military?.activations[id]).length;
-      if (acts + fresh <= 3) ids.push(g);
+      if (acts + fresh <= activationLimit(s)) ids.push(g);
     }
     for (const target of tg.troops) add({ type: 'attack', unitIds: ids, target });
     for (const w of tg.walls) add({ type: 'attackWall', unitIds: ids, capital: w.capital, side: w.side });

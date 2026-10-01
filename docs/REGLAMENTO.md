@@ -31,6 +31,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A18 | Mercado | La conversión es de **3 recursos iguales → 1 cualquiera** (sustituye el 2 → 1 de §45). |
 | A19 | Fe | Usar la Fe cuesta **2 Agua** (sustituye el 1 Agua de §42). |
 | A20 | Murallas en la Fase II | Con la **Acción Civil** se puede **levantar una Muralla nueva** (4 Piedra + 1 Madera) o **reparar una destruida** (3 Piedra) en un lado de la propia Capital. Máximo 4 Murallas por Capital. No se puede en un lado con tropas enemigas en su casilla. Una Muralla destruida no se puede reparar en el turno siguiente de su dueño, sino a partir del otro (debe pasar una ronda). Las Murallas levantadas en la Fase II cuentan como **originales** y se restauran al ser conquistada la Capital (§115). Sustituye la prohibición de §108. |
+| A21 | Acción Militar | Solo las tropas **activas** (con su edificio construido, §41) pueden moverse o atacar; las demás solo defienden. La Acción Militar permite **activar hasta 3 figuras**, **o reclutar 1 tropa y activar hasta 2**, en el orden que se quiera. La tropa recién reclutada no actúa ese turno. Sin tropas activas, la Acción Militar solo sirve para reclutar. Sustituye «No se combinan» de §47–48 y el movimiento libre de §40. |
 
 ### Decisiones de implementación (confirmadas por el autor)
 
@@ -156,7 +157,7 @@ Sirve exclusivamente para construir 1 edificio. Reclutar no es una Acción Civil
 Cuartel, Arquería, Caballerizas, Herrería, Iglesia, Mercado, Biblioteca y Ayuntamiento.
 
 ### 40–41. Desbloqueo de unidades
-Desde el comienzo de la Fase II todas las tropas pueden moverse y defenderse, pero no pueden iniciar un ataque sin su edificio: Infantería → Cuartel; Arquero → Arquería; Caballería → Caballerizas; Lancero → Herrería; Artillería → Herrería + Biblioteca.
+Desde el comienzo de la Fase II todas las tropas pueden moverse *(A21: solo las activas)* y defenderse, pero no pueden iniciar un ataque sin su edificio: Infantería → Cuartel; Arquero → Arquería; Caballería → Caballerizas; Lancero → Herrería; Artillería → Herrería + Biblioteca.
 
 ### 42–44. Iglesia y Fe
 Con Iglesia, pagar 1 Agua *(A19: 2 Agua)* permite repetir la tirada completa de tus propios dados; el nuevo resultado es obligatorio. Puede usarse en tu turno o en el de otro si participas en la tirada, y solo repites tus propios dados. Máximo 1 vez por cada turno individual. No se usa para conquistar, porque la conquista no tiene tirada.
@@ -165,7 +166,7 @@ Con Iglesia, pagar 1 Agua *(A19: 2 Agua)* permite repetir la tirada completa de 
 En su turno, un jugador con Mercado puede convertir 2 recursos iguales *(A18: 3)* en 1 recurso cualquiera, sin gastar acción y tantas veces como pueda pagar. También puede negociar recursos con cualquier jugador, sin gastar acción; solo el jugador activo necesita Mercado. *(Ver A17.)*
 
 ### 47–48. Acción Militar
-Elige exactamente una opción: **A. Activar** hasta 3 figuras distintas, o **B. Reclutar** 1 tropa. No se combinan. Una tropa recién reclutada no puede moverse ni atacar ese turno.
+Elige exactamente una opción: **A. Activar** hasta 3 figuras distintas, o **B. Reclutar** 1 tropa. No se combinan. *(Sustituido por A21: reclutar 1 + activar hasta 2.)* Una tropa recién reclutada no puede moverse ni atacar ese turno.
 
 ### 49–53. Reclutamiento
 | Tropa | Requisito | Madera | Piedra | Comida | Agua |

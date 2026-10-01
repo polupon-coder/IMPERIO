@@ -75,6 +75,8 @@ export interface Activation {
 
 export interface MilitaryState {
   open: boolean;
+  /** Tropa reclutada en esta Acción Militar (A21): no actúa y reduce las activaciones a 2. */
+  recruited?: string | null;
   activations: Record<string, Activation>;
   /** Ataques de Arqueros realizados: origen→objetivo (regla 87). */
   archerShots: string[];
