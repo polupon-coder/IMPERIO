@@ -79,9 +79,25 @@ def tinted(a, m, rgb, seed):
 tower, tmask = figure('art/torreon.webp', crop=True)
 os.makedirs('public/assets/ui', exist_ok=True)
 Image.fromarray(np.clip(tower * tmask + PAPER * (1 - tmask), 0, 255).astype(np.uint8)).save('public/assets/ui/torreon.webp', quality=88)
-wall, wmask = figure('public/assets/ui/muralla.webp', crop=False)
+wall, wmask = figure('public/assets/ui/muralla.webp', crop=True)
+
+
+def recolor_banner(a, rgb):
+    """El estandarte azul del Torreón pasa al color del jugador (conserva luces y sombras)."""
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    blue = (b > r + 35) & (b > g + 15)
+    blue = ndimage.binary_opening(blue, iterations=1)
+    if not blue.any():
+        return a
+    lum = a.mean(2)
+    ref = lum[blue].mean()
+    soft = ndimage.gaussian_filter(blue.astype(float), 0.8)[..., None]
+    new = np.clip(np.array(rgb, float) * (lum / ref)[..., None], 0, 255)
+    return a * (1 - soft) + new * soft
+
 for color, rgb in COLORS.items():
     os.makedirs(f'public/assets/fichas/{color}', exist_ok=True)
-    Image.fromarray(tinted(tower, tmask, rgb, sum(rgb) + 7)).save(f'public/assets/fichas/{color}/torreon.webp', quality=88)
+    t = tower if color == 'azul' else recolor_banner(tower, rgb)
+    Image.fromarray(tinted(t, tmask, rgb, sum(rgb) + 7)).save(f'public/assets/fichas/{color}/torreon.webp', quality=88)
     Image.fromarray(tinted(wall, wmask, rgb, sum(rgb) + 11)).save(f'public/assets/fichas/{color}/muralla.webp', quality=88)
 print('ok')
