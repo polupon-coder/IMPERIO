@@ -437,8 +437,11 @@ function rollCombat(s: GameState) {
 
 function combatStage(s: GameState, stage: 'attacker' | 'defender' | 'resolve') {
   const c = s.combat!;
+  // La Fe solo se ofrece a quien no va ganando la tirada (pierde o empata)
+  const a = Math.max(...c.attackerDice);
+  const b = Math.max(...c.defenderDice);
   if (stage === 'attacker') {
-    if (!c.attackerTower && faithEligible(s, c.attacker)) {
+    if (!c.attackerTower && a <= b && faithEligible(s, c.attacker)) {
       s.prompt = { kind: 'faith', seat: c.attacker, role: 'attacker' };
       return;
     }
@@ -446,7 +449,7 @@ function combatStage(s: GameState, stage: 'attacker' | 'defender' | 'resolve') {
   }
   if (stage === 'defender') {
     // aclaración 13: la Muralla no tiene Fe (ni el Torreón, A23)
-    if (c.target.kind === 'troops' && faithEligible(s, c.defender)) {
+    if (c.target.kind === 'troops' && b <= a && faithEligible(s, c.defender)) {
       s.prompt = { kind: 'faith', seat: c.defender, role: 'defender' };
       return;
     }

@@ -156,7 +156,7 @@ export function RulesSheet() {
                 intercambio por turno de 1 recurso por 1 recurso con otro jugador (botón «Comerciar»).
               </li>
               <li>
-                <b>Iglesia (Fe):</b> paga 2 Agua para repetir toda tu tirada; el nuevo resultado es obligatorio. Una
+                <b>Iglesia (Fe):</b> paga 2 Agua para repetir toda tu tirada si no vas ganando (pierdes o empatas); el nuevo resultado es obligatorio. Una
                 vez por cada turno, también cuando defiendes.
               </li>
             </ul>
