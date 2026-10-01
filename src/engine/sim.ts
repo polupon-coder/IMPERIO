@@ -293,7 +293,7 @@ export interface BotReport {
 }
 
 /** Juega una partida completa (Fase I incluida) con un tipo de jugador por asiento. */
-export function playBots(seed: number, players: SimPlayer[], maxTurns = 800): BotReport {
+export function playBots(seed: number, players: SimPlayer[], maxTurns = 2000): BotReport {
   const r = lcg(seed * 104729 + 7);
   let s = createGame(TEST_PLAYERS, seed);
   const problems: string[] = [];

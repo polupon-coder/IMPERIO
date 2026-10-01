@@ -34,6 +34,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A21 | Acción Militar | Solo las tropas **activas** (con su edificio construido, §41) pueden moverse o atacar; las demás solo defienden. La Acción Militar permite **activar hasta 3 figuras**, **o reclutar 1 tropa y activar hasta 2**, en el orden que se quiera. La tropa recién reclutada no actúa ese turno. Sin tropas activas, la Acción Militar solo sirve para reclutar. Sustituye «No se combinan» de §47–48 y el movimiento libre de §40. |
 | A22 | Artillería | En la Fase I la Montaña del anillo solo da **1 Muralla** (si la Capital ya tiene 4, no da recompensa militar). La Artillería solo se consigue reclutándola en la Fase II y requiere **solo la Herrería**. Sustituye la opción Artillería de §5, §19 y §21 y el requisito Herrería + Biblioteca de §38, §41 y §53. |
 | A23 | Torreón | Con **Herrería y Ayuntamiento**, la **Acción Civil** puede levantar **1 Torreón por jugador** (4 Piedra + 2 Madera) en una loseta de tierra **vacía** que comparta un lado con una loseta con tropa propia. Nunca en una Capital, en Agua ni en las 4 casillas laterales de ninguna Capital. Ocupa la loseta: ninguna tropa (tampoco las propias) entra ni pasa por ella. **Ataca como un Arquero** (alcance 2 con línea de tiro, 1 dado contra 1, ventajas del Arquero), gastando una de las activaciones de la Acción Militar, una vez por turno; solo queda destruido si gana un defensor Arquero o Artillería. **Defiende** con 2 dados contra 1 del atacante (+1 por figura agrupada): si gana, el atacante no sufre baja; si gana el atacante, el Torreón queda destruido (en cuerpo a cuerpo la formación puede avanzar a la loseta liberada). Sin Fe. No se repara: tras perderlo hay que esperar una ronda para levantar otro. No cuenta para la victoria. |
+| A24 | Victoria | Para ganar hacen falta los **8 edificios** y **2 Conquistas** de Capitales **distintas** (cada jugador solo puede conquistar una vez cada Capital, §117). Sustituye «al menos 1 Conquista» de §1 y §120. |
 
 ### Decisiones de implementación (confirmadas por el autor)
 
@@ -54,7 +55,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 4 jugadores · tablero fijo de 8 × 8 · dados d6 · ambientación medieval europea.
 Fases: **Fase I — Creación del Mundo** y **Fase II — El Imperio**.
 
-**Victoria:** un jugador gana inmediatamente cuando tiene a la vez sus **8 edificios** y al menos **1 Conquista**, conseguidas en cualquier orden.
+**Victoria:** un jugador gana inmediatamente cuando tiene a la vez sus **8 edificios** y al menos **1 Conquista** *(A24: 2 Conquistas de Capitales distintas)*, conseguidas en cualquier orden.
 
 ### 2. Tablero
 64 casillas: **4 Capitales** fijas en (2,2), (2,7), (7,2) y (7,7) —filas y columnas del 1 al 8— y **60 losetas de terreno**. Las Capitales no son losetas de terreno.
@@ -248,4 +249,4 @@ Dados: 1 Artillería 2d, 2 Artillerías 3d y 3 Artillerías 4d, contra 1d de la 
 - Si el anillo no tiene ninguna posición válida (por enemigos, el límite de 3, Agua o Montaña para la Artillería), no se puede reclutar.
 
 ### 120–122. Victoria
-En cuanto un jugador tiene los 8 edificios y al menos 1 Conquista, la partida termina y gana **IMPERIO**. Las Conquistas no se pierden aunque después conquisten su propia Capital.
+En cuanto un jugador tiene los 8 edificios y al menos 1 Conquista *(A24: 2)*, la partida termina y gana **IMPERIO**. Las Conquistas no se pierden aunque después conquisten su propia Capital.

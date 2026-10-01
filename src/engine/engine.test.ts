@@ -495,10 +495,13 @@ describe('Economía y turno', () => {
     expect(() => applyAction(s, 0, { type: 'convert', give: 'comida', get: 'comida' })).toThrow();
   });
 
-  it('victoria inmediata con 8 edificios y 1 Conquista', () => {
+  it('victoria inmediata con 8 edificios y 2 Conquistas (A24)', () => {
     let s = phase2Board();
     s.players[0].buildings = ['cuartel', 'arqueria', 'caballerizas', 'herreria', 'iglesia', 'mercado', 'biblioteca'];
     s.players[0].conquests = [2];
+    const one = applyAction({ ...structuredClone(s), players: s.players.map((p) => ({ ...p, resources: { comida: 50, madera: 50, piedra: 50, agua: 50 } })) }, 0, { type: 'build', building: 'ayuntamiento' });
+    expect(one.phase).toBe('PHASE_2'); // con 1 Conquista no basta
+    s.players[0].conquests = [2, 1];
     s.players[0].resources = { comida: 50, madera: 50, piedra: 50, agua: 50 };
     s = applyAction(s, 0, { type: 'build', building: 'ayuntamiento' });
     expect(s.phase).toBe('GAME_OVER');

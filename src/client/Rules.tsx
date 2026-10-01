@@ -54,8 +54,8 @@ export function RulesSheet() {
         {tab === 'Objetivo' && (
           <>
             <p className="rules-lead">
-              Gana <b>inmediatamente</b> quien tenga a la vez sus <b>8 edificios</b> construidos y al menos{' '}
-              <b>1 Conquista</b>. Las dos condiciones pueden conseguirse en cualquier orden.
+              Gana <b>inmediatamente</b> quien tenga a la vez sus <b>8 edificios</b> construidos y{' '}
+              <b>2 Conquistas</b> de Capitales distintas. Las condiciones pueden conseguirse en cualquier orden.
             </p>
             <ul>
               <li>4 jugadores, tablero de 8 × 8 casillas y dados de seis caras.</li>
@@ -360,7 +360,7 @@ export function RulesSheet() {
               </li>
               <li>La tropa no entra en la Capital: se queda en su casilla.</li>
               <li>
-                Solo se gana 1 Conquista. El conquistado no pierde nada y sigue jugando. Su Capital recupera al
+                Cada conquista suma 1 (hacen falta 2, de Capitales distintas). El conquistado no pierde nada y sigue jugando. Su Capital recupera al
                 instante sus Murallas originales.
               </li>
               <li>Cada jugador solo puede conquistar una vez cada Capital concreta.</li>

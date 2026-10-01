@@ -13,6 +13,7 @@ import {
   UNIT_TYPES,
   CONVERT_RATE,
   FAITH_COST,
+  VICTORY,
   wallBuildCheck,
   towerBuildSpots,
   towerBuildBlock,
@@ -908,8 +909,8 @@ function PlayersPanel({
                 <img className="coat" src={coatOfArms(p.color)} alt="" />
                 <b>{p.name}</b>
                 <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
-                <span className="conquests" title="Conquistas">
-                  ⚑ {p.conquests.length}
+                <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
+                  ⚑ {p.conquests.length}/{VICTORY.conquests}
                 </span>
               </div>
               <div className="sum-row bld-chips">
@@ -952,8 +953,8 @@ function PlayersPanel({
               <b>{p.name}</b>
               {seat === mySeat && <em> (tú)</em>}
               <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
-              <span className="conquests" title="Conquistas">
-                ⚑ {p.conquests.length}
+              <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
+                ⚑ {p.conquests.length}/{VICTORY.conquests}
               </span>
             </div>
             <div className="buildings">

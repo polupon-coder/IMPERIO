@@ -15,13 +15,13 @@ describe('Jugadores máquina', () => {
     const rep = playBots(seed, ['normal', 'normal', 'normal', 'normal']);
     expect(rep.problems).toEqual([]);
     expect(rep.winner).not.toBeNull();
-  });
+  }, 60000);
 
   it.each([4, 5])('partida con niveles mezclados y un jugador al azar (semilla %i)', (seed) => {
-    const rep = playBots(seed, ['normal', 'facil', 'azar', 'facil']);
+    const rep = playBots(seed, ['normal', 'facil', 'azar', 'facil'], 2000);
     expect(rep.problems).toEqual([]);
     expect(rep.winner).not.toBeNull();
-  });
+  }, 60000);
 
   it('solo decide quien tiene una decisión pendiente', () => {
     const s = playPhase1(3);

@@ -23,7 +23,7 @@ Juegan en el servidor con las mismas reglas y solo con acciones legales; nunca v
 - **Normal:** construye siguiendo un plan (Mercado, Ayuntamiento, Biblioteca…), usa el Mercado para completar costes, custodia los lados abiertos de su Capital, ataca cuando los dados le favorecen, desgasta a distancia con Arqueros y Artillería y marcha sobre la Capital rival más débil.
 - **Fácil:** el mismo criterio con errores y menos agresividad.
 
-En simulación, una máquina normal gana el 70 % de las partidas contra tres fáciles, y una fácil el 80 % contra tres jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`).
+En simulación, una máquina normal gana claramente a las fáciles, y una fácil a los jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`).
 
 Durante la partida, el tablero resalta siempre lo que es legal:
 
