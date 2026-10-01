@@ -326,6 +326,25 @@ describe('Combate', () => {
     expect(s.lastCombat!.defenderDice.length).toBe(2);
   });
 
+  it('no se ofrece la Fe si los dos sacan un 6 (A19)', () => {
+    let checked = 0;
+    for (let seed = 1; seed < 3000 && checked < 3; seed++) {
+      let s = phase2Board();
+      s.rng = seed;
+      s.players[0].buildings = ['cuartel', 'iglesia'];
+      s.players[1].buildings = ['iglesia'];
+      const a = put(s, 0, 'infanteria', 3, 3);
+      put(s, 1, 'infanteria', 2, 3);
+      s = applyAction(s, 0, { type: 'attack', unitIds: [a], target: idx(2, 3) });
+      const c = s.combat ?? s.lastCombat!;
+      if (c.attackerDice[0] === 6 && c.defenderDice[0] === 6) {
+        expect(s.prompt).toBeNull();
+        checked++;
+      } else if (c.attackerDice[0] <= c.defenderDice[0]) expect(s.prompt?.kind).toBe('faith');
+    }
+    expect(checked).toBe(3);
+  });
+
   it('avance de toda la formación tras vaciar la loseta', () => {
     for (let seed = 1; seed < 60; seed++) {
       let s = phase2Board();

@@ -674,6 +674,10 @@ function attackCompanions(s: GameState, leadId: string): string[] {
   return out;
 }
 
+/** Se puede levantar el Torreón ahora mismo: se marca como disponible, igual que las tropas reclutables. */
+const towerBuildable = (s: GameState, seat: Seat, myTurn: boolean) =>
+  myTurn && s.players[seat].tower == null && canUseCivil(s) && !towerBuildBlock(s, seat) && towerBuildSpots(s, seat).length > 0;
+
 function towerTitle(s: GameState, seat: Seat, myTurn: boolean) {
   const p = s.players[seat];
   if (p.tower != null) return 'Tu Torreón: pulsa para dispararle con él (como un Arquero)';
@@ -1012,7 +1016,7 @@ function PlayersPanel({
               </figure>
               {mine && (
                 <figure
-                  className={`${p.tower != null ? 'on' : ''} ${myTurnNow ? 'clickable' : ''}`}
+                  className={`${p.tower != null ? 'on' : ''} ${myTurnNow ? 'clickable' : ''} ${towerBuildable(s, mySeat, myTurnNow) ? 'can' : ''}`}
                   title={towerTitle(s, mySeat, myTurnNow)}
                   onClick={() => myTurnNow && onTower()}
                 >
@@ -1490,7 +1494,9 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
   const key = c ? `${s.turnNumber}:${c.from}:${c.summary}:${c.attackerDice.join()}:${c.defenderDice.join()}` : '';
   const [closed, setClosed] = useState('');
   if (!c || (!s.combat && closed === key)) return null;
-  if (!s.combat && s.lastCombat && s.log.length && !s.log.slice(-6).some((e) => e.text === c.summary)) return null;
+  // Si participaste (atacante o defensor), el resultado se queda hasta que cierres la ventana.
+  const involved = c.attacker === mySeat || c.defender === mySeat;
+  if (!s.combat && s.lastCombat && !involved && s.log.length && !s.log.slice(-6).some((e) => e.text === c.summary)) return null;
   const pr = s.prompt;
   const mine = pr && pr.seat === mySeat && (pr.kind === 'faith' || pr.kind === 'defenderChoice' || pr.kind === 'advance') ? pr : null;
   const waiting = pr && pr.seat !== mySeat && (pr.kind === 'faith' || pr.kind === 'defenderChoice' || pr.kind === 'advance') ? pr : null;
