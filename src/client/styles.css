@@ -2689,3 +2689,24 @@ textarea {
     margin-bottom: 16px;
   }
 }
+@media (max-width: 900px) {
+  /* Capital vacante: el texto se ajusta al ancho de la tarjeta y «Sistema» pasa de línea si no cabe */
+  .lobby .seat > :last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .lobby .seat-coat {
+    width: 56px;
+    height: 56px;
+  }
+  .seat-free-actions button {
+    padding: 3px 10px;
+  }
+  .add-bot {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+  .add-bot button {
+    padding: 2px 8px;
+  }
+}
