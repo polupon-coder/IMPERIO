@@ -50,6 +50,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
+import { useGameSounds, useMuted } from './sounds';
 import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
@@ -113,6 +114,8 @@ export function Game({
   const [rulesOpen, setRulesOpen] = useState(false);
   const [groupAsk, setGroupAsk] = useState<{ kind: 'move' | 'attack'; lead: string; ids: string[]; run: (ids: string[]) => void } | null>(null);
   const [wallsOpen, setWallsOpen] = useState(false);
+  const [muted, toggleMuted] = useMuted();
+  useGameSounds(s, mySeat, room.version);
 
   // Si la selección deja de ser válida tras una actualización, se limpia.
   useEffect(() => {
@@ -284,6 +287,9 @@ export function Game({
         )}
         <button className="rules-btn" onClick={() => setRulesOpen(true)}>
           Reglas
+        </button>
+        <button className="sound-btn" onClick={toggleMuted} title={muted ? 'Activar sonidos' : 'Silenciar sonidos'} aria-label={muted ? 'Activar sonidos' : 'Silenciar sonidos'}>
+          {muted ? '🔇' : '🔈'}
         </button>
         <span className="room-code">
           <span className="room-name">Mundo {room.code}</span>

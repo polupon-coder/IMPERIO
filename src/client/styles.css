@@ -2612,6 +2612,7 @@ textarea {
   .topbar .action-status { order: 7; }
   .topbar .turn-actions { order: 8; margin-right: 0; }
   .topbar .rules-btn { order: 9; margin-left: auto; }
+  .topbar .sound-btn { order: 10; }
   .topbar .active-player,
   .topbar .action-status .act,
   .topbar button {
@@ -2769,4 +2770,13 @@ textarea {
   .tile-choices button {
     justify-content: center;
   }
+}
+
+/* Botón para silenciar los sonidos, junto a Reglas */
+.sound-btn {
+  padding: 2px 8px !important;
+  font-size: 1rem;
+  line-height: 1;
+  background: #efe2c2 !important;
+  border: 1px solid #b8892f !important;
 }
