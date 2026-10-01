@@ -49,7 +49,7 @@ import {
   type Unit,
   type UnitType,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, WALL_TOKEN, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
 import { call, type PublicRoom } from './socket';
@@ -998,7 +998,7 @@ function PlayersPanel({
                 onClick={() => mine && myTurnNow && onWalls()}
               >
                 <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
-                  <img src={WALL_TOKEN} alt="Murallas" draggable={false} />
+                  <img src={wallFigure(p.color)} alt="Murallas" draggable={false} />
                 </span>
                 <figcaption>
                   Murallas <b>{p.walls.length}</b>/4
@@ -1452,7 +1452,7 @@ function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
             <button key={o} onClick={() => send({ type: 'chooseReward', option: o })}>
               <img
                 className="confirm-unit"
-                src={o === 'muralla' ? WALL_TOKEN : unitFigure(my.color, o)}
+                src={o === 'muralla' ? wallFigure(my.color) : unitFigure(my.color, o)}
                 alt=""
                 style={{ borderColor: PLAYER_COLORS[my.color] }}
               />

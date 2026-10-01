@@ -20,6 +20,8 @@ export const unitFigure = (color: string, type: UnitType) => `/assets/fichas/${c
 /** Ficha del Torreón con el fondo del color del jugador (scripts/prepare-tower.py). */
 export const towerFigure = (color: string) => `/assets/fichas/${color}/torreon.webp`;
 export const TOWER_ICON = '/assets/ui/torreon.webp';
+/** Ficha de la Muralla con el fondo del color del jugador (scripts/prepare-tower.py). */
+export const wallFigure = (color: string) => `/assets/fichas/${color}/muralla.webp`;
 
 /** Ilustración de cada edificio (scripts/prepare-buildings.py). */
 export const buildingImage = (b: string) => `/assets/buildings/${b}.webp`;

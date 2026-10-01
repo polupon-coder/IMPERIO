@@ -1,8 +1,9 @@
-"""Ficha del Torreón a partir de la ilustración del autor (art/torreon.webp).
+"""Fichas del Torreón y de la Muralla con el fondo de acuarela suave de cada jugador.
 
 Uso: python3 scripts/prepare-tower.py
-Salida: public/assets/fichas/<color>/torreon.webp (fondo de acuarela suave del color del jugador,
-igual que las tropas) y public/assets/ui/torreon.webp (sobre papel, para paneles).
+Entradas: art/torreon.webp (ilustración del autor) y public/assets/ui/muralla.webp
+Salidas:  public/assets/fichas/<color>/torreon.webp, public/assets/fichas/<color>/muralla.webp
+          y public/assets/ui/torreon.webp (sobre papel, para el panel).
 """
 import os
 import numpy as np
@@ -14,37 +15,48 @@ PAPER = np.array([244, 235, 220], float)
 MIX = 0.45
 S = 256
 
-src = Image.open('art/torreon.webp').convert('RGB')
-a0 = np.array(src).astype(float)
-mx = a0.max(2); mn = a0.min(2); sat = (mx - mn) / np.maximum(mx, 1)
-paper = (mx > 175) & (sat < 0.16)
-lab, _ = ndimage.label(paper)
-border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
-bg = ndimage.binary_opening(np.isin(lab, list(border)), iterations=2)
-fig = ~bg
-# Solo la mancha principal (torre, arbustos y suelo); fuera las motas del papel
-flab, n = ndimage.label(fig)
-sizes = ndimage.sum(fig, flab, range(1, n + 1))
-keep = [int(np.argmax(sizes)) + 1]
-fig = ndimage.binary_fill_holes(np.isin(flab, keep))
-ys, xs = np.where(fig)
-# Recorte cuadrado centrado en la figura con un pequeño margen
-cy, cx = (ys.min() + ys.max()) / 2, (xs.min() + xs.max()) / 2
-half = max(ys.max() - ys.min(), xs.max() - xs.min()) / 2 * 1.12
-box = (int(cx - half), int(cy - half), int(cx + half), int(cy + half))
-img = src.crop(box).resize((S, S), Image.LANCZOS)
-mask = Image.fromarray((fig * 255).astype(np.uint8)).crop(box).resize((S, S), Image.LANCZOS)
-a = np.array(img).astype(float)
-m = ndimage.gaussian_filter(np.array(mask).astype(float) / 255, 1.0)[..., None]
 
-os.makedirs('public/assets/ui', exist_ok=True)
-Image.fromarray(np.clip(a * m + PAPER * (1 - m), 0, 255).astype(np.uint8)).save('public/assets/ui/torreon.webp', quality=88)
-for color, rgb in COLORS.items():
-    rng = np.random.default_rng(sum(rgb) + 7)
+def figure(src_path, crop):
+    """Figura sobre papel → (imagen S×S, máscara suave de la figura)."""
+    src = Image.open(src_path).convert('RGB')
+    a0 = np.array(src).astype(float)
+    mx = a0.max(2)
+    mn = a0.min(2)
+    sat = (mx - mn) / np.maximum(mx, 1)
+    paper = (mx > 175) & (sat < 0.16)
+    lab, _ = ndimage.label(paper)
+    border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    fig = ~ndimage.binary_opening(np.isin(lab, list(border)), iterations=2)
+    # Solo la mancha principal (figura, arbustos y suelo); fuera las motas del papel
+    flab, n = ndimage.label(fig)
+    sizes = ndimage.sum(fig, flab, range(1, n + 1))
+    fig = ndimage.binary_fill_holes(flab == int(np.argmax(sizes)) + 1)
+    if crop:
+        ys, xs = np.where(fig)
+        cy, cx = (ys.min() + ys.max()) / 2, (xs.min() + xs.max()) / 2
+        half = max(ys.max() - ys.min(), xs.max() - xs.min()) / 2 * 1.12
+        box = (int(cx - half), int(cy - half), int(cx + half), int(cy + half))
+    else:
+        box = (0, 0, src.width, src.height)
+    img = src.crop(box).resize((S, S), Image.LANCZOS)
+    mask = Image.fromarray((fig * 255).astype(np.uint8)).crop(box).resize((S, S), Image.LANCZOS)
+    return np.array(img).astype(float), ndimage.gaussian_filter(np.array(mask).astype(float) / 255, 1.0)[..., None]
+
+
+def tinted(a, m, rgb, seed):
+    rng = np.random.default_rng(seed)
     base = np.array(rgb, float) * MIX + PAPER * (1 - MIX)
     wash = ndimage.gaussian_filter(rng.normal(size=(S, S)), 7)[..., None]
     wash = wash / (np.abs(wash).max() + 1e-6) * 14
-    out = a * m + np.clip(base + wash, 0, 255) * (1 - m)
+    return np.clip(a * m + np.clip(base + wash, 0, 255) * (1 - m), 0, 255).astype(np.uint8)
+
+
+tower, tmask = figure('art/torreon.webp', crop=True)
+os.makedirs('public/assets/ui', exist_ok=True)
+Image.fromarray(np.clip(tower * tmask + PAPER * (1 - tmask), 0, 255).astype(np.uint8)).save('public/assets/ui/torreon.webp', quality=88)
+wall, wmask = figure('public/assets/ui/muralla.webp', crop=False)
+for color, rgb in COLORS.items():
     os.makedirs(f'public/assets/fichas/{color}', exist_ok=True)
-    Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(f'public/assets/fichas/{color}/torreon.webp', quality=88)
-print('ok', box)
+    Image.fromarray(tinted(tower, tmask, rgb, sum(rgb) + 7)).save(f'public/assets/fichas/{color}/torreon.webp', quality=88)
+    Image.fromarray(tinted(wall, wmask, rgb, sum(rgb) + 11)).save(f'public/assets/fichas/{color}/muralla.webp', quality=88)
+print('ok')
