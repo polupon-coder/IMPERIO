@@ -2454,7 +2454,7 @@ textarea {
 .home-battle .home-play {
   position: absolute;
   left: 50%;
-  bottom: 9vh;
+  bottom: 4vh;
   transform: translateX(-50%);
 }
 .home-battle .home-play:hover:not(:disabled) {
