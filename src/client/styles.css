@@ -2619,3 +2619,24 @@ textarea {
     padding: 2px 8px;
   }
 }
+@media (max-width: 900px) {
+  /* Portada en móvil: «Jugar» centrado entre el título y el inicio del dibujo (≈60% inferior de la ilustración) */
+  .home-battle {
+    box-sizing: border-box;
+    padding-bottom: 60vw;
+  }
+  /* Mismo tono que el cielo de la ilustración: sin corte visible donde empieza la imagen */
+  .home:has(.home-battle) {
+    background-color: #eee8dc;
+  }
+  .home-battle .home-play {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    margin: auto 0;
+  }
+  .home-battle .home-play:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+}
