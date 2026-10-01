@@ -149,3 +149,7 @@ for at, f, g in [(0, 130.8, 1), (0.16, 116.5, 0.85), (0.3, 123.5, 0.7)]:
     place(buf, band(metal(f, 0.7), 80, 3200) * g, at)
     place(buf, drum(70, 0.3) * 0.25 * g, at)
 save('batalla', buf, 0.27)
+
+# Botón: toque de madera grave y muy corto (generador propio)
+rng = np.random.default_rng(7)
+save('boton', band(knock(120, 0.08, 520), 50, 1500), 0.22)

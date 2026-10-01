@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { type Color, type Seat } from '../engine';
 import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
+import { installButtonSounds } from './sounds';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
 
 /** Cada Capital tiene siempre el mismo color (igual que en el servidor). */
@@ -16,6 +17,8 @@ export function App() {
   const [myId, setMyId] = useState<number | null>(null);
   const [connected, setConnected] = useState(socket.connected);
   const [error, setError] = useState('');
+
+  useEffect(() => installButtonSounds(), []);
 
   useEffect(() => {
     const onRoom = (r: PublicRoom) => setRoom(r);

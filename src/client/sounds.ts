@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameState, Seat } from '../engine';
 
-export type SoundName = 'turno' | 'ficha' | 'dados' | 'construir' | 'conquista' | 'victoria' | 'batalla';
+export type SoundName = 'turno' | 'ficha' | 'dados' | 'construir' | 'conquista' | 'victoria' | 'batalla' | 'boton';
 
 const KEY = 'imperio:mudo';
 const cache = new Map<SoundName, HTMLAudioElement>();
@@ -75,4 +75,15 @@ export function useGameSounds(s: GameState, mySeat: Seat, version: number) {
     const myTurnNow = s.phase !== 'GAME_OVER' && (s.phase === 'PHASE_2' ? s.turn?.seat === mySeat : s.step === 'PILE_PLACEMENT' && active === mySeat);
     if (myTurnNow && turnKey !== p.turnKey) play('turno', 400);
   }, [version]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+/** Toque grave y corto al pulsar cualquier botón de la interfaz (no las fichas del tablero). */
+export function installButtonSounds() {
+  const onClick = (e: MouseEvent) => {
+    const b = (e.target as Element | null)?.closest?.('button');
+    if (!b || b.disabled || b.closest('.board')) return;
+    play('boton');
+  };
+  document.addEventListener('click', onClick, true);
+  return () => document.removeEventListener('click', onClick, true);
 }
