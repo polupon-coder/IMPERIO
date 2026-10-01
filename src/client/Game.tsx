@@ -268,7 +268,8 @@ export function Game({
       <header className="topbar">
         <span className="brand">Imperio</span>
         <span className="phase">
-          {PHASE_LABEL[s.phase]} · {s.phase === 'PHASE_2' ? `Ronda ${roman(Math.ceil(s.turnNumber / 4))}` : STEP_LABEL[s.step]}
+          {PHASE_LABEL[s.phase]}
+          {s.phase === 'PHASE_2' ? ` · Ronda ${roman(Math.ceil(s.turnNumber / 4))}` : <span className="step-label"> · {STEP_LABEL[s.step]}</span>}
         </span>
         {s.phase !== 'GAME_OVER' && s.step !== 'INITIAL_PLACEMENT' && s.step !== 'FINAL_DEPLOY' && (
           <span

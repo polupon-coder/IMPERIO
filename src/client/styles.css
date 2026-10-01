@@ -2865,3 +2865,25 @@ textarea {
 .topbar .exit-btn:hover {
   background: #c43a33 !important;
 }
+
+@media (max-width: 900px) {
+  /* Primera fila de la barra siempre en una línea: sin el paso de la Fase I, con sonido y salir al final */
+  .topbar .step-label {
+    display: none;
+  }
+  .topbar .brand,
+  .topbar .room-name,
+  .topbar .phase {
+    white-space: nowrap;
+  }
+  .topbar .room-name,
+  .topbar .phase {
+    font-size: 0.8rem;
+  }
+  .topbar .brand {
+    font-size: 1rem;
+  }
+  .topbar {
+    column-gap: 7px;
+  }
+}
