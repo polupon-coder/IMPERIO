@@ -486,7 +486,7 @@ function Phase1Panel({
                 <b>Coloca tus 4 losetas iniciales alrededor de tu Capital.</b> Elige una y pulsa una casilla
                 resaltada de tu anillo:
               </p>
-              <div className="row">
+              <div className="row tile-choices">
                 {my.initialTiles.map((t, i) => (
                   <button
                     key={t + i}
@@ -983,6 +983,7 @@ function PlayersPanel({
                     <CostTip title={NAMES.unit[u]} cost={UNIT_COST[u]} />
                     <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                       <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
+                      <img className="icon-alt" src={UNIT_IMAGES[u]} alt="" draggable={false} />
                     </span>
                     <figcaption>
                       {NAMES.unit[u]} <b>{n}</b>/5
@@ -995,8 +996,9 @@ function PlayersPanel({
                 title={mine && myTurnNow ? 'Levantar o reparar Murallas' : 'Murallas intactas / originales'}
                 onClick={() => mine && myTurnNow && onWalls()}
               >
-                <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
+                <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
                   <img src={wallFigure(p.color)} alt="Murallas" draggable={false} />
+                  <img className="icon-alt" src={WALL_SILHOUETTE} alt="" draggable={false} />
                 </span>
                 <figcaption>
                   Murallas <b>{p.walls.length}</b>/4

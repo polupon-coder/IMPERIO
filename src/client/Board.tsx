@@ -10,7 +10,7 @@ import {
   type Side,
   type Unit,
 } from '../engine';
-import { PLAYER_COLORS, TILE_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
+import { PLAYER_COLORS, TILE_IMAGES, UNIT_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -98,6 +98,7 @@ export function Board(p: BoardProps) {
                       }}
                     >
                       <img src={unitFigure(s.players[u.owner].color, u.type)} alt={NAMES.unit[u.type]} draggable={false} />
+                      <img className="icon-alt" src={UNIT_IMAGES[u.type]} alt="" draggable={false} />
                     </button>
                   ))}
                 </div>
