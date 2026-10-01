@@ -627,13 +627,20 @@ function ActionStatus({ state: s }: { state: GameState }) {
   if (!t) return null;
   const town = s.players[t.seat].buildings.includes('ayuntamiento');
   const civil = !t.civilUsed && (town || !t.militaryUsed);
-  const military = !!t.military?.open || (!t.militaryUsed && (town || !t.civilUsed));
-  if (!civil && !military) return <span className="action-status done">Has terminado tu turno</span>;
+  const m = t.military;
+  const fresh = !t.militaryUsed && (town || !t.civilUsed);
+  // Dentro de la Acción Militar (A21): lo que queda por hacer, reclutar o activar
+  const acts = m ? Object.keys(m.activations).length : 0;
+  const canRecruit = !!m?.open && !m.recruited && acts <= 2;
+  const canAct = !!m?.open && acts < (m.recruited ? 2 : 3);
+  const military = fresh || canRecruit || canAct;
+  // Tras reclutar queda la «Acción» (mover/atacar); tras mover o atacar queda «Reclutar»
+  const militaryLabel = !m?.open ? 'Militar' : m.recruited ? 'Acción' : acts > 0 ? (canRecruit ? 'Reclutar' : 'Acción') : 'Militar';
   const tip = town ? 'Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar' : 'Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar';
   return (
     <span className="action-status" title={tip}>
       <span className={`act ${civil ? 'on' : 'off'}`}>Civil</span>
-      <span className={`act ${military ? 'on' : 'off'}`}>Militar</span>
+      <span className={`act ${military ? 'on' : 'off'}`}>{military ? militaryLabel : 'Militar'}</span>
     </span>
   );
 }
