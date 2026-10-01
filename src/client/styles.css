@@ -2640,3 +2640,52 @@ textarea {
     transform: scale(1.05);
   }
 }
+
+/* ---------- Móvil: Mundo (sala de espera) en una columna dentro del pergamino ---------- */
+@media (max-width: 900px) {
+  .app:has(.lobby) .lobby {
+    padding: 12px 8px 24px;
+  }
+  .lobby-sheet {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .lobby-sheet .lobby-title {
+    font-size: 2rem;
+    margin-bottom: 14px;
+  }
+  .lobby-sheet .share {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .share .link-input {
+    min-width: 0;
+    font-size: 0.85rem;
+  }
+  .lobby .seats,
+  .lobby-sheet .seats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .lobby .seat,
+  .lobby-sheet .seat {
+    gap: 10px;
+    padding: 8px;
+    min-width: 0;
+  }
+  .lobby .seat-coat {
+    width: 64px;
+    height: 64px;
+  }
+  .seat-name {
+    font-size: 1.35rem;
+  }
+  .lobby-actions,
+  .lobby-sheet .lobby-actions {
+    flex-wrap: nowrap;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+}
