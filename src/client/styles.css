@@ -2601,7 +2601,7 @@ textarea {
   .topbar .brand { order: 1; }
   .topbar .room-name { order: 2; }
   .topbar .phase { order: 3; }
-  .topbar .room-code .link { order: 4; margin-left: auto; }
+  .topbar .room-code .exit-btn { order: 4; margin-left: auto; }
   .topbar::after {
     content: '';
     order: 5;
@@ -2612,7 +2612,9 @@ textarea {
   .topbar .action-status { order: 7; }
   .topbar .turn-actions { order: 8; margin-right: 0; }
   .topbar .rules-btn { order: 9; margin-left: auto; }
-  .topbar .sound-btn { order: 10; }
+  /* Sonido en la primera fila, justo a la izquierda de «salir» (mismo orden: va antes en el HTML) */
+  .topbar .sound-btn { order: 4; margin-left: auto; }
+  .topbar .room-code .exit-btn { margin-left: 4px !important; }
   .topbar .active-player,
   .topbar .action-status .act,
   .topbar button {
@@ -2796,13 +2798,70 @@ textarea {
 
 /* Portada y Mundo: botón para silenciar la música, discreto en la esquina */
 .music-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  color: #3a2c1e !important;
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 30;
-  padding: 4px 9px !important;
+  padding: 0 !important;
   font-size: 1.05rem;
   line-height: 1;
   background: #efe2c2cc !important;
   border: 1px solid #b8892f !important;
+}
+
+/* Aviso de fin de turno automático (5 s), centrado sobre el tablero */
+.auto-end {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  padding: 12px 18px;
+  text-align: center;
+  background-color: rgba(247, 240, 222, 0.96);
+  box-shadow: 0 6px 18px #3a220f55;
+}
+.auto-end p {
+  margin: 0 0 8px;
+}
+.auto-end .row {
+  justify-content: center;
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .auto-end {
+    width: calc(100% - 40px);
+  }
+}
+
+/* Salir (cruz roja) y sonido: botones cuadrados del mismo tamaño, con el icono centrado */
+.topbar .sound-btn,
+.topbar .exit-btn {
+  width: 32px;
+  height: 28px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  color: #3a2c1e !important;
+}
+.topbar .exit-btn {
+  margin-left: 10px;
+  background: #b0302a !important;
+  border: 1px solid #7d1f1a !important;
+  color: #fff !important;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.topbar .exit-btn:hover {
+  background: #c43a33 !important;
 }

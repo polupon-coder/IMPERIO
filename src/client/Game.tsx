@@ -51,6 +51,7 @@ import {
   type UnitType,
 } from '../engine';
 import { useGameSounds, useMuted } from './sounds';
+import { SpeakerIcon } from './icons';
 import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
@@ -289,12 +290,12 @@ export function Game({
           Reglas
         </button>
         <button className="sound-btn" onClick={toggleMuted} title={muted ? 'Activar sonidos' : 'Silenciar sonidos'} aria-label={muted ? 'Activar sonidos' : 'Silenciar sonidos'}>
-          {muted ? '🔇' : '🔈'}
+          <SpeakerIcon muted={muted} />
         </button>
         <span className="room-code">
           <span className="room-name">Mundo {room.code}</span>
-          <button className="link" onClick={onExit}>
-            salir
+          <button className="exit-btn" onClick={onExit} title="Salir del Mundo" aria-label="Salir del Mundo">
+            ×
           </button>
         </span>
       </header>
@@ -361,6 +362,7 @@ export function Game({
             selectedTower={mode.kind === 'tower'}
           />
           {s.phase === 'PHASE_2' && myTurn && <TurnHint state={s} mode={mode} setMode={setMode} />}
+          {s.phase === 'PHASE_2' && myTurn && !tradeOpen && !groupAsk && <AutoEndTurn state={s} send={send} />}
         </section>
 
         <aside className="side">
@@ -595,6 +597,41 @@ function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][num
         </button>
       )}
     </>
+  );
+}
+
+/**
+ * Sin Acción Civil ni Militar disponibles: avisa de que el turno ha terminado y lo pasa a los 5 segundos.
+ * Se puede pasar ya o esperar (por ejemplo, para comerciar con el Mercado).
+ */
+function AutoEndTurn({ state: s, send }: { state: GameState; send: Send }) {
+  const done = !s.prompt && !s.combat && !canUseCivil(s) && !canUseMilitary(s);
+  const key = `${s.turnNumber}`;
+  const [left, setLeft] = useState(5);
+  const [waitKey, setWaitKey] = useState('');
+  const active = done && waitKey !== key;
+  useEffect(() => {
+    if (!active) return;
+    setLeft(5);
+    const id = setInterval(() => setLeft((n) => n - 1), 1000);
+    return () => clearInterval(id);
+  }, [active, key]);
+  useEffect(() => {
+    if (active && left <= 0) send({ type: 'endTurn' });
+  }, [active, left]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!active) return null;
+  return (
+    <div className="card auto-end">
+      <p>
+        <b>Has terminado tu turno.</b> Pasa al siguiente jugador en {Math.max(0, left)} s.
+      </p>
+      <div className="row">
+        <button className="primary" onClick={() => send({ type: 'endTurn' })}>
+          Pasar ya
+        </button>
+        <button onClick={() => setWaitKey(key)}>Esperar</button>
+      </div>
+    </div>
   );
 }
 
