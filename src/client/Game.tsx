@@ -968,7 +968,7 @@ const canTrade = (s: GameState, seat: Seat) =>
   !s.turn.tradeDone &&
   !s.prompt &&
   !s.combat;
-/** El panel de Comerciar (conversión 2→1 e intercambio) se abre con Mercado durante tu turno. */
+/** El panel de Comerciar (conversión 3→1 e intercambio) se abre con Mercado durante tu turno. */
 const canOpenMarket = (s: GameState, seat: Seat) =>
   s.phase === 'PHASE_2' && s.turn?.seat === seat && s.players[seat].buildings.includes('mercado') && !s.prompt && !s.combat;
 
@@ -1226,7 +1226,7 @@ function ConvertRow({ state: s, mySeat, send }: { state: GameState; mySeat: Seat
     <>
       <h4>Convertir ({CONVERT_RATE} iguales → 1 cualquiera)</h4>
       <div className="row">
-        2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
+        {CONVERT_RATE} <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
         <button disabled={my.resources[give] < CONVERT_RATE || give === get} onClick={() => send({ type: 'convert', give, get }, true)}>
           Convertir
         </button>
