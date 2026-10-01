@@ -2887,3 +2887,98 @@ textarea {
     column-gap: 7px;
   }
 }
+
+@media (max-width: 900px) {
+  /* Reglas en la primera fila, junto al sonido y salir */
+  .topbar .rules-btn {
+    order: 4;
+    margin-left: auto;
+    height: 28px;
+    padding: 0 8px !important;
+  }
+  .topbar .sound-btn {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Si no cabe todo, se recorta el texto (Mundo y fase), nunca los botones */
+  .topbar {
+    column-gap: 5px;
+  }
+  .topbar .room-name,
+  .topbar .phase {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.74rem;
+  }
+  .topbar .brand {
+    font-size: 0.95rem;
+    flex: 0 0 auto;
+  }
+  .topbar .rules-btn,
+  .topbar .sound-btn,
+  .topbar .exit-btn {
+    flex: 0 0 auto;
+  }
+  .topbar .rules-btn {
+    font-size: 0.74rem !important;
+    padding: 0 6px !important;
+  }
+  .topbar .sound-btn,
+  .topbar .exit-btn {
+    width: 30px;
+  }
+}
+
+.turn-group {
+  display: contents;
+}
+@media (max-width: 900px) {
+  /* Barra en rejilla de dos filas: arriba Imperio · Mundo · fase … Reglas · sonido · salir (el texto se recorta
+     si no cabe, los botones nunca bajan); abajo, el turno y las acciones. */
+  .topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    column-gap: 6px;
+    row-gap: 6px;
+  }
+  .topbar::after {
+    display: none;
+  }
+  .topbar .room-code {
+    display: contents;
+  }
+  .topbar .brand { grid-row: 1; grid-column: 1; }
+  .topbar .room-name { grid-row: 1; grid-column: 2; }
+  .topbar .phase { grid-row: 1; grid-column: 3; }
+  .topbar .rules-btn { grid-row: 1; grid-column: 4; margin-left: 0; }
+  .topbar .sound-btn { grid-row: 1; grid-column: 5; margin-left: 0; }
+  .topbar .room-code .exit-btn { grid-row: 1; grid-column: 6; margin-left: 0 !important; }
+  .topbar .turn-group {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+  }
+  .topbar .room-name,
+  .topbar .phase {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Palabra corta para el móvil («R.» en lugar de «Ronda») */
+.word-short {
+  display: none;
+}
+@media (max-width: 900px) {
+  .topbar .word-long { display: none; }
+  .topbar .word-short { display: inline; }
+}

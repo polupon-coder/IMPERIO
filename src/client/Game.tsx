@@ -269,24 +269,35 @@ export function Game({
         <span className="brand">Imperio</span>
         <span className="phase">
           {PHASE_LABEL[s.phase]}
-          {s.phase === 'PHASE_2' ? ` · Ronda ${roman(Math.ceil(s.turnNumber / 4))}` : <span className="step-label"> · {STEP_LABEL[s.step]}</span>}
+          {s.phase === 'PHASE_2' ? (
+            <>
+              {' · '}
+              <span className="word-long">Ronda</span>
+              <span className="word-short">R.</span> {roman(Math.ceil(s.turnNumber / 4))}
+            </>
+          ) : (
+            <span className="step-label"> · {STEP_LABEL[s.step]}</span>
+          )}
         </span>
-        {s.phase !== 'GAME_OVER' && s.step !== 'INITIAL_PLACEMENT' && s.step !== 'FINAL_DEPLOY' && (
-          <span
-            className="active-player"
-            style={{ background: myTurn ? '#3f7d3a' : PLAYER_COLORS[s.players[active].color] }}
-          >
-            {myTurn ? 'Tu turno' : `Turno de ${s.players[active].name}`}
-          </span>
-        )}
-        {s.phase === 'PHASE_2' && myTurn && <ActionStatus state={s} />}
-        {s.phase === 'PHASE_2' && myTurn && (
-          <span className="turn-actions">
-            <button className="end-turn-top" disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endTurn' })}>
-              Terminar turno
-            </button>
-          </span>
-        )}
+        {/* Turno y acciones: segunda fila en el móvil (en ordenador, en línea como siempre) */}
+        <span className="turn-group">
+          {s.phase !== 'GAME_OVER' && s.step !== 'INITIAL_PLACEMENT' && s.step !== 'FINAL_DEPLOY' && (
+            <span
+              className="active-player"
+              style={{ background: myTurn ? '#3f7d3a' : PLAYER_COLORS[s.players[active].color] }}
+            >
+              {myTurn ? 'Tu turno' : `Turno de ${s.players[active].name}`}
+            </span>
+          )}
+          {s.phase === 'PHASE_2' && myTurn && <ActionStatus state={s} />}
+          {s.phase === 'PHASE_2' && myTurn && (
+            <span className="turn-actions">
+              <button className="end-turn-top" disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endTurn' })}>
+                Terminar turno
+              </button>
+            </span>
+          )}
+        </span>
         <button className="rules-btn" onClick={() => setRulesOpen(true)}>
           Reglas
         </button>
