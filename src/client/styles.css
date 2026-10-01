@@ -2324,3 +2324,53 @@ textarea {
   font-size: 0.8em;
   margin-left: 6px;
 }
+
+/* Barra superior: acciones del turno */
+.action-status {
+  display: inline-flex;
+  gap: 6px;
+}
+.action-status .act {
+  font-size: 0.85rem;
+  padding: 2px 9px;
+  border-radius: 10px;
+  border: 1px solid #ffffff33;
+}
+.action-status .act.on {
+  background: #3f7d3a;
+  color: #f7efdc;
+}
+.action-status .act.busy {
+  background: #b8862b;
+  color: #fff8e6;
+}
+.action-status .act.off {
+  color: #c9b896;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+/* Ventana de Murallas */
+.walls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.wall-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wall-row button {
+  margin-left: auto;
+}
+.army-figures figure.clickable {
+  cursor: pointer;
+}
+.army-figures figure.clickable:hover {
+  filter: brightness(1.08);
+}
+.center-actions {
+  justify-content: center !important;
+}

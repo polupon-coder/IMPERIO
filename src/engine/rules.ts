@@ -118,6 +118,16 @@ export const BUILDING_COST: Record<Building, Resources> = {
   ayuntamiento: R(5, 5, 3, 3),
 };
 
+/** Aclaración A18: el Mercado convierte 3 recursos iguales en 1 cualquiera. */
+export const CONVERT_RATE = 3;
+/** Aclaración A19: la Fe cuesta 2 Agua. */
+export const FAITH_COST = 2;
+/** Aclaración A20: Murallas en la Fase II (Acción Civil). */
+export const WALL_BUILD_COST: Resources = R(1, 4, 0, 0);
+export const WALL_REPAIR_COST: Resources = R(0, 3, 0, 0);
+/** Una Muralla destruida en el turno T solo se repara a partir del turno T + 5 (pasa una ronda). */
+export const WALL_REPAIR_WAIT = 4;
+
 /** §49–53 */
 export const UNIT_COST: Record<UnitType, Resources> = {
   infanteria: R(0, 0, 2, 1),

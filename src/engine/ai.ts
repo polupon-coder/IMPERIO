@@ -27,6 +27,8 @@ import {
   UNIT_COST,
   UNIT_TYPES,
   canAfford,
+  CONVERT_RATE,
+  FAITH_COST,
   isCapital,
   isLand,
   manhattan,
@@ -36,7 +38,7 @@ import {
   sideTowards,
 } from './rules';
 import type { Action, Building, GameState, Resource, Resources, Seat, Side, Terrain, UnitType } from './types';
-import { unitCount } from './game';
+import { unitCount, wallBuildCheck } from './game';
 
 export type BotLevel = 'facil' | 'normal';
 type Rand = () => number;
@@ -298,11 +300,11 @@ function conversionPlan(have: Resources, cost: Resources): Array<{ give: Resourc
   for (const need of RESOURCES) {
     while (res[need] < cost[need]) {
       const give = pickBest(
-        RESOURCES.filter((x) => x !== need && res[x] - cost[x] >= 2),
+        RESOURCES.filter((x) => x !== need && res[x] - cost[x] >= CONVERT_RATE),
         (x) => res[x] - cost[x],
       );
       if (!give) return null;
-      res[give] -= 2;
+      res[give] -= CONVERT_RATE;
       res[need] += 1;
       plan.push({ give, get: need });
     }
@@ -352,7 +354,8 @@ function answerPrompt(s: GameState, seat: Seat, level: BotLevel, r: Rand): Actio
       if (level === 'facil') use = r() < 0.4;
       else if (pr.role === 'attacker') use = a < b || (a === b && !c.attackerCanLose);
       else use = b < a;
-      if (p.resources.agua < 2 && level === 'normal' && pr.role === 'attacker' && a === b) use = false;
+      // La Fe es cara: no se gasta en empates si el Agua escasea
+      if (level === 'normal' && a === b && p.resources.agua < FAITH_COST * 2) use = false;
       return { type: 'faith', use };
     }
     case 'advance': {
@@ -552,6 +555,22 @@ function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand): Action | 
   return t ? { type: 'recruit', unit: t, pos: bestSpot(s, seat, t, r) } : null;
 }
 
+function wallChoice(s: GameState, seat: Seat, level: BotLevel): Action | null {
+  const threat = threatLevel(s, seat);
+  const p = s.players[seat];
+  // Sin amenaza, solo si ya no le quedan edificios que construir pronto
+  const nearBuilding = remainingBuildings(s, seat).length > 0 && p.buildings.length < 8;
+  if (threat === 0 && nearBuilding) return null;
+  if (level === 'facil' && threat < 3) return null;
+  const sides = SIDES.filter((side) => isLand(s.cells[sideCell(seat, side)].terrain) && wallBuildCheck(s, seat, side).ok);
+  const best = pickBest(sides, (side) => {
+    const pos = sideCell(seat, side);
+    const nearEnemy = Math.min(9, ...enemyUnits(s, seat).map((e) => manhattan(e.pos, pos)));
+    return (wallBuildCheck(s, seat, side).repair ? 1 : 0) - nearEnemy;
+  });
+  return best ? { type: 'buildWall', side: best } : null;
+}
+
 function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | null {
   if (s.prompt) return s.prompt.seat === seat ? answerPrompt(s, seat, level, r) : null;
   if (s.combat || s.turn?.seat !== seat) return null;
@@ -574,6 +593,12 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
       if (choice.plan.length) return { type: 'convert', ...choice.plan[0] };
       return { type: 'build', building: choice.b };
     }
+  }
+
+  // 2b. Murallas: reparar o levantar en lados abiertos de tierra, sobre todo si hay amenaza
+  if (canUseCivil(s)) {
+    const wall = wallChoice(s, seat, level);
+    if (wall) return wall;
   }
 
   // 3. Acción militar

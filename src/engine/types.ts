@@ -62,6 +62,8 @@ export interface PlayerState {
   reserve: UnitType[];
   /** Número de turno en el que usó Fe por última vez. */
   faithTurn: number | null;
+  /** Turno en que se destruyó cada Muralla (para la espera antes de repararla, A20). */
+  wallDestroyedTurn?: Partial<Record<Side, number>>;
 }
 
 export interface Activation {
@@ -171,6 +173,7 @@ export type Action =
   // Fase II
   | { type: 'libraryChoice'; resource: Resource }
   | { type: 'build'; building: Building }
+  | { type: 'buildWall'; side: Side }
   | { type: 'recruit'; unit: UnitType; pos: number }
   | { type: 'move'; unitId: string; to: number }
   | { type: 'attack'; unitIds: string[]; target: number }

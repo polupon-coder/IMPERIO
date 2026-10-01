@@ -28,6 +28,9 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A15 | Bombardeo de Murallas | Opción B: la Artillería puede atacar la Muralla de un lado desde la casilla adyacente a ese lado o desde cualquier casilla a distancia 2 de la Capital con una ruta ortogonal mínima que entra por ese lado (la casilla en línea recta y las dos diagonales). |
 | A16 | Pasar | El jugador activo puede terminar su turno sin realizar acciones. |
 | A17 | Negociación | Cada intercambio es de **1 recurso por 1 recurso** con otro jugador. Solo **un intercambio aceptado por turno**. |
+| A18 | Mercado | La conversión es de **3 recursos iguales → 1 cualquiera** (sustituye el 2 → 1 de §45). |
+| A19 | Fe | Usar la Fe cuesta **2 Agua** (sustituye el 1 Agua de §42). |
+| A20 | Murallas en la Fase II | Con la **Acción Civil** se puede **levantar una Muralla nueva** (4 Piedra + 1 Madera) o **reparar una destruida** (3 Piedra) en un lado de la propia Capital. Máximo 4 Murallas por Capital. No se puede en un lado con tropas enemigas en su casilla. Una Muralla destruida no se puede reparar en el turno siguiente de su dueño, sino a partir del otro (debe pasar una ronda). Las Murallas levantadas en la Fase II cuentan como **originales** y se restauran al ser conquistada la Capital (§115). Sustituye la prohibición de §108. |
 
 ### Decisiones de implementación (confirmadas por el autor)
 
@@ -135,7 +138,7 @@ Si el jugador ya tiene Biblioteca al empezar el turno, obtiene además 1 recurso
 Sin Ayuntamiento: 1 Acción Civil **o** 1 Acción Militar. Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar, en el orden que elija. Los edificios funcionan en cuanto se construyen: por ejemplo, construir el Ayuntamiento con la Acción Civil permite hacer la Acción Militar ese mismo turno, y los edificios militares desbloquean sus tropas al instante.
 
 ### 30. Acción Civil
-Sirve exclusivamente para construir 1 edificio. Reclutar no es una Acción Civil.
+Sirve exclusivamente para construir 1 edificio. Reclutar no es una Acción Civil. *(A20: también puede levantar o reparar una Muralla.)*
 
 ### 31–38. Edificios (una copia de cada uno por jugador)
 | Edificio | Madera | Piedra | Comida | Agua | Efecto |
@@ -156,10 +159,10 @@ Cuartel, Arquería, Caballerizas, Herrería, Iglesia, Mercado, Biblioteca y Ayun
 Desde el comienzo de la Fase II todas las tropas pueden moverse y defenderse, pero no pueden iniciar un ataque sin su edificio: Infantería → Cuartel; Arquero → Arquería; Caballería → Caballerizas; Lancero → Herrería; Artillería → Herrería + Biblioteca.
 
 ### 42–44. Iglesia y Fe
-Con Iglesia, pagar 1 Agua permite repetir la tirada completa de tus propios dados; el nuevo resultado es obligatorio. Puede usarse en tu turno o en el de otro si participas en la tirada, y solo repites tus propios dados. Máximo 1 vez por cada turno individual. No se usa para conquistar, porque la conquista no tiene tirada.
+Con Iglesia, pagar 1 Agua *(A19: 2 Agua)* permite repetir la tirada completa de tus propios dados; el nuevo resultado es obligatorio. Puede usarse en tu turno o en el de otro si participas en la tirada, y solo repites tus propios dados. Máximo 1 vez por cada turno individual. No se usa para conquistar, porque la conquista no tiene tirada.
 
 ### 45–46. Mercado
-En su turno, un jugador con Mercado puede convertir 2 recursos iguales en 1 recurso cualquiera, sin gastar acción y tantas veces como pueda pagar. También puede negociar recursos con cualquier jugador, sin gastar acción; solo el jugador activo necesita Mercado. *(Ver A17.)*
+En su turno, un jugador con Mercado puede convertir 2 recursos iguales *(A18: 3)* en 1 recurso cualquiera, sin gastar acción y tantas veces como pueda pagar. También puede negociar recursos con cualquier jugador, sin gastar acción; solo el jugador activo necesita Mercado. *(Ver A17.)*
 
 ### 47–48. Acción Militar
 Elige exactamente una opción: **A. Activar** hasta 3 figuras distintas, o **B. Reclutar** 1 tropa. No se combinan. Una tropa recién reclutada no puede moverse ni atacar ese turno.
@@ -229,7 +232,7 @@ Dados: 1 Artillería 2d, 2 Artillerías 3d y 3 Artillerías 4d, contra 1d de la 
 - Si gana el atacante, la Muralla queda destruida. *(Si gana la Muralla: ver A12, sin baja.)*
 - Las tropas del propietario atraviesan libremente sus propias Murallas. *(Ver A8 y A14.)*
 - Un enemigo no puede atacar una Capital a través de un lado con Muralla intacta.
-- Una Muralla destruida no puede reconstruirse; solo vuelve cuando esa Capital es conquistada.
+- Una Muralla destruida no puede reconstruirse; solo vuelve cuando esa Capital es conquistada. *(Sustituida por A20: se puede reparar.)*
 
 ### 109–119. Capitales y Conquistas
 - Para atacar una Capital, la tropa debe estar desbloqueada, ortogonalmente adyacente, poder atacar todavía en esta activación y estar en un lado sin Muralla intacta. Si puede hacerlo legalmente, la Capital queda **conquistada automáticamente**, sin tirada y sin que importen el tipo, el número ni las bonificaciones.

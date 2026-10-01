@@ -141,10 +141,10 @@ export function RulesSheet() {
                 la militar antes de construir).
               </li>
               <li>
-                <b>Acción Civil:</b> construir 1 edificio. Pulsa el edificio en tu panel.
+                <b>Acción Civil:</b> construir 1 edificio (pulsa el edificio en tu panel) o levantar/reparar 1 Muralla.
               </li>
               <li>
-                <b>Acción Militar:</b> activar hasta 3 figuras para mover y atacar, <b>o</b> reclutar 1 tropa. La
+                <b>Acción Militar:</b> activar hasta 3 figuras para mover y atacar (si hay varias tropas en la casilla te pregunta si las mueves juntas), <b>o</b> reclutar 1 tropa. La
                 tropa reclutada aparece en tu anillo y no actúa ese turno.
               </li>
               <li>Puedes terminar el turno sin hacer nada.</li>
@@ -152,11 +152,11 @@ export function RulesSheet() {
             <h4>Sin gastar acción</h4>
             <ul>
               <li>
-                <b>Mercado:</b> convertir 2 recursos iguales en 1 cualquiera, tantas veces como quieras, y 1
+                <b>Mercado:</b> convertir 3 recursos iguales en 1 cualquiera, tantas veces como quieras, y 1
                 intercambio por turno de 1 recurso por 1 recurso con otro jugador (botón «Comerciar»).
               </li>
               <li>
-                <b>Iglesia (Fe):</b> paga 1 Agua para repetir toda tu tirada; el nuevo resultado es obligatorio. Una
+                <b>Iglesia (Fe):</b> paga 2 Agua para repetir toda tu tirada; el nuevo resultado es obligatorio. Una
                 vez por cada turno, también cuando defiendes.
               </li>
             </ul>
@@ -323,7 +323,16 @@ export function RulesSheet() {
                 dados (+1 por figura extra) contra 1. Si pierde, retira 1 Artillería.
               </li>
               <li>Los Arqueros no atacan Murallas ni Capitales a distancia.</li>
-              <li>Una Muralla destruida no se reconstruye, salvo cuando conquistan esa Capital.</li>
+              <li>
+                Con la <b>Acción Civil</b> puedes <b>levantar una Muralla nueva</b> (4 Piedra + 1 Madera) o{' '}
+                <b>reparar una destruida</b> (3 Piedra), hasta 4 por Capital y nunca en un lado ocupado por tropas
+                enemigas. Pulsa «Murallas» en tu panel.
+              </li>
+              <li>
+                Una Muralla destruida no se puede reparar en tu turno siguiente, sino a partir del otro: los rivales
+                siempre tienen una ronda para entrar por la brecha.
+              </li>
+              <li>Al conquistar una Capital, todas sus Murallas (también las levantadas después) vuelven a su sitio.</li>
             </ul>
             <h4>Conquista</h4>
             <ul>

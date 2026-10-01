@@ -346,6 +346,48 @@ describe('Economía y turno', () => {
     s = applyAction(s, 0, { type: 'endTurn' });
   });
 
+  it('Mercado: 3 recursos iguales por 1 (A18)', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['mercado'];
+    s.players[0].resources.comida = 2;
+    expect(() => applyAction(s, 0, { type: 'convert', give: 'comida', get: 'piedra' })).toThrow();
+    s.players[0].resources.comida = 3;
+    s = applyAction(s, 0, { type: 'convert', give: 'comida', get: 'piedra' });
+    expect(s.players[0].resources.comida).toBe(0);
+    expect(s.players[0].resources.piedra).toBe(21);
+  });
+
+  it('Murallas en la Fase II: levantar, máximo 4 y no con enemigos en el lado (A20)', () => {
+    let s = phase2Board();
+    s = applyAction(s, 0, { type: 'buildWall', side: 'N' });
+    expect(s.players[0].walls).toEqual(['N']);
+    expect(s.players[0].originalWalls).toEqual(['N']);
+    expect(s.players[0].resources.piedra).toBe(16);
+    expect(s.players[0].resources.madera).toBe(19);
+    expect(() => applyAction(s, 0, { type: 'buildWall', side: 'S' })).toThrow(); // ya usó la Acción Civil
+    const t = phase2Board();
+    put(t, 1, 'infanteria', 2, 1); // lado sur de la Capital 0 (fila 3, col 2)
+    expect(() => applyAction(t, 0, { type: 'buildWall', side: 'S' })).toThrow();
+    const u = phase2Board();
+    u.players[0].originalWalls = ['N', 'S', 'E', 'O'];
+    u.players[0].walls = ['N', 'S', 'E'];
+    u.players[0].wallDestroyedTurn = {};
+    expect(applyAction(u, 0, { type: 'buildWall', side: 'O' }).players[0].walls).toContain('O'); // reparar
+  });
+
+  it('reparar una Muralla destruida exige esperar una ronda y cuesta 3 Piedra (A20)', () => {
+    const s = phase2Board();
+    s.players[0].originalWalls = ['N'];
+    s.players[0].walls = [];
+    s.players[0].wallDestroyedTurn = { N: s.turnNumber - 2 };
+    expect(() => applyAction(s, 0, { type: 'buildWall', side: 'N' })).toThrow();
+    s.players[0].wallDestroyedTurn = { N: s.turnNumber - 6 };
+    const r = applyAction(s, 0, { type: 'buildWall', side: 'N' });
+    expect(r.players[0].walls).toEqual(['N']);
+    expect(r.players[0].resources.piedra).toBe(17);
+    expect(r.players[0].resources.madera).toBe(20);
+  });
+
   it('el Mercado no convierte un recurso en sí mismo', () => {
     const s = phase2Board();
     s.players[0].buildings = ['mercado'];

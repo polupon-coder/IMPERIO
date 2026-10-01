@@ -11,6 +11,9 @@ import {
   SIDES,
   UNIT_COST,
   UNIT_TYPES,
+  CONVERT_RATE,
+  FAITH_COST,
+  wallBuildCheck,
   activationOf,
   attackAvailable,
   attackTargets,
@@ -99,6 +102,8 @@ export function Game({
   const [tradeOpen, setTradeOpen] = useState(false);
   const [victoryOpen, setVictoryOpen] = useState(true);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [groupAsk, setGroupAsk] = useState<{ kind: 'move' | 'attack'; lead: string; ids: string[]; run: (ids: string[]) => void } | null>(null);
+  const [wallsOpen, setWallsOpen] = useState(false);
 
   // Si la selección deja de ser válida tras una actualización, se limpia.
   useEffect(() => {
@@ -186,8 +191,21 @@ export function Game({
     }
     if (mode.kind === 'recruit' && m) return send({ type: 'recruit', unit: mode.unit, pos });
     if (mode.kind === 'unit') {
-      if (m === 'move') return send({ type: 'move', unitId: mode.unitId, to: pos }, true);
-      if (m === 'attack') return send({ type: 'attack', unitIds: [mode.unitId, ...mode.group], target: pos });
+      const lead = mode.unitId;
+      if (m === 'move') {
+        const runMove = async (ids: string[]) => {
+          for (const id of ids) if (!(await send({ type: 'move', unitId: id, to: pos }, true))) break;
+        };
+        const others = moveCompanions(s, lead, pos);
+        if (others.length) return setGroupAsk({ kind: 'move', lead, ids: others, run: runMove });
+        return runMove([lead]);
+      }
+      if (m === 'attack') {
+        const runAttack = (ids: string[]) => send({ type: 'attack', unitIds: ids, target: pos });
+        const others = attackCompanions(s, lead);
+        if (others.length) return setGroupAsk({ kind: 'attack', lead, ids: others, run: runAttack });
+        return runAttack([lead]);
+      }
       if (m === 'conquer') {
         const cap = ([0, 1, 2, 3] as Seat[]).find((c) => capitalPos(c) === pos)!;
         return send({ type: 'conquer', unitId: mode.unitId, capital: cap });
@@ -205,7 +223,12 @@ export function Game({
   };
 
   const onWall = (capital: Seat, side: Side) => {
-    if (mode.kind === 'unit') send({ type: 'attackWall', unitIds: [mode.unitId, ...mode.group], capital, side });
+    if (mode.kind !== 'unit') return;
+    const lead = mode.unitId;
+    const run = (ids: string[]) => send({ type: 'attackWall', unitIds: ids, capital, side });
+    const others = attackCompanions(s, lead);
+    if (others.length) return setGroupAsk({ kind: 'attack', lead, ids: others, run });
+    run([lead]);
   };
 
   const military = s.turn?.military;
@@ -226,6 +249,7 @@ export function Game({
             {myTurn ? 'Tu turno' : `Turno de ${s.players[active].name}`}
           </span>
         )}
+        {s.phase === 'PHASE_2' && myTurn && <ActionStatus state={s} />}
         {s.phase === 'PHASE_2' && myTurn && (
           <span className="turn-actions">
             {s.turn?.military?.open && (
@@ -254,6 +278,39 @@ export function Game({
       <RewardDialog state={s} mySeat={mySeat} send={send} />
       <CombatDialog state={s} mySeat={mySeat} send={send} />
       <Announcements state={s} mySeat={mySeat} />
+      {groupAsk && (
+        <Modal title={groupAsk.kind === 'move' ? '¿Mover juntas?' : '¿Atacar juntas?'} onClose={() => setGroupAsk(null)}>
+          <p className="center">
+            {groupAsk.kind === 'move'
+              ? `En esta casilla hay ${groupAsk.ids.length === 1 ? 'otra tropa que puede' : `otras ${groupAsk.ids.length} tropas que pueden`} ir al mismo destino.`
+              : `En esta casilla ${groupAsk.ids.length === 1 ? 'hay otra figura' : `hay otras ${groupAsk.ids.length} figuras`} del mismo tipo que ${groupAsk.ids.length === 1 ? 'puede' : 'pueden'} atacar con ella (+1 dado por figura).`}
+            <br />
+            <small className="muted">Cada figura gasta una de las 3 activaciones de la Acción Militar.</small>
+          </p>
+          <div className="row modal-actions center-actions">
+            <button
+              className="primary"
+              onClick={() => {
+                const g = groupAsk;
+                setGroupAsk(null);
+                g.run([g.lead, ...g.ids]);
+              }}
+            >
+              {groupAsk.kind === 'move' ? 'Mover' : 'Atacar con'} {groupAsk.ids.length + 1}
+            </button>
+            <button
+              onClick={() => {
+                const g = groupAsk;
+                setGroupAsk(null);
+                g.run([g.lead]);
+              }}
+            >
+              Solo esta
+            </button>
+          </div>
+        </Modal>
+      )}
+      {wallsOpen && <WallsDialog state={s} mySeat={mySeat} send={send} onClose={() => setWallsOpen(false)} />}
       {rulesOpen && (
         <Modal title="Reglas de Imperio" onClose={() => setRulesOpen(false)} wide>
           <RulesSheet />
@@ -301,6 +358,7 @@ export function Game({
             mySeat={mySeat}
             onBuild={(b) => send({ type: 'build', building: b })}
             onRecruit={(u) => setMode({ kind: 'recruit', unit: u })}
+            onWalls={() => setWallsOpen(true)}
             recruiting={mode.kind === 'recruit' ? mode.unit : null}
           />
           <ChatBar room={room} state={s} mySeat={mySeat} onTrade={() => setTradeOpen(true)} />
@@ -525,6 +583,99 @@ function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; s
   );
 }
 
+/** Tropas propias de la misma casilla que pueden ir también a `to` (respetando activaciones y pila de 3). */
+function moveCompanions(s: GameState, leadId: string, to: number): string[] {
+  const u = unitById(s, leadId);
+  if (!u) return [];
+  const acts = s.turn?.military?.activations ?? {};
+  let budget = 3 - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
+  let room = 3 - s.units.filter((x) => x.pos === to && x.owner === u.owner).length - 1;
+  const out: string[] = [];
+  for (const o of s.units) {
+    if (o.id === u.id || o.owner !== u.owner || o.pos !== u.pos || room <= 0) continue;
+    const fresh = !acts[o.id];
+    if (fresh && budget <= 0) continue;
+    if (!moveTargets(s, o.id).has(to)) continue;
+    out.push(o.id);
+    room--;
+    if (fresh) budget--;
+  }
+  return out;
+}
+
+/** Figuras del mismo tipo y casilla que pueden unirse al ataque (respetando las 3 activaciones). */
+function attackCompanions(s: GameState, leadId: string): string[] {
+  const u = unitById(s, leadId);
+  if (!u) return [];
+  const acts = s.turn?.military?.activations ?? {};
+  let budget = 3 - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
+  const out: string[] = [];
+  for (const id of groupCandidates(s, leadId)) {
+    const fresh = !acts[id];
+    if (fresh && budget <= 0) continue;
+    out.push(id);
+    if (fresh) budget--;
+  }
+  return out;
+}
+
+/** Barra superior: si quedan la Acción Civil y la Acción Militar del turno. */
+function ActionStatus({ state: s }: { state: GameState }) {
+  const t = s.turn;
+  if (!t) return null;
+  const town = s.players[t.seat].buildings.includes('ayuntamiento');
+  const civil = t.civilUsed ? 'gastada' : !town && t.militaryUsed ? 'no disponible' : t.military?.open ? 'tras la militar' : 'disponible';
+  const military = t.military?.open ? 'en curso' : t.militaryUsed ? 'gastada' : !town && t.civilUsed ? 'no disponible' : 'disponible';
+  const cls = (v: string) => (v === 'disponible' ? 'on' : v === 'en curso' || v === 'tras la militar' ? 'busy' : 'off');
+  const tip = town ? 'Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar' : 'Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar';
+  return (
+    <span className="action-status" title={tip}>
+      <span className={`act ${cls(civil)}`}>Civil: {civil}</span>
+      <span className={`act ${cls(military)}`}>Militar: {military}</span>
+    </span>
+  );
+}
+
+/** Levantar o reparar Murallas de la propia Capital (A20). */
+function WallsDialog({ state: s, mySeat, send, onClose }: { state: GameState; mySeat: Seat; send: Send; onClose: () => void }) {
+  const p = s.players[mySeat];
+  const civil = s.turn?.seat === mySeat && canUseCivil(s);
+  return (
+    <Modal title="Murallas de tu Capital" onClose={onClose}>
+      <p className="muted center">
+        Con la Acción Civil: levantar una nueva (<Cost r={{ comida: 0, madera: 1, piedra: 4, agua: 0 }} />) o reparar una destruida (
+        <Cost r={{ comida: 0, madera: 0, piedra: 3, agua: 0 }} />). Máximo 4.
+      </p>
+      {!civil && <p className="error center">No te queda Acción Civil en este turno.</p>}
+      <div className="walls-list">
+        {SIDES.map((side) => {
+          const intact = p.walls.includes(side);
+          const check = wallBuildCheck(s, mySeat, side);
+          const label = { N: 'Norte', S: 'Sur', E: 'Este', O: 'Oeste' }[side];
+          const state = intact ? 'en pie' : p.originalWalls.includes(side) ? 'destruida' : 'sin Muralla';
+          return (
+            <div key={side} className="wall-row">
+              <b>{label}</b> <span className="muted">· {state}</span>
+              {!intact && (
+                <button
+                  disabled={!civil || !check.ok}
+                  title={!civil ? 'No te queda Acción Civil este turno' : check.ok ? '' : check.reason}
+                  onClick={async () => {
+                    if (await send({ type: 'buildWall', side })) onClose();
+                  }}
+                >
+                  {check.repair ? 'Reparar' : 'Levantar'} <Cost r={check.cost} />
+                </button>
+              )}
+              {!intact && !check.ok && civil && <small className="error">{check.reason}</small>}
+            </div>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+}
+
 function UnitPanel({
   state: s,
   mode,
@@ -540,9 +691,6 @@ function UnitPanel({
   const steps = stepsLeft(s, u, a);
   const canAtt = attackAvailable(s, u, a);
   const unlocked = isUnlocked(s, u.owner, u.type);
-  const cands = groupCandidates(s, u.id);
-  const acts = s.turn?.military?.activations ?? {};
-  const budget = 3 - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
   return (
     <div className="unit-panel">
       <p>
@@ -550,31 +698,6 @@ function UnitPanel({
         {steps ? `puede mover ${steps}` : 'sin movimiento'} ·{' '}
         {canAtt ? (unlocked ? 'puede atacar' : 'no puede atacar (falta edificio)') : 'sin ataque'}
       </p>
-      {cands.length > 0 && canAtt && unlocked && (
-        <div>
-          <small>Ataque agrupado (+1 dado por figura):</small>
-          <div className="row">
-            {cands.map((id, i) => {
-              const on = mode.group.includes(id);
-              const fresh = !acts[id];
-              const disabled = !on && fresh && mode.group.filter((g) => !acts[g]).length >= budget;
-              return (
-                <label key={id} className="check">
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    disabled={disabled}
-                    onChange={() =>
-                      setMode({ ...mode, group: on ? mode.group.filter((g) => g !== id) : [...mode.group, id] })
-                    }
-                  />
-                  {NAMES.unit[u.type]} #{i + 2}
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      )}
       <p className="legend">
         <span className="lg move" /> mover <span className="lg attack" /> atacar <span className="lg conquer" /> conquistar
         · Murallas atacables parpadean
@@ -640,6 +763,7 @@ function PlayersPanel({
   mySeat,
   onBuild,
   onRecruit,
+  onWalls,
   recruiting,
 }: {
   state: GameState;
@@ -647,6 +771,7 @@ function PlayersPanel({
   mySeat: Seat;
   onBuild: (b: Building) => void;
   onRecruit: (u: UnitType) => void;
+  onWalls: () => void;
   recruiting: UnitType | null;
 }) {
   const [confirm, setConfirm] = useState<{ kind: 'build'; b: Building } | { kind: 'recruit'; u: UnitType } | null>(null);
@@ -794,7 +919,11 @@ function PlayersPanel({
                   </figure>
                 );
               })}
-              <figure className={p.walls.length ? 'on' : ''} title="Murallas intactas / originales">
+              <figure
+                className={`${p.walls.length ? 'on' : ''} ${mine && myTurnNow ? 'clickable' : ''}`}
+                title={mine && myTurnNow ? 'Levantar o reparar Murallas' : 'Murallas intactas / originales'}
+                onClick={() => mine && myTurnNow && onWalls()}
+              >
                 <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color] }}>
                   <img src={WALL_TOKEN} alt="Murallas" draggable={false} />
                 </span>
@@ -1083,17 +1212,17 @@ function ConfirmDialog({
   );
 }
 
-/** Conversión del Mercado: 2 recursos iguales → 1 cualquiera (§45). */
+/** Conversión del Mercado: 3 recursos iguales → 1 cualquiera (§45, A18). */
 function ConvertRow({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
   const my = s.players[mySeat];
   const [give, setGive] = useState<Resource>('comida');
   const [get, setGet] = useState<Resource>('madera');
   return (
     <>
-      <h4>Convertir (2 iguales → 1 cualquiera)</h4>
+      <h4>Convertir ({CONVERT_RATE} iguales → 1 cualquiera)</h4>
       <div className="row">
         2 <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
-        <button disabled={my.resources[give] < 2 || give === get} onClick={() => send({ type: 'convert', give, get }, true)}>
+        <button disabled={my.resources[give] < CONVERT_RATE || give === get} onClick={() => send({ type: 'convert', give, get }, true)}>
           Convertir
         </button>
       </div>
@@ -1308,12 +1437,12 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
       {mine?.kind === 'faith' && (
         <div className="faith-ask">
           <p>
-            Tienes Iglesia: ¿pagas <b>1 Agua</b> para usar la Fe y repetir toda tu tirada? El nuevo resultado es
+            Tienes Iglesia: ¿pagas <b>{FAITH_COST} Agua</b> para usar la Fe y repetir toda tu tirada? El nuevo resultado es
             obligatorio.
           </p>
           <div className="row modal-actions">
             <button className="primary" onClick={() => send({ type: 'faith', use: true })}>
-              Usar Fe (1 Agua)
+              Usar Fe ({FAITH_COST} Agua)
             </button>
             <button onClick={() => send({ type: 'faith', use: false })}>No</button>
           </div>

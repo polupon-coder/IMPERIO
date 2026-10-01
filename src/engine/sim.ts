@@ -12,6 +12,8 @@ import {
   UNIT_COST,
   UNIT_TYPES,
   applyAction,
+  wallBuildCheck,
+  CONVERT_RATE,
   attackTargets,
   chooseAction,
   pendingSeats,
@@ -166,6 +168,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
     for (const b of BUILDINGS)
       if (!p.buildings.includes(b) && !(b === 'ayuntamiento' && p.buildings.length < 2) && canAfford(p.resources, BUILDING_COST[b]))
         add({ type: 'build', building: b });
+  if (canUseCivil(s)) for (const side of SIDES) if (wallBuildCheck(s, seat, side).ok) add({ type: 'buildWall', side });
   if (canUseMilitary(s) && !t.military)
     for (const u of UNIT_TYPES)
       if (isUnlocked(s, seat, u) && unitCount(s, seat, u) < MAX_PER_TYPE && canAfford(p.resources, UNIT_COST[u]))
@@ -188,7 +191,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
   }
   if (hasBuilding(s, seat, 'mercado')) {
     for (const give of RESOURCES)
-      if (p.resources[give] >= 2) for (const get of RESOURCES) if (get !== give) add({ type: 'convert', give, get });
+      if (p.resources[give] >= CONVERT_RATE) for (const get of RESOURCES) if (get !== give) add({ type: 'convert', give, get });
     if (!t.tradeDone)
       for (const to of SEATS)
         if (to !== seat)
@@ -206,6 +209,7 @@ export function phase2Candidates(s: GameState, r: () => number): Candidate[] {
 const WEIGHT: Partial<Record<Action['type'], number>> = {
   conquer: 1000,
   build: 60,
+  buildWall: 3,
   attack: 12,
   attackWall: 12,
   recruit: 6,

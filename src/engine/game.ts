@@ -33,6 +33,11 @@ import {
   TERRAIN_RESOURCE,
   UNIT_COST,
   UNIT_TYPES,
+  CONVERT_RATE,
+  FAITH_COST,
+  WALL_BUILD_COST,
+  WALL_REPAIR_COST,
+  WALL_REPAIR_WAIT,
   canAfford,
   coordLabel,
   emptyResources,
@@ -40,9 +45,11 @@ import {
   manhattan,
   pay,
   ringOwner,
+  sideCell,
 } from './rules';
 import { rollD6, rollDice, shuffle } from './rng';
 import type {
+  Side,
   Action,
   Color,
   Combat,
@@ -377,7 +384,7 @@ function checkVictory(s: GameState, seat: Seat) {
 
 const faithEligible = (s: GameState, seat: Seat) => {
   const p = s.players[seat];
-  return hasBuilding(s, seat, 'iglesia') && p.resources.agua >= 1 && p.faithTurn !== s.turnNumber;
+  return hasBuilding(s, seat, 'iglesia') && p.resources.agua >= FAITH_COST && p.faithTurn !== s.turnNumber;
 };
 
 function rollCombat(s: GameState) {
@@ -459,6 +466,7 @@ function resolveCombat(s: GameState) {
     text = `${att} (${aName}) ataca la Muralla ${NAMES.side[side]} de la Capital de ${def}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
     if (c.result === 'attacker') {
       s.players[capital].walls = s.players[capital].walls.filter((w) => w !== side);
+      (s.players[capital].wallDestroyedTurn ??= {})[side] = s.turnNumber;
       text += 'Muralla destruida.';
     } else if (c.result === 'defender') {
       if (c.attackerCanLose) {
@@ -617,6 +625,24 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       checkVictory(s, seat);
       break;
     }
+    case 'buildWall': {
+      requireTurn(s, seat);
+      if (!canUseCivil(s)) fail('No te queda Acción Civil disponible.');
+      const check = wallBuildCheck(s, seat, action.side);
+      if (!check.ok) fail(check.reason);
+      pay(p.resources, check.cost);
+      if (check.repair) {
+        p.walls.push(action.side);
+        delete p.wallDestroyedTurn?.[action.side];
+        log(s, `${p.name} repara la Muralla ${NAMES.side[action.side]} de su Capital.`, seat);
+      } else {
+        p.walls.push(action.side);
+        p.originalWalls.push(action.side);
+        log(s, `${p.name} levanta una nueva Muralla en el lado ${NAMES.side[action.side]} de su Capital.`, seat);
+      }
+      s.turn!.civilUsed = true;
+      break;
+    }
     case 'recruit': {
       requireTurn(s, seat);
       if (!canUseMilitary(s) || s.turn!.military) fail('No puedes reclutar ahora.');
@@ -723,7 +749,8 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       Object.assign(activate(s, u!.id), { attacked: true, done: true });
       p.conquests.push(action.capital);
       const victim = s.players[action.capital];
-      victim.walls = [...victim.originalWalls]; // §115
+      victim.walls = [...victim.originalWalls]; // §115 (incluye las levantadas en la Fase II, A20)
+      victim.wallDestroyedTurn = {};
       log(
         s,
         `¡${p.name} conquista la Capital de ${victim.name} con ${NAMES.unit[u!.type]} desde ${coordLabel(u!.pos)}!` +
@@ -758,18 +785,18 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const c = s.combat!;
       s.prompt = null;
       if (action.use) {
-        p.resources.agua -= 1;
+        p.resources.agua -= FAITH_COST;
         p.faithTurn = s.turnNumber;
         if (pr.role === 'attacker') {
           const old = c.attackerDice;
           c.attackerDice = rollDice(s, old.length);
           c.attackerFaith = true;
-          log(s, `${p.name} usa Fe (1 Agua): [${old.join(',')}] → [${c.attackerDice.join(',')}].`, seat);
+          log(s, `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.attackerDice.join(',')}].`, seat);
         } else {
           const old = c.defenderDice;
           c.defenderDice = rollDice(s, old.length);
           c.defenderFaith = true;
-          log(s, `${p.name} usa Fe (1 Agua): [${old.join(',')}] → [${c.defenderDice.join(',')}].`, seat);
+          log(s, `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.defenderDice.join(',')}].`, seat);
         }
       }
       combatStage(s, pr.role === 'attacker' ? 'defender' : 'resolve');
@@ -793,10 +820,10 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!hasBuilding(s, seat, 'mercado')) fail('Necesitas Mercado.');
       if (!RESOURCES.includes(action.give) || !RESOURCES.includes(action.get)) fail('Recurso no válido.');
       if (action.give === action.get) fail('Elige un recurso distinto.');
-      if (p.resources[action.give] < 2) fail('Necesitas 2 recursos iguales.');
-      p.resources[action.give] -= 2;
+      if (p.resources[action.give] < CONVERT_RATE) fail(`Necesitas ${CONVERT_RATE} recursos iguales.`);
+      p.resources[action.give] -= CONVERT_RATE;
       p.resources[action.get] += 1;
-      log(s, `${p.name} convierte 2 ${NAMES.resource[action.give]} en 1 ${NAMES.resource[action.get]}.`, seat);
+      log(s, `${p.name} convierte ${CONVERT_RATE} ${NAMES.resource[action.give]} en 1 ${NAMES.resource[action.get]}.`, seat);
       break;
     }
     case 'proposeTrade': {
@@ -853,6 +880,32 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       fail('Acción desconocida.');
   }
   return s;
+}
+
+/**
+ * Aclaración A20: levantar (4 Piedra + 1 Madera) o reparar (3 Piedra) una Muralla de la propia
+ * Capital con la Acción Civil. Máximo 4; no en un lado con tropas enemigas; una Muralla destruida
+ * no se repara hasta que haya pasado una ronda completa.
+ */
+export function wallBuildCheck(
+  s: GameState,
+  seat: Seat,
+  side: Side,
+): { ok: true; repair: boolean; cost: Resources } | { ok: false; reason: string; repair: boolean; cost: Resources } {
+  const p = s.players[seat];
+  const repair = p.originalWalls.includes(side);
+  const cost = repair ? WALL_REPAIR_COST : WALL_BUILD_COST;
+  const no = (reason: string) => ({ ok: false as const, reason, repair, cost });
+  if (!SIDES.includes(side)) return no('Lado no válido.');
+  if (p.walls.includes(side)) return no('Ese lado ya tiene Muralla.');
+  if (!repair && p.originalWalls.length >= MAX_WALLS) return no('Ya tienes 4 Murallas.');
+  if (unitsAt(s, sideCell(seat, side)).some((u) => u.owner !== seat)) return no('Hay tropas enemigas en ese lado.');
+  if (repair) {
+    const t = p.wallDestroyedTurn?.[side];
+    if (t !== undefined && s.turnNumber <= t + WALL_REPAIR_WAIT) return no('Destruida hace poco: podrás repararla en tu próximo turno.');
+  }
+  if (!canAfford(p.resources, cost)) return no('Recursos insuficientes.');
+  return { ok: true, repair, cost };
 }
 
 function sanitize(r: Resources): Resources {
