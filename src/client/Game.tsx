@@ -291,7 +291,7 @@ export function Game({
           Reglas
         </button>
         <span className="room-code">
-          Mundo {room.code}
+          <span className="room-name">Mundo {room.code}</span>
           <button className="link" onClick={onExit}>
             salir
           </button>

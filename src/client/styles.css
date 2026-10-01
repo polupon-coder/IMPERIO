@@ -2494,3 +2494,128 @@ textarea {
     gap: 40px;
   }
 }
+
+/* ---------- Móvil: el panel lateral va debajo del tablero, a todo el ancho ---------- */
+@media (max-width: 900px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 6px 10px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+  .topbar .brand {
+    font-size: 1.1rem;
+  }
+  .topbar button {
+    padding: 3px 10px;
+  }
+  .layout {
+    padding: 8px 8px 16px;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .board-col {
+    align-self: center;
+  }
+  .turn-hint {
+    position: static;
+    margin: 6px 0 0 22px;
+    font-size: 1.2rem;
+  }
+  /* El lateral crece con su contenido (sin caja con scroll propio) */
+  .side {
+    flex: none;
+    height: auto !important;
+    overflow: visible !important;
+    margin-top: 0;
+    border-width: 20px;
+    border-image-width: 20px;
+  }
+  .side > .card.players {
+    overflow: visible;
+  }
+  .mini-token,
+  .res-big {
+    width: 38px;
+    height: 38px;
+  }
+  .army-figures {
+    gap: 2px;
+  }
+  .army-figures figcaption {
+    font-size: 0.62rem;
+  }
+  .modal {
+    max-width: calc(100vw - 16px);
+    border-width: 22px;
+    border-image-width: 22px;
+  }
+  .reward-options {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+@media (max-width: 900px) {
+  /* Edificios de los rivales en dos filas de 4, con el nombre entero */
+  .sum-row.bld-chips {
+    flex-wrap: wrap;
+    height: auto;
+    font-size: 0.7rem;
+  }
+  .sum-row.bld-chips > .bld-chip {
+    flex: 1 1 calc(25% - 3px);
+    height: 22px;
+  }
+  /* Chat: la caja de escribir ocupa toda la línea (el historial sigue en ▴) */
+  .chat-last {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  /* En el móvil el fondo se desplaza con la página (sin franjas al hacer scroll) */
+  body {
+    background-attachment: scroll, scroll;
+  }
+}
+@media (max-width: 900px) {
+  /* Opciones de las ventanas flotantes en una sola fila */
+  .reward-options {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .reward-options button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 4px;
+  }
+  /* Barra superior en dos filas: Imperio · Mundo · fase … salir / turno y acciones */
+  .topbar {
+    gap: 6px 8px;
+    font-size: 0.85rem;
+  }
+  .topbar .room-code {
+    display: contents;
+  }
+  .topbar .brand { order: 1; }
+  .topbar .room-name { order: 2; }
+  .topbar .phase { order: 3; }
+  .topbar .room-code .link { order: 4; margin-left: auto; }
+  .topbar::after {
+    content: '';
+    order: 5;
+    flex-basis: 100%;
+    height: 0;
+  }
+  .topbar .active-player { order: 6; }
+  .topbar .action-status { order: 7; }
+  .topbar .turn-actions { order: 8; margin-right: 0; }
+  .topbar .rules-btn { order: 9; margin-left: auto; }
+  .topbar .active-player,
+  .topbar .action-status .act,
+  .topbar button {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+  }
+}
