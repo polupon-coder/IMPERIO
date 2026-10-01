@@ -251,7 +251,11 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
         </div>
         <div className="ornament" />
         <div className="row lobby-actions">
-          <button className={`seal ${me.ready ? '' : 'green'}`} onClick={() => update({ ready: !me.ready })}>
+          <button
+            className={`seal ${me.ready ? 'dim' : 'green'}`}
+            title={me.ready ? 'Pulsa de nuevo si aún no estás preparado' : ''}
+            onClick={() => update({ ready: !me.ready })}
+          >
             {me.ready ? (
               <>
                 No estoy
@@ -268,7 +272,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
           </button>
           {isHost && (
             <button
-              className="seal"
+              className={`seal ${allReady ? 'green' : ''}`}
               disabled={!allReady}
               onClick={async () => {
                 const r = await call('start');

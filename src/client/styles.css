@@ -2383,3 +2383,10 @@ textarea {
 .banner-text {
   white-space: pre-line;
 }
+/* Mundo: «Estoy preparado» se apaga al confirmar */
+.seal.dim {
+  background: #9a8f7c !important;
+  color: #7d7262 !important;
+  filter: grayscale(0.8);
+  opacity: 0.7;
+}
