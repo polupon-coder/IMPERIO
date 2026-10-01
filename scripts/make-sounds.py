@@ -1,4 +1,4 @@
-"""Genera los sonidos suaves del juego (WAV mono 22 kHz) sintetizados, sin muestras externas.
+"""Genera los sonidos sintetizados del juego (WAV mono 22 kHz). Los .mp3 de public/assets/sonidos son audios aportados por el autor.
 
 Uso: python3 scripts/make-sounds.py   → public/assets/sonidos/*.wav
 """
@@ -108,7 +108,7 @@ for i in range(4):
     snd = stone(rng.uniform(95, 140), rng.uniform(0.07, 0.1))
     place(buf, band(snd, 60, 1400) * (1 - i / 6), at)
     at += rng.uniform(0.05, 0.08)
-save('dados', buf, 0.3)
+# (Dados usa ahora un audio aportado por el autor: dados.mp3)
 rng = saved
 
 
@@ -123,7 +123,7 @@ for i in range(9):
 buf = np.zeros(int(SR * 0.7))
 for i, at in enumerate([0, 0.17, 0.34]):
     place(buf, knock(150, 0.16, 700) * (1 - 0.15 * i), at)
-save('construir', buf, 0.3)
+# (Construir usa ahora un audio aportado por el autor: construir.mp3; se mantiene la secuencia aleatoria)
 rng = saved
 
 # Conquista: dos choques de acero graves sobre un golpe de madera
@@ -140,15 +140,9 @@ for i, at in enumerate([0, 0.32, 0.64]):
 place(buf, drum(55, 1.0), 0.96)
 place(buf, metal(146.8, 1.4), 0.97)
 place(buf, metal(220, 1.2) * 0.6, 0.99)
-save('victoria', buf, 0.28)
+# (Victoria usa ahora un audio aportado por el autor: victoria.mp3)
 
-# Batalla: entrechocar grave de espadas al empezar un combate (generador propio)
-rng = np.random.default_rng(42)
-buf = np.zeros(int(SR * 1.1))
-for at, f, g in [(0, 130.8, 1), (0.16, 116.5, 0.85), (0.3, 123.5, 0.7)]:
-    place(buf, band(metal(f, 0.7), 80, 3200) * g, at)
-    place(buf, drum(70, 0.3) * 0.25 * g, at)
-save('batalla', buf, 0.27)
+# (Batalla usa ahora un audio aportado por el autor: batalla.mp3)
 
 # Botón: toque de madera grave y muy corto (generador propio)
 rng = np.random.default_rng(7)

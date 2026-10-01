@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { type Color, type Seat } from '../engine';
 import { PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
-import { installButtonSounds } from './sounds';
+import { installButtonSounds, setMusic, useMuted } from './sounds';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
 
 /** Cada Capital tiene siempre el mismo color (igual que en el servidor). */
@@ -66,9 +66,17 @@ export function App() {
   };
 
   const me = room?.players.find((p) => p.id === myId);
+  const inGame = !!(room && me && room.game);
+  useEffect(() => setMusic(!inGame), [inGame]);
+  const [muted, toggleMuted] = useMuted();
   return (
     <div className="app">
       {!connected && <div className="banner">Conectando con el servidor…</div>}
+      {!inGame && (
+        <button className="music-btn" onClick={toggleMuted} title={muted ? 'Activar música y sonidos' : 'Silenciar música y sonidos'} aria-label={muted ? 'Activar música y sonidos' : 'Silenciar música y sonidos'}>
+          {muted ? '🔇' : '🔈'}
+        </button>
+      )}
       {!room || !me ? (
         <Home onEnter={entered} error={error} />
       ) : room.game ? (
