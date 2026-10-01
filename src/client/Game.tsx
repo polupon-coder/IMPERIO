@@ -1538,11 +1538,32 @@ function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
 }
 
 /** Tiradas de dados en ventana flotante para todos; Fe, defensa y avance para quien le toque. */
+const CLOSED_COMBAT_KEY = 'imperio:combate-cerrado';
+const readClosedCombat = () => {
+  try {
+    return sessionStorage.getItem(CLOSED_COMBAT_KEY) ?? '';
+  } catch {
+    return '';
+  }
+};
+
 function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Seat; send: Send }) {
   const c = s.combat ?? s.lastCombat;
-  const key = c ? `${s.turnNumber}:${c.from}:${c.summary}:${c.attackerDice.join()}:${c.defenderDice.join()}` : '';
-  const [closed, setClosed] = useState('');
+  // Identidad fija del combate (la entrada del registro con su resultado), no el turno: al cambiar de turno
+  // o reconectar no debe volver a abrirse un resultado ya cerrado.
+  const logN = c?.summary ? ([...s.log].reverse().find((e) => e.text === c.summary)?.n ?? 0) : 0;
+  const key = c ? `${c.from}:${c.summary}:${c.attackerDice.join()}:${c.defenderDice.join()}:${logN}` : '';
+  const [closed, setClosedState] = useState(readClosedCombat);
+  const setClosed = (k: string) => {
+    setClosedState(k);
+    try {
+      sessionStorage.setItem(CLOSED_COMBAT_KEY, k);
+    } catch {
+      /* sin almacenamiento */
+    }
+  };
   if (!c || (!s.combat && closed === key)) return null;
+  if (!s.combat && s.lastCombat && !logN) return null; // resultado antiguo que ya salió del registro
   // Si participaste (atacante o defensor), el resultado se queda hasta que cierres la ventana.
   const involved = c.attacker === mySeat || c.defender === mySeat;
   if (!s.combat && s.lastCombat && !involved && s.log.length && !s.log.slice(-6).some((e) => e.text === c.summary)) return null;
