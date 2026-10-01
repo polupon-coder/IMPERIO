@@ -385,6 +385,14 @@ function maybeCloseMilitary(s: GameState) {
   }
 }
 
+/** Empezar la Acción Civil termina la Acción Militar en curso (las acciones no se intercalan). */
+function closeMilitaryForCivil(s: GameState, seat: Seat) {
+  const m = s.turn?.military;
+  if (!m?.open) return;
+  m.open = false;
+  log(s, `${s.players[seat].name} termina su Acción Militar.`, seat);
+}
+
 function checkVictory(s: GameState, seat: Seat) {
   const p = s.players[seat];
   if (p.buildings.length === 8 && p.conquests.length >= VICTORY.conquests) {
@@ -682,6 +690,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (p.buildings.includes(b)) fail('Ya tienes ese edificio.');
       if (b === 'ayuntamiento' && p.buildings.length < 2) fail('El Ayuntamiento requiere 2 edificios previos.');
       if (!canAfford(p.resources, BUILDING_COST[b])) fail('Recursos insuficientes.');
+      closeMilitaryForCivil(s, seat);
       pay(p.resources, BUILDING_COST[b]);
       p.buildings.push(b);
       s.turn!.civilUsed = true;
@@ -694,6 +703,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!canUseCivil(s)) fail('No te queda Acción Civil disponible.');
       const check = wallBuildCheck(s, seat, action.side);
       if (!check.ok) fail(check.reason);
+      closeMilitaryForCivil(s, seat);
       pay(p.resources, check.cost);
       if (check.repair) {
         p.walls.push(action.side);
@@ -714,6 +724,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (block) fail(block);
       if (!towerBuildSpots(s, seat).includes(action.pos))
         fail('El Torreón va en una loseta de tierra vacía junto a una tropa tuya, nunca al lado de una Capital.');
+      closeMilitaryForCivil(s, seat);
       pay(p.resources, TOWER_COST);
       p.tower = action.pos;
       s.turn!.civilUsed = true;

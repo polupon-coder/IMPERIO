@@ -277,11 +277,6 @@ export function Game({
         {s.phase === 'PHASE_2' && myTurn && <ActionStatus state={s} />}
         {s.phase === 'PHASE_2' && myTurn && (
           <span className="turn-actions">
-            {s.turn?.military?.open && (
-              <button disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endMilitary' })}>
-                Terminar acción militar
-              </button>
-            )}
             <button className="end-turn-top" disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endTurn' })}>
               Terminar turno
             </button>
@@ -604,7 +599,8 @@ function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; s
     <div className="card turn-hint">
       {mode.kind === 'towerBuild' && (
         <p>
-          Elige dónde levantar el Torreón: loseta vacía junto a una tropa tuya, nunca al lado de una Capital.{' '}
+          Elige dónde levantar el Torreón: loseta vacía junto a una tropa tuya, nunca al lado de una Capital.
+          {s.turn?.military?.open && ` ${MILITARY_CLOSE_NOTE}`}{' '}
           <button className="link" onClick={() => setMode({ kind: 'none' })}>
             cancelar
           </button>
@@ -704,6 +700,8 @@ function ActionStatus({ state: s }: { state: GameState }) {
 }
 
 /** Levantar o reparar Murallas de la propia Capital (A20). */
+const MILITARY_CLOSE_NOTE = 'Esto termina tu Acción Militar.';
+
 function WallsDialog({ state: s, mySeat, send, onClose }: { state: GameState; mySeat: Seat; send: Send; onClose: () => void }) {
   const p = s.players[mySeat];
   const civil = s.turn?.seat === mySeat && canUseCivil(s);
@@ -714,6 +712,7 @@ function WallsDialog({ state: s, mySeat, send, onClose }: { state: GameState; my
         <Cost r={{ comida: 0, madera: 0, piedra: 3, agua: 0 }} />). Máximo 4.
       </p>
       {!civil && <p className="error center">No te queda Acción Civil en este turno.</p>}
+      {civil && s.turn?.military?.open && <p className="muted center">{MILITARY_CLOSE_NOTE}</p>}
       <div className="walls-list">
         {SIDES.map((side) => {
           const intact = p.walls.includes(side);
@@ -1285,6 +1284,7 @@ function ConfirmDialog({
           <p>Coste:</p>
           <Cost r={cost} />
           {!build && ok && <p className="muted">Después elige una casilla de tu anillo en el tablero.</p>}
+          {build && ok && s.turn?.military?.open && <p className="muted">{MILITARY_CLOSE_NOTE}</p>}
           {why && <p className="error">{why}</p>}
         </div>
       </div>

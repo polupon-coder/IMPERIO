@@ -405,6 +405,18 @@ describe('Economía y turno', () => {
     expect(() => applyAction(s, 0, { type: 'build', building: 'iglesia' })).toThrow();
   });
 
+  it('con Ayuntamiento, construir con la Acción Militar abierta la da por terminada', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel', 'mercado', 'ayuntamiento'];
+    const inf = put(s, 0, 'infanteria', 3, 3);
+    s = applyAction(s, 0, { type: 'move', unitId: inf, to: idx(3, 4) });
+    expect(s.turn!.military!.open).toBe(true);
+    s = applyAction(s, 0, { type: 'build', building: 'iglesia' });
+    expect(s.players[0].buildings).toContain('iglesia');
+    expect(s.turn!.military!.open).toBe(false);
+    expect(() => applyAction(s, 0, { type: 'move', unitId: inf, to: idx(3, 5) })).toThrow();
+  });
+
   it('sin Ayuntamiento, tras reclutar no se puede construir', () => {
     let s = phase2Board();
     s.players[0].buildings = ['cuartel'];

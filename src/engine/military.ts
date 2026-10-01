@@ -48,7 +48,7 @@ export function canUseMilitary(s: GameState): boolean {
 export function canUseCivil(s: GameState): boolean {
   const t = s.turn;
   if (s.phase !== 'PHASE_2' || !t || s.prompt || s.combat) return false;
-  if (t.military?.open) return false;
+  // Con la Acción Militar abierta (solo posible con Ayuntamiento), la Civil la da por terminada.
   if (t.civilUsed) return false;
   return hasBuilding(s, t.seat, 'ayuntamiento') || !t.militaryUsed;
 }
