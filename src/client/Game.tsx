@@ -1513,7 +1513,7 @@ function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat })
     }
     // Comienza la Fase II
     if (before.phase === 'PHASE_1' && s.phase === 'PHASE_2')
-      setBanner({ title: 'Empieza la Fase II', text: 'El mapa está completo. Comienza la lucha por el Imperio.' });
+      setBanner({ title: 'Empieza la Fase II', text: 'El mapa está completo.\nComienza la lucha por el Imperio.' });
     // Conquistas (si la conquista da la victoria, ya lo anuncia la proclama)
     if (s.phase !== 'GAME_OVER') for (const p of s.players) {
       const nb = before.players[p.seat].conquests.length;

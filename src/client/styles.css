@@ -2380,3 +2380,6 @@ textarea {
   opacity: 0.6;
 }
 
+.banner-text {
+  white-space: pre-line;
+}
