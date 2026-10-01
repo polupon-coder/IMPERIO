@@ -621,19 +621,19 @@ function attackCompanions(s: GameState, leadId: string): string[] {
   return out;
 }
 
-/** Barra superior: si quedan la Acción Civil y la Acción Militar del turno. */
+/** Barra superior: Civil y Militar en verde si aún se pueden usar este turno; apagadas si no. */
 function ActionStatus({ state: s }: { state: GameState }) {
   const t = s.turn;
   if (!t) return null;
   const town = s.players[t.seat].buildings.includes('ayuntamiento');
-  const civil = t.civilUsed ? 'gastada' : !town && t.militaryUsed ? 'no disponible' : t.military?.open ? 'tras la militar' : 'disponible';
-  const military = t.military?.open ? 'en curso' : t.militaryUsed ? 'gastada' : !town && t.civilUsed ? 'no disponible' : 'disponible';
-  const cls = (v: string) => (v === 'disponible' ? 'on' : v === 'en curso' || v === 'tras la militar' ? 'busy' : 'off');
+  const civil = !t.civilUsed && (town || !t.militaryUsed);
+  const military = !!t.military?.open || (!t.militaryUsed && (town || !t.civilUsed));
+  if (!civil && !military) return <span className="action-status done">Has terminado tu turno</span>;
   const tip = town ? 'Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar' : 'Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar';
   return (
     <span className="action-status" title={tip}>
-      <span className={`act ${cls(civil)}`}>Civil: {civil}</span>
-      <span className={`act ${cls(military)}`}>Militar: {military}</span>
+      <span className={`act ${civil ? 'on' : 'off'}`}>Civil</span>
+      <span className={`act ${military ? 'on' : 'off'}`}>Militar</span>
     </span>
   );
 }
