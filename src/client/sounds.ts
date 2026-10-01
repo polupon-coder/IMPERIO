@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameState, Seat } from '../engine';
 
-export type SoundName = 'turno' | 'ficha' | 'dados' | 'construir' | 'conquista' | 'victoria' | 'batalla' | 'boton' | 'fe' | 'destruccion' | 'derrota' | 'celebracion';
+export type SoundName = 'turno' | 'ficha' | 'dados' | 'construir' | 'conquista' | 'victoria' | 'batalla' | 'boton' | 'fe' | 'destruccion' | 'derrota' | 'celebracion' | 'artilleria' | 'caballeria' | 'lancero' | 'infanteria' | 'arquero';
 
 const KEY = 'imperio:mudo';
 /** Archivo y volumen de cada sonido (la mayoría son WAV sintetizados; la Fe es un audio aportado por el autor). */
@@ -15,6 +15,11 @@ const FILE: Partial<Record<SoundName, string>> = {
   celebracion: 'celebracion.mp3',
   dados: 'dados.mp3',
   victoria: 'victoria.mp3',
+  artilleria: 'artilleria.mp3',
+  caballeria: 'caballeria.mp3',
+  infanteria: 'infanteria.mp3',
+  arquero: 'arquero.mp3',
+  conquista: 'conquista.mp3',
 };
 /** Volúmenes igualados a la sonoridad de los sonidos sintetizados. */
 const VOLUME: Partial<Record<SoundName, number>> = {
@@ -26,7 +31,28 @@ const VOLUME: Partial<Record<SoundName, number>> = {
   celebracion: 0.43,
   dados: 0.75,
   victoria: 0.8,
+  artilleria: 1,
+  caballeria: 0.75,
+  lancero: 0.45,
+  infanteria: 0.6,
+  arquero: 0.35,
+  conquista: 1,
 };
+/** Sonido propio de cada tipo de tropa al moverse, atacar o reclutarse (el Torreón dispara como un Arquero). */
+const UNIT_SOUND: Partial<Record<string, SoundName>> = {
+  artilleria: 'artilleria',
+  caballeria: 'caballeria',
+  lancero: 'lancero',
+  infanteria: 'infanteria',
+  arquero: 'arquero',
+};
+const UNIT_RE: Array<[RegExp, SoundName]> = [
+  [/ (mueve|recluta|despliega) Artillería /, 'artilleria'],
+  [/ (mueve|recluta|despliega) Caballería /, 'caballeria'],
+  [/ (mueve|recluta|despliega) Lancero /, 'lancero'],
+  [/ (mueve|recluta|despliega) Infantería /, 'infanteria'],
+  [/ (mueve|recluta|despliega) Arquero /, 'arquero'],
+];
 const cache = new Map<SoundName, HTMLAudioElement>();
 
 function readMuted() {
@@ -125,7 +151,12 @@ export function useGameSounds(s: GameState, mySeat: Seat, version: number) {
       at = 2000;
       combatSound = true;
     } else if (combatKey && combatKey !== p.combatKey) {
-      play('batalla');
+      // La tropa que ataca suena primero (si tiene sonido propio) y después el choque de espadas
+      const own = c ? (c.attackerTower ? 'arquero' : UNIT_SOUND[c.attackerType]) : undefined;
+      if (own) {
+        play(own);
+        play('batalla', 450);
+      } else play('batalla');
       if (dice) play('dados', 650);
       at = 1500;
       combatSound = true;
@@ -142,7 +173,11 @@ export function useGameSounds(s: GameState, mySeat: Seat, version: number) {
     }
     if (!combatSound) {
       if (has(/ construye | levanta | repara /)) play('construir');
-      else if (has(/ coloca | mueve | despliega | recluta | avanza /)) play('ficha');
+      else {
+        const unit = UNIT_RE.find(([re]) => has(re));
+        if (unit) play(unit[1]);
+        else if (has(/ coloca | mueve | despliega | recluta | avanza /)) play('ficha');
+      }
     }
 
     const myTurnNow = s.phase !== 'GAME_OVER' && (s.phase === 'PHASE_2' ? s.turn?.seat === mySeat : s.step === 'PILE_PLACEMENT' && active === mySeat);

@@ -131,7 +131,7 @@ buf = np.zeros(int(SR * 1.4))
 place(buf, drum(65, 0.7), 0)
 place(buf, metal(196), 0.02)
 place(buf, metal(174.6) * 0.85, 0.3)
-save('conquista', buf, 0.26)
+# (Conquista usa ahora un audio aportado por el autor: conquista.mp3)
 
 # Victoria: tres golpes de tambor de guerra y un gran choque de acero
 buf = np.zeros(int(SR * 2.4))
