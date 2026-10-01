@@ -143,7 +143,7 @@ export const UNIT_REQUIRES: Record<UnitType, Building[]> = {
   arquero: ['arqueria'],
   caballeria: ['caballerizas'],
   lancero: ['herreria'],
-  artilleria: ['herreria', 'biblioteca'],
+  artilleria: ['herreria'], // A22
 };
 
 /** Unidades con alcance 2 (§84, §94). */

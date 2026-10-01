@@ -194,7 +194,7 @@ function pushReward(s: GameState, seat: Seat, t: Terrain) {
   let options: Array<UnitType | 'muralla'> = [];
   if (t === 'llanura') options = ['infanteria'];
   if (t === 'bosque') options = ['arquero', 'lancero'];
-  if (t === 'montana') options = ['muralla', 'artilleria'];
+  if (t === 'montana') options = ['muralla']; // A22: la Montaña solo da Muralla
   const possible = options.filter((o) =>
     o === 'muralla' ? wallsCommitted(s, seat) < MAX_WALLS : underLimit(s, seat, o),
   );

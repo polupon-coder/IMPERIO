@@ -19,10 +19,10 @@ const BUILDING_EFFECT: Record<string, string> = {
   cuartel: 'Activa el ataque de la Infantería.',
   arqueria: 'Activa el ataque de los Arqueros.',
   caballerizas: 'Permite reclutar Caballería y atacar con ella.',
-  herreria: 'Activa el ataque de los Lanceros. Con Biblioteca, la Artillería.',
+  herreria: 'Activa los Lanceros y la Artillería.',
   iglesia: 'Permite usar la Fe.',
   mercado: 'Convertir recursos y comerciar con otros jugadores.',
-  biblioteca: '+1 recurso a elegir al empezar cada turno. Con Herrería, la Artillería.',
+  biblioteca: '+1 recurso a elegir al empezar cada turno.',
   ayuntamiento: 'Requiere 2 edificios previos. Permite 1 Acción Civil + 1 Militar por turno.',
 };
 
@@ -114,7 +114,7 @@ export function RulesSheet() {
             <ul>
               <li>Llanura → 1 Infantería.</li>
               <li>Bosque → 1 Arquero o 1 Lancero.</li>
-              <li>Montaña → 1 Muralla o 1 Artillería.</li>
+              <li>Montaña → 1 Muralla (si ya tienes 4, nada). La Artillería solo se recluta en la Fase II con Herrería.</li>
             </ul>
             <p>
               Las tropas se colocan en tu anillo (máximo 3 por loseta, nunca en Agua y la Artillería nunca en
