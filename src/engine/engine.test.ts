@@ -488,19 +488,35 @@ describe('A26 y Torreón propio', () => {
     expect(attackTargets(s, arq).walls).toContainEqual({ capital: 1, side: 'S' });
   });
 
-  it('las tropas propias atraviesan su Torreón, pero no se detienen en él; las enemigas no pasan', () => {
+  it('A28: las tropas propias atraviesan su Torreón y pueden quedarse (máx. 2); las enemigas no pasan', () => {
     const s = phase2Board();
     s.players[0].buildings = ['cuartel'];
     s.players[1].buildings = ['cuartel'];
     s.players[0].tower = idx(4, 3);
     const inf = put(s, 0, 'infanteria', 4, 2);
     const t = moveTargets(s, inf);
-    expect(t.has(idx(4, 3))).toBe(false);
+    expect(t.has(idx(4, 3))).toBe(true);
     expect(t.has(idx(4, 4))).toBe(true);
+    put(s, 0, 'infanteria', 4, 3);
+    put(s, 0, 'infanteria', 4, 3);
+    expect(moveTargets(s, inf).has(idx(4, 3))).toBe(false); // ya hay 2 + el Torreón
     s.turn = { seat: 1, civilUsed: false, militaryUsed: false, military: null, tradeDone: false };
     s.current = s.order.indexOf(1);
     const foe = put(s, 1, 'infanteria', 3, 3);
     expect(moveTargets(s, foe).has(idx(5, 3))).toBe(false);
+  });
+
+  it('A28: con guarnición se ataca a las tropas, no al Torreón', () => {
+    const s = phase2Board();
+    s.players[1].buildings = ['cuartel'];
+    s.players[0].tower = idx(4, 3);
+    put(s, 0, 'infanteria', 4, 3);
+    s.turn = { seat: 1, civilUsed: false, militaryUsed: false, military: null, tradeDone: false };
+    s.current = s.order.indexOf(1);
+    const foe = put(s, 1, 'infanteria', 3, 3);
+    const tg = attackTargets(s, foe);
+    expect(tg.towers).not.toContain(idx(4, 3));
+    expect(tg.troops).toContain(idx(4, 3));
   });
 });
 

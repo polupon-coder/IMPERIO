@@ -345,7 +345,8 @@ export function RulesSheet() {
                 Madera) en una loseta de tierra vacía junto (por un lado) a una tropa tuya. Nunca en las casillas que
                 rodean por los lados a una Capital. Pulsa «Torreón» en tu panel.
               </li>
-              <li>Ocupa su loseta: ninguna tropa puede detenerse en ella. Las enemigas tampoco pueden pasar; las tuyas sí pueden atravesarla.</li>
+              <li>Ocupa 1 de las 3 plazas de su loseta: caben hasta 2 tropas tuyas como guarnición, y tus tropas pueden atravesarla. Las enemigas no pueden ni pasar ni detenerse.</li>
+              <li>Con guarnición, defienden las tropas y el Torreón no se puede atacar hasta que la loseta quede vacía.</li>
               <li>
                 <b>Ataca como un Arquero</b> (alcance 2, 1 dado contra 1), gastando una de las activaciones de la Acción
                 Militar. Solo cae si le gana un Arquero o una Artillería.

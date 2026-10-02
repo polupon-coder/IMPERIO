@@ -211,6 +211,7 @@ export function attackTargets(s: GameState, unitId: string): AttackTargets {
   }
   for (const pl of s.players) {
     if (pl.seat === u.owner || pl.tower == null) continue;
+    if (unitsAt(s, pl.tower).length) continue; // A28: con guarnición, primero hay que vaciar la loseta
     const d = manhattan(u.pos, pl.tower);
     if (d === 1 || (ranged && d === 2 && hasLineOfFire(s, u.pos, pl.tower))) res.towers.push(pl.tower);
   }

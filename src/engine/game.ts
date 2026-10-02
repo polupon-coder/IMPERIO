@@ -864,7 +864,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         summary: '',
       };
       if (action.type === 'attackTower') {
-        if (!targets.towers.includes(action.target)) fail('Ese Torreón no está a tu alcance.');
+        if (!targets.towers.includes(action.target)) fail('Ese Torreón no está a tu alcance (o tiene tropas que lo defienden).');
         combat = {
           ...base,
           defender: towerAt(s, action.target)!,

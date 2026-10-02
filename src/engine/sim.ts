@@ -144,7 +144,10 @@ export function checkInvariants(s: GameState): string[] {
   if (s.combat && !s.prompt) out.push('combate abierto sin decisión pendiente');
   for (const p of s.players) {
     if (p.tower == null) continue;
-    if (unitsAt(s, p.tower).length) out.push(`${p.name}: tropas sobre el Torreón`);
+    // A28: solo guarnición propia y como mucho 2 tropas (el Torreón ocupa 1 plaza)
+    const garrison = unitsAt(s, p.tower);
+    if (garrison.some((u) => u.owner !== p.seat)) out.push(`${p.name}: tropas enemigas sobre el Torreón`);
+    if (garrison.length > 2) out.push(`${p.name}: más de 2 tropas en la loseta del Torreón`);
     if (isCapitalSide(p.tower) || isCapital(p.tower) || !isLand(s.cells[p.tower].terrain)) out.push(`${p.name}: Torreón en casilla no válida`);
     if (s.players.some((o) => o !== p && o.tower === p.tower)) out.push('dos Torreones en la misma casilla');
   }

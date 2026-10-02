@@ -35,6 +35,7 @@ import {
   FAITH_COST,
   VICTORY,
   isCapital,
+  capitalSeatAt,
   isLand,
   manhattan,
   orthoNeighbors,
@@ -127,12 +128,19 @@ function distanceMap(s: GameState, seat: Seat, type: UnitType, goals: number[]):
     const cur = q.shift()!;
     for (const n of orthoNeighbors(cur)) {
       const t = s.cells[n].terrain;
-      if (isCapital(n) || !isLand(t) || (type === 'artilleria' && t === 'montana')) continue;
+      if (isCapital(n)) {
+        // A27: la propia Capital se atraviesa (un paso)
+        if (capitalSeatAt(n) === seat && dist[cur] + 1 < dist[n]) {
+          dist[n] = dist[cur] + 1;
+          q.push(n);
+        }
+        continue;
+      }
+      if (!isLand(t) || (type === 'artilleria' && t === 'montana')) continue;
       // El terreno lento cuesta más (entrar termina la activación); las casillas con enemigos
       // se pueden despejar atacando, pero cuestan bastante más.
       const tw = towerAt(s, n);
-      if (tw === seat) continue; // el propio Torreón no se atraviesa
-      const enemy = unitsAt(s, n).some((u) => u.owner !== seat) || tw !== null;
+      const enemy = unitsAt(s, n).some((u) => u.owner !== seat) || (tw !== null && tw !== seat); // A28: el propio se atraviesa y se ocupa
       const nd = dist[cur] + (t === 'llanura' ? 1 : 1.6) + (enemy ? 3 : 0);
       if (nd < dist[n]) {
         dist[n] = nd;
@@ -438,7 +446,7 @@ function goalsFor(s: GameState, seat: Seat, target: Seat, type: UnitType): numbe
   const ok = (pos: number) => {
     const t = s.cells[pos].terrain;
     return (
-      !isCapital(pos) && isLand(t) && !(type === 'artilleria' && t === 'montana') && towerAt(s, pos) === null && !unitsAt(s, pos).some((u) => u.owner !== seat)
+      !isCapital(pos) && isLand(t) && !(type === 'artilleria' && t === 'montana') && (towerAt(s, pos) === null || towerAt(s, pos) === seat) && !unitsAt(s, pos).some((u) => u.owner !== seat)
     );
   };
   for (const side of SIDES) {

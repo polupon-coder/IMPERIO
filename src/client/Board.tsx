@@ -73,8 +73,8 @@ export function Board(p: BoardProps) {
               {s.players.filter((pl) => pl.tower === pos).map((pl) => (
                 <button
                   key={'t' + pl.seat}
-                  className={`token tower-token ${p.selectedTower && pl.seat === s.turn?.seat ? 'sel' : ''}`}
-                  style={{ ['--owner' as string]: colorOf(pl.seat) }}
+                  className={`token tower-token ${units.length ? 'garrisoned' : ''} ${p.selectedTower && pl.seat === s.turn?.seat ? 'sel' : ''}`}
+                  style={{ ['--owner' as string]: colorOf(pl.seat), ...(units.length ? towerSlot() : {}) }}
                   title={`Torreón de ${pl.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -87,7 +87,7 @@ export function Board(p: BoardProps) {
               ))}
               {units.length > 0 && (
                 <div className="stack">
-                  {stackLayout(units).map(({ u, left, top }) => (
+                  {stackLayout(units, s.players.some((pl) => pl.tower === pos)).map(({ u, left, top }) => (
                     <button
                       key={u.id}
                       className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''} ${isUnlocked(s, u.owner, u.type) ? '' : 'locked'}`}
@@ -172,17 +172,27 @@ function Walls({
  * y las del mismo tipo un poco solapadas en horizontal.
  */
 const TOKEN = 54; // % de la casilla (igual para todas las fichas)
-function stackLayout(units: Unit[]) {
+/**
+ * A28: con guarnición, el Torreón ocupa la primera fila de la pila (como una ficha más) y las tropas,
+ * las filas siguientes; así no queda tapado.
+ */
+function towerSlot() {
+  return { left: `${(100 - TOKEN) / 2}%`, top: '-2%', width: `${TOKEN}%`, height: `${TOKEN}%` };
+}
+
+function stackLayout(units: Unit[], withTower = false) {
   const groups: Unit[][] = [];
   for (const u of units) {
     const g = groups.find((x) => x[0].type === u.type);
     if (g) g.push(u);
     else groups.push([u]);
   }
-  const rows = groups.length;
+  const extra = withTower ? 1 : 0; // fila reservada al Torreón
+  const rows = groups.length + extra;
   const rowStep = rows > 1 ? (100 - TOKEN) / (rows - 1) : 0;
   const out: Array<{ u: Unit; left: number; top: number }> = [];
-  groups.forEach((g, r) => {
+  groups.forEach((g, i) => {
+    const r = i + extra;
     const top = rows > 1 ? r * rowStep - 2 : (100 - TOKEN) / 2;
     const step = g.length > 1 ? Math.min(TOKEN * 0.62, (100 - TOKEN) / (g.length - 1)) : 0;
     const width = TOKEN + step * (g.length - 1);

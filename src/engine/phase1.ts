@@ -96,10 +96,12 @@ export function canStand(s: GameState, seat: Seat, type: UnitType, pos: number, 
   const t = s.cells[pos]?.terrain;
   if (isCapital(pos) || !isLand(t)) return false;
   if (type === 'artilleria' && t === 'montana') return false;
-  if (towerAt(s, pos) !== null) return false; // A23: nadie entra en la casilla de un Torreón
+  // A28: en la loseta del propio Torreón caben tropas propias (el Torreón ocupa 1 plaza); en la de uno ajeno, nadie
+  const tw = towerAt(s, pos);
+  if (tw !== null && tw !== seat) return false;
   const here = unitsAt(s, pos).filter((u) => u.id !== ignoreUnit);
   if (here.some((u) => u.owner !== seat)) return false;
-  return here.length < MAX_STACK;
+  return here.length < MAX_STACK - (tw === seat ? 1 : 0);
 }
 
 /** §20 / §54: posiciones de despliegue o reclutamiento en el propio anillo. */
