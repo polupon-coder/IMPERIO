@@ -249,7 +249,7 @@ export function addBot(room: Room, token: string, seat: Seat, level: BotLevel) {
   requireHost(room, token);
   if (room.game) throw new RoomError('La partida ya ha empezado.');
   if (![0, 1, 2, 3].includes(seat)) throw new RoomError('Capital no válida.');
-  if (level !== 'facil' && level !== 'normal') throw new RoomError('Nivel no válido.');
+  if (level !== 'facil' && level !== 'normal' && level !== 'dificil') throw new RoomError('Nivel no válido.');
   if (room.players.some((p) => p.seat === seat)) throw new RoomError('Esa Capital ya está ocupada.');
   if (room.players.length >= 4) throw new RoomError('El Mundo está completo (4 jugadores).');
   const name = BOT_NAME[seat];
@@ -282,7 +282,7 @@ export function takeover(room: Room, token: string, playerId: number, level: Bot
   if (!p) throw new RoomError('Jugador desconocido.');
   if (p.bot) throw new RoomError('Ese sitio ya lo juega la máquina.');
   if (online.has(p.id)) throw new RoomError('Ese jugador está conectado.');
-  p.bot = level === 'facil' ? 'facil' : 'normal';
+  p.bot = level === 'facil' || level === 'dificil' ? level : 'normal';
   p.takeover = true;
   save(room);
 }

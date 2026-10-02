@@ -55,7 +55,7 @@ import {
 import { useGameSounds, useMuted } from './sounds';
 import { SpeakerIcon } from './icons';
 import { EvolutionDialogBody } from './Evolution';
-import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
+import { BOT_LABEL, PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
 import { call, type PublicRoom } from './socket';
@@ -604,7 +604,7 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
 /** Máquina, desconectado y, para el anfitrión, ceder a la máquina el sitio de un desconectado. */
 function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; mySeat: Seat }) {
   if (!lobby) return null;
-  if (lobby.bot) return <span className="bot-tag" title={`Juega el sistema (${lobby.bot === 'facil' ? 'fácil' : 'normal'})`}>sistema</span>;
+  if (lobby.bot) return <span className="bot-tag" title={`Juega el sistema (${BOT_LABEL[lobby.bot]})`}>sistema</span>;
   if (lobby.online) return null;
   const me = room.players.find((x) => x.seat === mySeat);
   const host = me && me.id === room.hostId && room.game?.phase !== 'GAME_OVER';
@@ -713,7 +713,8 @@ function moveCompanions(s: GameState, leadId: string, to: number): string[] {
   const leadAct = sim.turn!.military!.activations[u.id];
   const group = leadAct.group ?? u.id;
   let budget = activationLimit(s) - activationsUsed(s) - (acts[u.id] ? 0 : 1);
-  let room = 3 - s.units.filter((x) => x.pos === to && x.owner === u.owner).length - 1;
+  // A28: en la loseta del propio Torreón caben 2 tropas
+  let room = (s.players[u.owner].tower === to ? 2 : 3) - s.units.filter((x) => x.pos === to && x.owner === u.owner).length - 1;
   const out: string[] = [];
   for (const o of s.units) {
     if (o.id === u.id || o.owner !== u.owner || o.pos !== u.pos || room <= 0) continue;

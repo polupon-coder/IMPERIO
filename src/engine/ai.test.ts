@@ -23,6 +23,12 @@ describe('Jugadores máquina', () => {
     expect(rep.winner).not.toBeNull();
   }, 60000);
 
+  it.each([6, 7])('el nivel difícil juega partidas completas y legales (semilla %i)', (seed) => {
+    const rep = playBots(seed, ['dificil', 'normal', 'dificil', 'normal']);
+    expect(rep.problems).toEqual([]);
+    expect(rep.winner).not.toBeNull();
+  }, 60000);
+
   it('solo decide quien tiene una decisión pendiente', () => {
     const s = playPhase1(3);
     const active = pendingSeats(s)[0];

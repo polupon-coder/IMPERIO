@@ -1,5 +1,5 @@
 // Uso: npx tsx scripts/simulate-bots.ts [partidas] [asiento0,asiento1,asiento2,asiento3]
-// Partidas entre jugadores máquina (normal, facil o azar). Ej.: normal,facil,azar,azar
+// Partidas entre jugadores máquina (dificil, normal, facil o azar). Ej.: normal,facil,azar,azar
 import { playBots, type SimPlayer } from '../src/engine/sim';
 
 const n = Number(process.argv[2] ?? 20);

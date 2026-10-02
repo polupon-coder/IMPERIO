@@ -834,6 +834,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (plan.some((x) => !x.steps)) fail('Movimiento no legal.');
       const here = s.units.filter((x) => x.pos === action.to && x.owner === seat).length;
       if (here + movers.length > MAX_STACK) fail('Como mucho 3 tropas por loseta.');
+      if (towerAt(s, action.to) === seat && here + movers.length > MAX_STACK - 1) fail('En la loseta del Torreón caben 2 tropas.'); // A28
       const from = u!.pos;
       for (const { o, steps } of plan) {
         const a = activate(s, o.id, o === u ? undefined : group);

@@ -1,6 +1,10 @@
 // Ilustraciones del juego. Para usar tus propias imágenes, sustituye los archivos de
 // public/assets/ manteniendo el nombre, o cambia aquí la ruta/extensión (.png, .webp, .svg).
-import type { Terrain, UnitType } from '../engine';
+import type { BotLevel, Terrain, UnitType } from '../engine';
+
+/** Niveles de la máquina, con nombres cortos para que quepan en la fila «COM» del móvil. */
+export const BOT_LEVELS: BotLevel[] = ['facil', 'normal', 'dificil'];
+export const BOT_LABEL: Record<BotLevel, string> = { facil: 'fácil', normal: 'medio', dificil: 'difícil' };
 
 export const TILE_IMAGES: Record<Terrain | 'capital', string> = {
   llanura: '/assets/tiles/llanura.webp',

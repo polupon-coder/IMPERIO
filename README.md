@@ -11,7 +11,7 @@ en tiempo real y el servidor aplica automáticamente todas las reglas.
 1. Un jugador entra en la web, escribe su nombre y pulsa **Crear partida**.
 2. Comparte el enlace (`…/?sala=CÓDIGO`) o el código de 5 letras.
 3. Cada jugador elige su Capital (Noroeste, Noreste, Sureste o Suroeste) y su color, y pulsa **Estoy preparado**.
-4. Las Capitales vacías se pueden completar con **jugadores máquina** (nivel fácil o normal): el anfitrión pulsa *Máquina: fácil / normal* en el trono vacante. Así se puede jugar 1 contra 3, 2 contra 2, etc.
+4. Las Capitales vacías se pueden completar con **jugadores máquina** (nivel fácil, medio o difícil): el anfitrión pulsa *COM: fácil / medio / difícil* en el trono vacante. Así se puede jugar 1 contra 3, 2 contra 2, etc.
 5. Cuando están los 4 preparados, el anfitrión pulsa **Iniciar partida**.
 6. Si alguien cierra el navegador, al volver a abrir el enlace entra automáticamente en su sitio. La sesión se guarda en el navegador y la partida en el servidor.
 7. Si un jugador se desconecta, el anfitrión puede pulsar **ceder a la máquina** junto a su nombre: la máquina juega por él hasta que vuelve, y entonces recupera su sitio.
@@ -23,7 +23,7 @@ Juegan en el servidor con las mismas reglas y solo con acciones legales; nunca v
 - **Normal:** construye siguiendo un plan (Mercado, Ayuntamiento, Biblioteca…), usa el Mercado para completar costes, custodia los lados abiertos de su Capital, ataca cuando los dados le favorecen, desgasta a distancia con Arqueros y Artillería y marcha sobre la Capital rival más débil.
 - **Fácil:** el mismo criterio con errores y menos agresividad.
 
-En simulación, una máquina normal gana claramente a las fáciles, y una fácil a los jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`).
+En simulación, una máquina normal (medio) gana claramente a las fáciles, y una fácil a los jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`). La difícil, con las mismas reglas pero mejor criterio (Biblioteca, Mercado y Ayuntamiento primero; arqueros y caballería agrupados; brecha en las Murallas; frena al que va ganando), gana unas 6 de cada 10 partidas contra tres medias (`npx tsx scripts/simulate-bots.ts 100 dificil,normal,normal,normal`).
 
 Durante la partida, el tablero resalta siempre lo que es legal:
 
@@ -88,7 +88,7 @@ src/engine/   Motor de reglas puro (TypeScript, sin red): estado, validación, c
   phase1.ts     colocación de losetas, conectividad, reserva de Agua, intercambio de emergencia
   military.ts   movimiento, objetivos de ataque, línea de tiro, dados base
   game.ts       createGame / applyAction: la máquina de estados completa
-  ai.ts         jugadores máquina (niveles fácil y normal)
+  ai.ts         jugadores máquina (niveles fácil, normal y difícil)
 src/server/   Express + Socket.IO: salas, lobby, persistencia y reconexión. Es la única autoridad.
 src/client/   React: inicio, lobby, tablero y panel de acciones. Usa el mismo motor para resaltar lo legal.
 public/assets Ilustraciones (provisionales).

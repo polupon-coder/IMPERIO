@@ -24,6 +24,7 @@ import {
   BUILDING_COST,
   CAPITALS,
   MAX_PER_TYPE,
+  MAX_STACK,
   RESOURCES,
   RINGS,
   SEATS,
@@ -32,6 +33,7 @@ import {
   UNIT_TYPES,
   canAfford,
   CONVERT_RATE,
+  TOWER_COST,
   FAITH_COST,
   VICTORY,
   isCapital,
@@ -44,9 +46,9 @@ import {
   sideTowards,
 } from './rules';
 import type { Action, Building, GameState, Resource, Resources, Seat, Side, Terrain, UnitType } from './types';
-import { towerBuildSpots, unitCount, wallBuildCheck } from './game';
+import { applyAction, towerBuildSpots, unitCount, wallBuildCheck } from './game';
 
-export type BotLevel = 'facil' | 'normal';
+export type BotLevel = 'facil' | 'normal' | 'dificil';
 type Rand = () => number;
 
 // ---------------------------------------------------------------------------------------------
@@ -103,6 +105,16 @@ function openSides(s: GameState, seat: Seat) {
 
 const enemyUnits = (s: GameState, seat: Seat) => s.units.filter((u) => u.owner !== seat);
 const ownUnits = (s: GameState, seat: Seat) => s.units.filter((u) => u.owner === seat);
+
+/** Lo cerca que está un jugador de la victoria (8 edificios y 2 conquistas). */
+const progress = (s: GameState, seat: Seat) => s.players[seat].buildings.length + s.players[seat].conquests.length * 3;
+
+/** Rival más avanzado si va claramente por delante del resto (modo difícil: se le frena). */
+function leaderOf(s: GameState, seat: Seat): Seat | null {
+  const rivals = SEATS.filter((x) => x !== seat).sort((a, b) => progress(s, b) - progress(s, a));
+  const top = rivals[0];
+  return progress(s, top) >= Math.max(6, progress(s, seat) + 1) ? top : null;
+}
 
 /** Amenaza sobre la propia Capital: enemigos cerca de sus lados abiertos. */
 function threatLevel(s: GameState, seat: Seat) {
@@ -291,8 +303,11 @@ const BUILD_PRIORITY: Record<Building, number> = {
   iglesia: 3,
 };
 
-function buildPriority(s: GameState, seat: Seat, b: Building) {
-  let v = BUILD_PRIORITY[b];
+/** Difícil: Biblioteca, Mercado y, en cuanto se pueda, el Ayuntamiento (como juega un buen jugador). */
+const BUILD_PRIORITY_HARD: Record<Building, number> = { ...BUILD_PRIORITY, biblioteca: 11, mercado: 10, ayuntamiento: 13 };
+
+function buildPriority(s: GameState, seat: Seat, b: Building, smart = false) {
+  let v = (smart ? BUILD_PRIORITY_HARD : BUILD_PRIORITY)[b];
   // Los edificios que desbloquean tropas que ya tiene suben de prioridad
   const own = ownUnits(s, seat);
   const has = (t: UnitType) => own.some((u) => u.type === t);
@@ -328,19 +343,19 @@ function conversionPlan(have: Resources, cost: Resources): Array<{ give: Resourc
 }
 
 /** Edificio a construir ahora (con las conversiones necesarias), según prioridad. */
-function buildChoice(s: GameState, seat: Seat) {
+function buildChoice(s: GameState, seat: Seat, smart = false) {
   const p = s.players[seat];
   const market = hasBuilding(s, seat, 'mercado');
   const options = remainingBuildings(s, seat)
     .map((b) => ({ b, plan: canAfford(p.resources, BUILDING_COST[b]) ? [] : market ? conversionPlan(p.resources, BUILDING_COST[b]) : null }))
     .filter((x) => x.plan !== null) as Array<{ b: Building; plan: Array<{ give: Resource; get: Resource }> }>;
-  return pickBest(options, (x) => buildPriority(s, seat, x.b) - x.plan.length * 0.8);
+  return pickBest(options, (x) => buildPriority(s, seat, x.b, smart) - x.plan.length * (smart ? 0.3 : 0.8));
 }
 
 /** Recurso que más falta para el próximo edificio. */
-function neededResource(s: GameState, seat: Seat): Resource {
+function neededResource(s: GameState, seat: Seat, smart = false): Resource {
   const p = s.players[seat];
-  const target = pickBest(remainingBuildings(s, seat), (b) => buildPriority(s, seat, b));
+  const target = pickBest(remainingBuildings(s, seat), (b) => buildPriority(s, seat, b, smart));
   if (!target) return pickBest(RESOURCES, (r) => -p.resources[r])!;
   return pickBest(RESOURCES, (r) => BUILDING_COST[target][r] - p.resources[r] - p.resources[r] * 0.001)!;
 }
@@ -354,7 +369,7 @@ function answerPrompt(s: GameState, seat: Seat, level: BotLevel, r: Rand): Actio
   const p = s.players[seat];
   switch (pr.kind) {
     case 'library':
-      return { type: 'libraryChoice', resource: neededResource(s, seat) };
+      return { type: 'libraryChoice', resource: neededResource(s, seat, level === 'dificil') };
     case 'defenderChoice': {
       const c = s.combat!;
       const pos = c.target.kind === 'troops' ? c.target.pos : -1;
@@ -370,7 +385,7 @@ function answerPrompt(s: GameState, seat: Seat, level: BotLevel, r: Rand): Actio
       else if (pr.role === 'attacker') use = a < b || (a === b && !c.attackerCanLose);
       else use = b < a;
       // La Fe es cara: no se gasta en empates si el Agua escasea
-      if (level === 'normal' && a === b && p.resources.agua < FAITH_COST * 2) use = false;
+      if (level !== 'facil' && a === b && p.resources.agua < FAITH_COST * 2) use = false;
       return { type: 'faith', use };
     }
     case 'advance': {
@@ -389,6 +404,7 @@ function answerPrompt(s: GameState, seat: Seat, level: BotLevel, r: Rand): Actio
     case 'trade': {
       const from = s.players[pr.from];
       if (from.buildings.length >= 7) return { type: 'respondTrade', accept: false }; // no ayuda a quien está a punto de ganar
+      if (level === 'dificil' && progress(s, pr.from) >= progress(s, seat) + 1) return { type: 'respondTrade', accept: false };
       const gets = RESOURCES.find((x) => pr.give[x] > 0)!;
       const gives = RESOURCES.find((x) => pr.receive[x] > 0)!;
       const target = pickBest(remainingBuildings(s, seat), (b) => buildPriority(s, seat, b));
@@ -427,7 +443,11 @@ function makePlan(s: GameState, seat: Seat, level: BotLevel): Plan {
   const army = ownUnits(s, seat).length;
   const marching =
     p.conquests.length < VICTORY.conquests &&
-    (level === 'normal' ? p.buildings.length >= 4 || army >= 9 : p.buildings.length >= 6 || army >= 12);
+    (level === 'dificil'
+      ? p.buildings.length >= 4 || army >= 8
+      : level === 'normal'
+        ? p.buildings.length >= 4 || army >= 9
+        : p.buildings.length >= 6 || army >= 12);
   const guards = new Set<string>();
   for (const { pos } of openSides(s, seat)) {
     const here = unitsAt(s, pos).filter((u) => u.owner === seat);
@@ -474,9 +494,10 @@ interface Scored {
   value: number;
 }
 
-function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
+function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Scored[] {
   const out: Scored[] = [];
   const myOpen = openSides(s, seat).map((o) => o.pos);
+  const leader = smart ? leaderOf(s, seat) : null;
   for (const u of ownUnits(s, seat)) {
     if (!canActivate(s, u) || !canAttackNow(s, u)) continue;
     // A25: todo el grupo del mismo tipo ataca por una sola activación
@@ -491,7 +512,13 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
       const [w, l] = duel(ba + n - 1, bb + m - 1);
       const near = Math.min(...myOpen.map((p) => manhattan(p, pos)), 9);
       const clearsTarget = plan.target !== null && sideTowards(plan.target, pos) !== null;
-      const killValue = UNIT_VALUE[t] + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0) + (clearsTarget ? 2 : 0);
+      let killValue = UNIT_VALUE[t] + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0) + (clearsTarget ? 2 : 0);
+      if (smart) {
+        const owner = unitsAt(s, pos)[0].owner;
+        // Frena al que va ganando y aprovecha las pilas que se quedan con una sola figura
+        if (owner === leader) killValue += 0.8;
+        if (unitsAt(s, pos).length === 1) killValue += 0.3;
+      }
       const lossValue = canLose ? UNIT_VALUE[u.type] : 0;
       // Usar varias figuras cuesta activaciones: se descuenta un poco
       const value = w * killValue - l * lossValue - (n - 1) * 0.08;
@@ -507,7 +534,9 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
     for (const wl of tg.walls) {
       const art = u.type === 'artilleria';
       const [w, l] = art ? duel(2 + n - 1, 1) : duel(n, 2);
-      const goal = wl.capital === plan.target ? 2.2 : 0.8;
+      let goal = wl.capital === plan.target ? 2.2 : 0.8;
+      // Difícil: abrir brecha en una Capital aún por conquistar vale más (y más con grupo)
+      if (smart && !s.players[seat].conquests.includes(wl.capital)) goal += 1.6 + (n - 1) * 0.5;
       const value = w * goal - (art ? l * UNIT_VALUE.artilleria : 0);
       out.push({ action: { type: 'attackWall', unitIds: ids, capital: wl.capital, side: wl.side }, value });
     }
@@ -529,7 +558,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
   return out;
 }
 
-function moveOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
+function moveOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Scored[] {
   const out: Scored[] = [];
   const threat = threatLevel(s, seat);
   const open = openSides(s, seat);
@@ -546,6 +575,12 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
     if (!targets.size) continue;
     const isGuard = plan.guards.has(u.id);
     const dist = plan.marching && !isGuard ? distTo(u.type) : null;
+    // Difícil: las figuras iguales de la loseta marchan juntas (A25, una sola activación)
+    const acts = s.turn?.military?.activations ?? {};
+    const mates =
+      smart && dist && !acts[u.id]
+        ? ownUnits(s, seat).filter((o) => o.id !== u.id && o.pos === u.pos && o.type === u.type && !acts[o.id] && !plan.guards.has(o.id))
+        : [];
     for (const to of targets.keys()) {
       let value = 0;
       // Defensa: cubrir un lado abierto sin guardia
@@ -563,13 +598,25 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
       const adjEnemy = orthoNeighbors(to).reduce((n, x) => n + unitsAt(s, x).filter((e) => e.owner !== seat).length, 0);
       const mine = unitsAt(s, to).filter((x) => x.owner === seat).length + 1;
       if (adjEnemy > mine) value -= 0.8 * (adjEnemy - mine);
+      if (smart && dist) {
+        const room = MAX_STACK - (towerAt(s, to) === seat ? 1 : 0) - unitsAt(s, to).filter((x) => x.owner === seat).length - 1;
+        const going = mates.slice(0, Math.max(0, room));
+        const gain = dist[u.pos] - dist[to];
+        if (going.length && Number.isFinite(gain) && gain > 0) {
+          value += gain * 1.1 * going.length;
+          out.push({ action: { type: 'move', unitId: u.id, to, with: going.map((o) => o.id) }, value });
+          continue;
+        }
+        // Agrupar figuras del mismo tipo prepara ataques de grupo
+        if (unitsAt(s, to).some((x) => x.owner === seat && x.type === u.type)) value += 0.6;
+      }
       out.push({ action: { type: 'move', unitId: u.id, to }, value });
     }
   }
   return out;
 }
 
-function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand): Action | null {
+function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand, smart = false): Action | null {
   const p = s.players[seat];
   const options = UNIT_TYPES.filter(
     (t) => isUnlocked(s, seat, t) && unitCount(s, seat, t) < MAX_PER_TYPE && canAfford(p.resources, UNIT_COST[t]) && ringSpots(s, seat, t).length,
@@ -583,17 +630,39 @@ function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand): Action | 
     if (x === 'lancero') v += 1 + enemyCav * 0.3;
     if (x === 'artilleria') v += targetWalled ? 2 : 0.5;
     if (x === 'infanteria') v += 1;
+    if (smart) {
+      // Contra las tropas rivales cercanas: el tipo con mejores duelos cuerpo a cuerpo
+      const near = enemyUnits(s, seat).filter((e) => manhattan(e.pos, CAPITALS[seat]) <= 5);
+      for (const e of near) {
+        const [a, b] = baseDice(x, e.type, 1);
+        v += (a - b) * 0.35;
+      }
+      // Arqueros y caballería en grupo son lo más eficaz; sumarse a figuras iguales permite atacar juntas
+      if (x === 'arquero' || x === 'caballeria') v += 1.2;
+      if (stackSpot(s, seat, x) !== undefined) v += 0.8;
+    }
     return v;
   });
-  return t ? { type: 'recruit', unit: t, pos: bestSpot(s, seat, t, r) } : null;
+  if (!t) return null;
+  return { type: 'recruit', unit: t, pos: (smart ? stackSpot(s, seat, t) : undefined) ?? bestSpot(s, seat, t, r) };
+}
+
+/** Casilla del anillo donde ya hay figuras propias del mismo tipo y cabe otra (para formar grupos). */
+function stackSpot(s: GameState, seat: Seat, type: UnitType): number | undefined {
+  const spots = ringSpots(s, seat, type).filter((pos) => unitsAt(s, pos).some((u) => u.owner === seat && u.type === type));
+  return pickBest(spots, (pos) => unitsAt(s, pos).filter((u) => u.type === type).length);
 }
 
 function wallChoice(s: GameState, seat: Seat, level: BotLevel): Action | null {
   const threat = threatLevel(s, seat);
   const p = s.players[seat];
+  // Difícil: si un rival que aún no le ha conquistado está cerca de ganar, se amuralla igualmente
+  const danger =
+    level === 'dificil' &&
+    SEATS.some((x) => x !== seat && !s.players[x].conquests.includes(seat) && s.players[x].conquests.length >= 1 && s.players[x].buildings.length >= 7);
   // Sin amenaza, solo si ya no le quedan edificios que construir pronto
   const nearBuilding = remainingBuildings(s, seat).length > 0 && p.buildings.length < 8;
-  if (threat === 0 && nearBuilding) return null;
+  if (threat === 0 && nearBuilding && !danger) return null;
   if (level === 'facil' && threat < 3) return null;
   const sides = SIDES.filter((side) => isLand(s.cells[sideCell(seat, side)].terrain) && wallBuildCheck(s, seat, side).ok);
   const best = pickBest(sides, (side) => {
@@ -604,6 +673,20 @@ function wallChoice(s: GameState, seat: Seat, level: BotLevel): Action | null {
   return best ? { type: 'buildWall', side: best } : null;
 }
 
+/** Torreón en la casilla con más enemigos al alcance (o null si no conviene o no se puede). */
+function towerChoice(s: GameState, seat: Seat, smart: boolean, sloppy: boolean, r: Rand): Action | null {
+  const p = s.players[seat];
+  const spots = towerBuildSpots(s, seat);
+  if (!spots.length || !canAfford(p.resources, TOWER_COST) || (sloppy && r() < 0.5)) return null;
+  const myCap = CAPITALS[seat];
+  const best = pickBest(spots, (pos) => {
+    const enemies = enemyUnits(s, seat).filter((e) => manhattan(e.pos, pos) <= 2).length;
+    return enemies * 2 + (manhattan(pos, myCap) <= 3 ? 1 : 0) + r() * 0.3;
+  })!;
+  const worth = smart || enemyUnits(s, seat).some((e) => manhattan(e.pos, best) <= 3) || p.buildings.length >= 8;
+  return worth ? { type: 'buildTower', pos: best } : null;
+}
+
 function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | null {
   if (s.prompt) return s.prompt.seat === seat ? answerPrompt(s, seat, level, r) : null;
   if (s.combat || s.turn?.seat !== seat) return null;
@@ -611,6 +694,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
   const t = s.turn!;
   const plan = makePlan(s, seat, level);
   const sloppy = level === 'facil';
+  const smart = level === 'dificil';
 
   // 1. Conquistar si se puede (puede dar la victoria)
   for (const u of ownUnits(s, seat)) {
@@ -621,7 +705,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
 
   // 2. Construir (con conversiones del Mercado si hacen falta)
   if (canUseCivil(s)) {
-    const choice = buildChoice(s, seat);
+    const choice = buildChoice(s, seat, smart);
     if (choice && !(sloppy && r() < 0.15)) {
       if (choice.plan.length) return { type: 'convert', ...choice.plan[0] };
       return { type: 'build', building: choice.b };
@@ -634,27 +718,19 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
     if (wall) return wall;
   }
 
-  // 2c. Torreón: cuando ya no hay edificio asequible, en la casilla con más enemigos al alcance
+  // 2c. Torreón: cuando ya no hay edificio asequible
   if (canUseCivil(s)) {
-    const spots = towerBuildSpots(s, seat);
-    if (spots.length && !(sloppy && r() < 0.5)) {
-      const myCap = CAPITALS[seat];
-      const best = pickBest(spots, (pos) => {
-        const enemies = enemyUnits(s, seat).filter((e) => manhattan(e.pos, pos) <= 2).length;
-        return enemies * 2 + (manhattan(pos, myCap) <= 3 ? 1 : 0) + r() * 0.3;
-      })!;
-      const worth = enemyUnits(s, seat).some((e) => manhattan(e.pos, best) <= 3) || p.buildings.length >= 8;
-      if (worth) return { type: 'buildTower', pos: best };
-    }
+    const tower = towerChoice(s, seat, smart, sloppy, r);
+    if (tower) return tower;
   }
 
   // 3. Acción militar
   if (canUseMilitary(s)) {
     const started = !!t.military;
     const threat = threatLevel(s, seat);
-    const attacks = attackOptions(s, seat, plan);
-    const moves = moveOptions(s, seat, plan);
-    const thresholdAttack = sloppy ? 0.25 : 0.12;
+    const attacks = attackOptions(s, seat, plan, smart);
+    const moves = moveOptions(s, seat, plan, smart);
+    const thresholdAttack = sloppy ? 0.25 : smart ? 0.05 : 0.12;
     let best = pickBest([...attacks.filter((a) => a.value > thresholdAttack), ...moves.filter((m) => m.value > 0.5)], (x) => x.value + (sloppy ? r() * 1.5 : r() * 0.05));
     if (sloppy && best && r() < 0.2) best = undefined;
 
@@ -662,7 +738,9 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
     if (canRecruitNow(s)) {
       const army = ownUnits(s, seat).length;
       const wantArmy =
-        (threat > 0 && openSides(s, seat).length > 0 && army < 20) || army < (sloppy ? 4 : 6) || (plan.marching && army < 12);
+        (threat > 0 && openSides(s, seat).length > 0 && army < 20) ||
+        army < (sloppy ? 4 : 6) ||
+        (plan.marching && army < 12);
       const civilLeft = canUseCivil(s) && !hasBuilding(s, seat, 'ayuntamiento');
       const savingForBuild = civilLeft && remainingBuildings(s, seat).some((b) => {
         // Le falta poco para un edificio: mejor no gastar
@@ -672,8 +750,17 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
       // Un gran ataque de 3 figuras vale más que reclutar (reclutar deja solo 2 activaciones)
       const bigAttack = (best?.value ?? 0) >= 2.5 && best?.action.type === 'attack' && best.action.unitIds.length >= 3;
       if (wantArmy && !savingForBuild && !bigAttack) {
-        const rec = recruitChoice(s, seat, plan, r);
+        const rec = recruitChoice(s, seat, plan, r, smart);
         if (rec) return rec;
+      }
+    }
+    if (best?.action.type === 'move' && best.action.with) {
+      // Por si alguna compañera no puede llegar: entonces se mueve sola
+      try {
+        applyAction(s, seat, best.action);
+      } catch {
+        const { with: _w, ...single } = best.action;
+        return single;
       }
     }
     if (best) return best.action;
@@ -682,7 +769,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
 
   // 4. Construir después de la acción militar (con Ayuntamiento)
   if (canUseCivil(s)) {
-    const choice = buildChoice(s, seat);
+    const choice = buildChoice(s, seat, smart);
     if (choice) return choice.plan.length ? { type: 'convert', ...choice.plan[0] } : { type: 'build', building: choice.b };
   }
   return { type: 'endTurn' };

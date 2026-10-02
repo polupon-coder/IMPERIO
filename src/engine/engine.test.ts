@@ -506,6 +506,18 @@ describe('A26 y Torreón propio', () => {
     expect(moveTargets(s, foe).has(idx(5, 3))).toBe(false);
   });
 
+  it('A28: un grupo no puede dejar 3 tropas en la loseta del propio Torreón', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    s.players[0].tower = idx(4, 3);
+    const a = put(s, 0, 'infanteria', 4, 2);
+    const b = put(s, 0, 'infanteria', 4, 2);
+    const c = put(s, 0, 'infanteria', 4, 2);
+    expect(() => applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 3), with: [b, c] })).toThrow();
+    const ok = applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 3), with: [b] });
+    expect(ok.units.filter((u) => u.pos === idx(4, 3))).toHaveLength(2);
+  });
+
   it('A28: con guarnición se ataca a las tropas, no al Torreón', () => {
     const s = phase2Board();
     s.players[1].buildings = ['cuartel'];

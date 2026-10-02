@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type Color, type Seat } from '../engine';
-import { PLAYER_COLORS, coatOfArms } from './assets';
+import { BOT_LABEL, BOT_LEVELS, PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { installButtonSounds, setMusic, useMuted } from './sounds';
 import { SpeakerIcon } from './icons';
@@ -232,7 +232,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                     <>
                       <div className="seat-name">{p.name}</div>
                       <div className="seat-meta">
-                        <em>sistema · {p.bot === 'facil' ? 'fácil' : 'normal'}</em>
+                        <em>sistema · {BOT_LABEL[p.bot]}</em>
                       </div>
                       <div className="ok">✔ Preparado</div>
                       {isHost && (
@@ -258,8 +258,11 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                         {isHost && (
                           <span className="add-bot">
                             COM:
-                            <button onClick={() => botCall('addBot', { seat, level: 'facil' })}>fácil</button>
-                            <button onClick={() => botCall('addBot', { seat, level: 'normal' })}>normal</button>
+                            {BOT_LEVELS.map((level) => (
+                              <button key={level} onClick={() => botCall('addBot', { seat, level })}>
+                                {BOT_LABEL[level]}
+                              </button>
+                            ))}
                           </span>
                         )}
                       </div>
