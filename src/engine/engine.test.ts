@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activationsUsed,
+  sideCell,
   unitById,
   CAPITALS,
   RINGS,
@@ -213,13 +214,13 @@ describe('Torreón (A23)', () => {
     expect(towerBuildSpots(s, 0)).toEqual([]);
   });
 
-  it('bloquea el paso a todas las tropas', () => {
+  it('nadie se detiene en él y las enemigas no lo atraviesan', () => {
     const s = ready();
     const inf = put(s, 0, 'infanteria', 3, 3);
-    s.players[0].tower = idx(3, 4);
+    s.players[1].tower = idx(3, 4);
     const t = moveTargets(s, inf);
     expect(t.has(idx(3, 4))).toBe(false);
-    expect(t.has(idx(3, 5))).toBe(false); // no se pasa a través
+    expect(t.has(idx(3, 5))).toBe(false); // no se pasa a través de un Torreón enemigo
   });
 
   it('atacar al Torreón: 1 dado contra 2, nunca hay baja del atacante y cae si pierde', () => {
@@ -454,6 +455,33 @@ describe('A25: grupos del mismo tipo', () => {
     const a = put(s, 0, 'infanteria', 4, 1);
     const b = put(s, 0, 'arquero', 4, 1);
     expect(() => applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 2), with: [b] })).toThrow();
+  });
+});
+
+describe('A26 y Torreón propio', () => {
+  it('el Arquero ataca una Muralla a distancia 2, como la Artillería', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['arqueria'];
+    s.players[1].walls = ['S'];
+    const front = sideCell(1, 'S'); // casilla junto al lado sur de la Capital 1
+    const r = Math.floor(front / 8), c = front % 8;
+    const arq = put(s, 0, 'arquero', r + 1, c); // a distancia 2 de la Capital, en línea
+    expect(attackTargets(s, arq).walls).toContainEqual({ capital: 1, side: 'S' });
+  });
+
+  it('las tropas propias atraviesan su Torreón, pero no se detienen en él; las enemigas no pasan', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    s.players[1].buildings = ['cuartel'];
+    s.players[0].tower = idx(4, 3);
+    const inf = put(s, 0, 'infanteria', 4, 2);
+    const t = moveTargets(s, inf);
+    expect(t.has(idx(4, 3))).toBe(false);
+    expect(t.has(idx(4, 4))).toBe(true);
+    s.turn = { seat: 1, civilUsed: false, militaryUsed: false, military: null, tradeDone: false };
+    s.current = s.order.indexOf(1);
+    const foe = put(s, 1, 'infanteria', 3, 3);
+    expect(moveTargets(s, foe).has(idx(5, 3))).toBe(false);
   });
 });
 

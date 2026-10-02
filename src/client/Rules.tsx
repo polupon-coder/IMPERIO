@@ -322,7 +322,11 @@ export function RulesSheet() {
                 <b>Artillería</b> desde la casilla junto al lado o a distancia 2 (en línea o en las diagonales): 2
                 dados (+1 por figura extra) contra 1. Si pierde, retira 1 Artillería.
               </li>
-              <li>Los Arqueros no atacan Murallas ni Capitales a distancia.</li>
+              <li>
+                <b>Arqueros</b>: atacan la Muralla desde las mismas casillas que la Artillería (junto al lado o a distancia 2),
+                como tropa convencional: 1 dado (+1 por figura extra) contra 2, sin sufrir baja. No conquistan Capitales a
+                distancia.
+              </li>
               <li>
                 Con la <b>Acción Civil</b> puedes <b>levantar una Muralla nueva</b> (4 Piedra + 1 Madera) o{' '}
                 <b>reparar una destruida</b> (3 Piedra), hasta 4 por Capital y nunca en un lado ocupado por tropas
@@ -341,7 +345,7 @@ export function RulesSheet() {
                 Madera) en una loseta de tierra vacía junto (por un lado) a una tropa tuya. Nunca en las casillas que
                 rodean por los lados a una Capital. Pulsa «Torreón» en tu panel.
               </li>
-              <li>Ocupa su loseta: ninguna tropa puede entrar ni pasar por ella, tampoco las tuyas.</li>
+              <li>Ocupa su loseta: ninguna tropa puede detenerse en ella. Las enemigas tampoco pueden pasar; las tuyas sí pueden atravesarla.</li>
               <li>
                 <b>Ataca como un Arquero</b> (alcance 2, 1 dado contra 1), gastando una de las activaciones de la Acción
                 Militar. Solo cae si le gana un Arquero o una Artillería.

@@ -18,7 +18,7 @@ describe('Jugadores máquina', () => {
   }, 60000);
 
   it.each([4, 5])('partida con niveles mezclados y un jugador al azar (semilla %i)', (seed) => {
-    const rep = playBots(seed, ['normal', 'facil', 'azar', 'facil'], 2000);
+    const rep = playBots(seed, ['normal', 'facil', 'azar', 'facil'], 4000); // con un jugador al azar algunas partidas son largas
     expect(rep.problems).toEqual([]);
     expect(rep.winner).not.toBeNull();
   }, 60000);

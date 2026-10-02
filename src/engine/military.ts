@@ -128,7 +128,8 @@ export function moveTargets(s: GameState, unitId: string, group?: string): Map<n
         if (isCapital(n) || t === null || t === 'agua') continue; // §75, Capital bloqueada
         if (u.type === 'artilleria' && t === 'montana') continue; // §74
         if (unitsAt(s, n).some((o) => o.owner !== u.owner)) continue; // §62
-        if (towerAt(s, n) !== null) continue; // A23: el Torreón bloquea el paso a todos
+        const tw = towerAt(s, n);
+        if (tw !== null && tw !== u.owner) continue; // A23: el Torreón enemigo bloquea el paso; por el propio se pasa (sin detenerse)
         seen.add(n);
         if (canStand(s, u.owner, u.type, n, u.id)) out.set(n, step);
         if (t === 'llanura') next.push(n); // entrar en terreno lento termina la activación
@@ -210,8 +211,8 @@ export function attackTargets(s: GameState, unitId: string): AttackTargets {
   for (const c of SEATS) {
     if (c === u.owner) continue;
     for (const side of s.players[c].walls) {
-      const ok =
-        u.type === 'artilleria' ? bombardPositions(c, side).includes(u.pos) : sideCell(c, side) === u.pos;
+      // A15 y A26: Artillería y Arqueros atacan la Muralla también a distancia 2; el resto, desde la casilla del lado
+      const ok = RANGED.includes(u.type) ? bombardPositions(c, side).includes(u.pos) : sideCell(c, side) === u.pos;
       if (ok) res.walls.push({ capital: c, side });
     }
     // §109–112, §117
