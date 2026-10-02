@@ -83,26 +83,34 @@ export function play(name: SoundName, delayMs = 0) {
 // Música de fondo de la portada y del Mundo (sala de espera), en bucle y muy suave.
 let music: HTMLAudioElement | null = null;
 let musicWanted = false;
+/** Se carga en cuanto se abre la página, para que suene al instante con el primer toque. */
+function musicElement() {
+  if (!music) {
+    music = new Audio('/assets/sonidos/musica-portada.mp3');
+    music.preload = 'auto';
+    music.loop = true;
+    music.volume = 0.15;
+    music.load();
+  }
+  return music;
+}
 function updateMusic() {
   if (!musicWanted || muted) {
     music?.pause();
     return;
   }
-  if (!music) {
-    music = new Audio('/assets/sonidos/musica-portada.mp3');
-    music.loop = true;
-    music.volume = 0.15;
-  }
-  music.play().catch(() => {}); // sin interacción previa el navegador lo bloquea: se reintenta al primer toque
+  musicElement().play().catch(() => {}); // sin interacción previa el navegador lo bloquea: se reintenta al primer toque
 }
+if (typeof window !== 'undefined') musicElement();
 export function setMusic(on: boolean) {
   musicWanted = on;
   updateMusic();
 }
 if (typeof window !== 'undefined')
-  window.addEventListener('pointerdown', () => {
-    if (musicWanted && !muted && music?.paused !== false) updateMusic();
-  });
+  for (const ev of ['pointerdown', 'touchstart', 'keydown'])
+    window.addEventListener(ev, () => {
+      if (musicWanted && !muted && music?.paused !== false) updateMusic();
+    }, { capture: true });
 
 export function useMuted(): [boolean, () => void] {
   const [m, setM] = useState(muted);
