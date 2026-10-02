@@ -321,7 +321,27 @@ function checkFinalDeploy(s: GameState) {
 // Fase II — turno
 // ---------------------------------------------------------------------------------------------
 
+/** Guarda el resumen de la ronda para los gráficos de evolución. */
+function recordHistory(s: GameState) {
+  const round = Math.ceil(s.turnNumber / 4);
+  const point = {
+    round,
+    players: s.players.map((p) => ({
+      buildings: p.buildings.length,
+      conquests: p.conquests.length,
+      units: s.units.filter((u) => u.owner === p.seat).length,
+      walls: p.walls.length,
+      resources: RESOURCES.reduce((n, r) => n + p.resources[r], 0),
+    })),
+  };
+  const h = (s.history ??= []);
+  if (h.length && h[h.length - 1].round === round) h[h.length - 1] = point;
+  else h.push(point);
+}
+
 function startTurn(s: GameState) {
+  // Al empezar cada ronda (y al empezar la Fase II, ronda 0) se guarda cómo iba la partida
+  if (s.current === 0) recordHistory(s);
   s.turnNumber++;
   const seat = activeSeat(s);
   const p = s.players[seat];
@@ -410,6 +430,7 @@ function checkVictory(s: GameState, seat: Seat) {
     s.phase = 'GAME_OVER';
     s.step = 'END';
     s.winner = seat;
+    recordHistory(s);
     s.prompt = null;
     log(s, `¡${p.name} completa 8 edificios y tiene ${p.conquests.length} Conquista(s): gana Imperio!`, seat);
   }

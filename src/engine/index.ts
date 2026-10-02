@@ -4,3 +4,4 @@ export * from './phase1';
 export * from './military';
 export { applyAction, createGame, unitCount, wallBuildCheck, towerBuildSpots, towerBuildBlock, RuleError, type NewPlayer } from './game';
 export { chooseAction, pendingSeats, duel, type BotLevel } from './ai';
+export { progress } from './score';

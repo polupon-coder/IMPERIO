@@ -169,6 +169,14 @@ export interface GameState {
   log: LogEntry[];
   nextUnitId: number;
   rng: number;
+  /** Instantáneas por ronda de la Fase II para los gráficos de evolución (partidas antiguas: ausente). */
+  history?: HistoryPoint[];
+}
+
+/** Estado resumido de cada jugador (por asiento) al terminar una ronda. */
+export interface HistoryPoint {
+  round: number;
+  players: Array<{ buildings: number; conquests: number; units: number; walls: number; resources: number }>;
 }
 
 export type Action =

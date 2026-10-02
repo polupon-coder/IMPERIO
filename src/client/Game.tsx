@@ -54,6 +54,7 @@ import {
 } from '../engine';
 import { useGameSounds, useMuted } from './sounds';
 import { SpeakerIcon } from './icons';
+import { EvolutionDialogBody } from './Evolution';
 import { PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
@@ -1761,6 +1762,7 @@ function VictoryDialog({
   const w = s.players[s.winner!];
   const color = PLAYER_COLORS[w.color];
   const [chatOpen, setChatOpen] = useState(false);
+  const [evoOpen, setEvoOpen] = useState(false);
   const feed = useFeed(room, s);
   return (
     <Modal title="Proclama Real" onClose={onClose} wide>
@@ -1780,6 +1782,11 @@ function VictoryDialog({
           <button className="seal small" onClick={() => setChatOpen(true)}>
             Chat
           </button>
+          {(s.history?.length ?? 0) >= 2 && (
+            <button className="seal small" onClick={() => setEvoOpen(true)}>
+              Evolución
+            </button>
+          )}
           <button className="seal small" onClick={onExit}>
             Volver a la
             <br />
@@ -1787,6 +1794,11 @@ function VictoryDialog({
           </button>
         </div>
         {chatOpen && <ChatHistory feed={feed} onClose={() => setChatOpen(false)} />}
+        {evoOpen && (
+          <Modal title="Evolución de la partida" onClose={() => setEvoOpen(false)} wide>
+            <EvolutionDialogBody state={s} />
+          </Modal>
+        )}
       </div>
     </Modal>
   );
