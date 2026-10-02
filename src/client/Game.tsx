@@ -1002,6 +1002,9 @@ function PlayersPanel({
                 <span title="Murallas" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
                   <img src={WALL_SILHOUETTE} alt="Murallas" /> <b>{p.walls.length}</b>
                 </span>
+                <span title={p.tower != null ? 'Torreón levantado' : 'Sin Torreón'} className={`res unit-pill ${p.tower != null ? '' : 'zero'}`}>
+                  <img src={TOWER_SILHOUETTE} alt="Torreón" /> <b>{p.tower != null ? 1 : 0}</b>
+                </span>
               </div>
               <div className="sum-row">
                 {RESOURCES.map((r) => (
