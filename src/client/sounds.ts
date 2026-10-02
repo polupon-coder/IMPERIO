@@ -129,7 +129,7 @@ export function useMuted(): [boolean, () => void] {
 
 /** Elige un sonido para cada actualización de la partida a partir del registro y del estado. */
 export function useGameSounds(s: GameState, mySeat: Seat, version: number) {
-  const prev = useRef<{ n: number; turnKey: string; combatKey: string; dice: string; result: string; phase: string } | null>(null);
+  const prev = useRef<{ n: number; turnKey: string; combatKey: string; dice: string; result: string; phase: string; built: number } | null>(null);
   useEffect(() => {
     const lastN = s.log.at(-1)?.n ?? 0;
     const active = s.order[s.current];
@@ -139,12 +139,14 @@ export function useGameSounds(s: GameState, mySeat: Seat, version: number) {
     const dice = c ? `${c.attackerDice.join(',')}|${c.defenderDice.join(',')}` : '';
     const result = c?.result ? `${combatKey}:${dice}:${c.result}` : '';
     const p = prev.current;
-    prev.current = { n: lastN, turnKey, combatKey, dice, result, phase: s.phase };
+    prev.current = { n: lastN, turnKey, combatKey, dice, result, phase: s.phase, built: s.players[mySeat].buildings.length };
     if (!p) return; // primera carga: sin sonidos
 
     const texts = s.log.filter((e) => e.n > p.n).map((e) => e.text);
     const has = (re: RegExp) => texts.some((t) => re.test(t));
     if (has(/gana Imperio/)) return play('victoria');
+    // Fanfarria al completar tus 8 edificios
+    if (s.phase !== 'GAME_OVER' && s.players[mySeat].buildings.length === 8 && p.built < 8) return play('victoria');
     // Fanfarria también al empezar la Fase II
     if (p.phase === 'PHASE_1' && s.phase === 'PHASE_2') return play('victoria');
     if (has(/conquista la Capital/)) return play('conquista');

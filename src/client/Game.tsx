@@ -1689,6 +1689,20 @@ function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat })
     // Comienza la Fase II
     if (before.phase === 'PHASE_1' && s.phase === 'PHASE_2')
       setBanner({ title: 'Empieza la Fase II', text: 'El mapa está completo.\nComienza la lucha por el Imperio.' });
+    // Los 8 edificios (si completarlos da la victoria, ya lo anuncia la proclama)
+    if (s.phase !== 'GAME_OVER') for (const p of s.players) {
+      if (p.buildings.length === 8 && before.players[p.seat].buildings.length < 8) {
+        const left = Math.max(0, VICTORY.conquests - p.conquests.length);
+        const need = left === 1 ? '1 Conquista' : `${left} Conquistas`;
+        setBanner(
+          p.seat === mySeat
+            ? { title: '¡Enhorabuena!', text: `Has construido los 8 edificios.
+Te ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` }
+            : { title: 'Ocho edificios', text: `${p.name} ha construido los 8 edificios.
+Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
+        );
+      }
+    }
     // Conquistas (si la conquista da la victoria, ya lo anuncia la proclama)
     if (s.phase !== 'GAME_OVER') for (const p of s.players) {
       const nb = before.players[p.seat].conquests.length;
