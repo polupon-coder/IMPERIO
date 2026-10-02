@@ -125,6 +125,12 @@ export function moveTargets(s: GameState, unitId: string, group?: string): Map<n
       for (const n of orthoNeighbors(p)) {
         if (seen.has(n)) continue;
         const t = s.cells[n].terrain;
+        // A27: el dueño atraviesa su propia Capital (y sus Murallas) sin detenerse; para el resto está bloqueada
+        if (isCapital(n) && capitalSeatAt(n) === u.owner) {
+          seen.add(n);
+          next.push(n);
+          continue;
+        }
         if (isCapital(n) || t === null || t === 'agua') continue; // §75, Capital bloqueada
         if (u.type === 'artilleria' && t === 'montana') continue; // §74
         if (unitsAt(s, n).some((o) => o.owner !== u.owner)) continue; // §62

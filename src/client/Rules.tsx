@@ -223,7 +223,7 @@ export function RulesSheet() {
             </ul>
             <h4>Movimiento</h4>
             <ul>
-              <li>Siempre en línea recta (nunca en diagonal). Nunca en Agua ni a través de Capitales o enemigos.</li>
+              <li>Siempre en línea recta (nunca en diagonal). Nunca en Agua ni a través de enemigos ni de Capitales ajenas. Tu propia Capital (y sus Murallas) sí la atraviesas, contando un paso, pero no puedes detenerte en ella.</li>
               <li>
                 <b>Bosque y Montaña son lentos:</b> entrar termina la activación. Si empiezas en ellos, salir consume
                 la activación (1 casilla); si te quedas quieto, puedes atacar.
@@ -313,7 +313,7 @@ export function RulesSheet() {
           <>
             <h4>Murallas</h4>
             <ul>
-              <li>Están en los lados de la Capital y bloquean todo por ese lado, también a las tropas propias.</li>
+              <li>Están en los lados de la Capital y bloquean por ese lado el paso de los enemigos y todos los disparos (también los tuyos). Tus tropas sí cruzan tus Murallas al atravesar tu Capital.</li>
               <li>
                 <b>Tropa convencional</b> junto al lado: 1 dado (+1 por figura extra) contra 2 de la Muralla. Si gana,
                 la destruye; si pierde, no sufre baja.

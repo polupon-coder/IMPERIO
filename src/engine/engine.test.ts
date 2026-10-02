@@ -458,6 +458,25 @@ describe('A25: grupos del mismo tipo', () => {
   });
 });
 
+describe('A27: paso por la propia Capital', () => {
+  it('las tropas propias atraviesan su Capital (aunque tenga Murallas) sin detenerse; las enemigas no', () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    s.players[0].walls = ['N', 'S', 'E', 'O'];
+    const cap = CAPITALS[0];
+    const r = Math.floor(cap / 8), c = cap % 8;
+    const inf = put(s, 0, 'infanteria', r - 1, c); // lado norte
+    const t = moveTargets(s, inf);
+    expect(t.has(cap)).toBe(false);
+    expect(t.get(idx(r + 1, c))).toBe(2); // lado sur, cruzando la Capital
+    s.turn = { seat: 1, civilUsed: false, militaryUsed: false, military: null, tradeDone: false };
+    s.current = s.order.indexOf(1);
+    s.players[1].buildings = ['cuartel'];
+    const foe = put(s, 1, 'infanteria', r, c + 1); // lado este
+    expect(moveTargets(s, foe).has(idx(r, c - 1))).toBe(false);
+  });
+});
+
 describe('A26 y Torreón propio', () => {
   it('el Arquero ataca una Muralla a distancia 2, como la Artillería', () => {
     const s = phase2Board();
