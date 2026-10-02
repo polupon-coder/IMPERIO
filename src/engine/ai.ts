@@ -468,16 +468,11 @@ interface Scored {
 
 function attackOptions(s: GameState, seat: Seat, plan: Plan): Scored[] {
   const out: Scored[] = [];
-  const acts = s.turn?.military?.activations ?? {};
-  const used = Object.keys(acts).length;
   const myOpen = openSides(s, seat).map((o) => o.pos);
   for (const u of ownUnits(s, seat)) {
     if (!canActivate(s, u) || !canAttackNow(s, u)) continue;
-    const ids = [u.id];
-    for (const g of groupCandidates(s, u.id)) {
-      const fresh = [...ids, g].filter((id) => !acts[id]).length;
-      if (used + fresh <= activationLimit(s)) ids.push(g);
-    }
+    // A25: todo el grupo del mismo tipo ataca por una sola activación
+    const ids = [u.id, ...groupCandidates(s, u.id)];
     const n = ids.length;
     const tg = attackTargets(s, u.id);
     for (const pos of tg.troops) {

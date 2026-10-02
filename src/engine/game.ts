@@ -7,6 +7,8 @@ import {
   attackTargets,
   baseDice,
   activationLimit,
+  activationGroup,
+  activationsUsed,
   canActivate,
   canRecruitNow,
   canAttackNow,
@@ -26,6 +28,7 @@ import {
   CAPITALS,
   INITIAL_TILES,
   MAX_PER_TYPE,
+  MAX_STACK,
   MAX_WALLS,
   NAMES,
   PILE_COMPOSITION,
@@ -71,6 +74,7 @@ import type {
   RewardItem,
   Seat,
   Terrain,
+  Unit,
   UnitType,
 } from './types';
 
@@ -356,23 +360,30 @@ function ensureMilitary(s: GameState) {
   return t.military;
 }
 
-function activate(s: GameState, unitId: string) {
+function activate(s: GameState, unitId: string, group?: string) {
   const m = ensureMilitary(s);
   const u = unitById(s, unitId)!;
-  if (!m.activations[unitId]) m.activations[unitId] = activationOf(s, u);
+  if (!m.activations[unitId]) m.activations[unitId] = { ...activationOf(s, u), ...(group && group !== unitId ? { group } : {}) };
   return m.activations[unitId];
+}
+
+/** A25: grupo al que se suman las figuras que actúan con `lead` (el suyo si ya estaba activada). */
+function groupOf(s: GameState, leadId: string) {
+  const a = s.turn?.military?.activations[leadId];
+  return a ? activationGroup(leadId, a) : leadId;
 }
 
 function maybeCloseMilitary(s: GameState) {
   const m = s.turn?.military;
   if (!m || !m.open) return;
   const ids = Object.keys(m.activations);
+  const used = activationsUsed(s);
   // Se cierra sola si ya no queda nada útil: límite de activaciones agotado (o ninguna tropa activable)
   const canStillActivate =
     s.units.some((u) => u.owner === s.turn!.seat && !m.activations[u.id] && canActivate(s, u)) ||
     (canTowerAttack(s) && towerTargets(s, s.turn!.seat).length > 0);
-  if (ids.length < activationLimit(s) && canStillActivate) return;
-  if (!m.recruited && canRecruitNow(s) && ids.length <= 2) return; // aún puede reclutar
+  if (used < activationLimit(s) && canStillActivate) return;
+  if (!m.recruited && canRecruitNow(s) && used <= 2) return; // aún puede reclutar
   const allDone = ids.every((id) => {
     const u = unitById(s, id);
     if (!u) return true;
@@ -788,14 +799,29 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const u = unitById(s, action.unitId);
       if (!u || u.owner !== seat) fail('Tropa no válida.');
       if (!canActivate(s, u!)) fail('No puedes activar más tropas en esta Acción Militar.');
-      const steps = moveTargets(s, u!.id).get(action.to);
-      if (!steps) fail('Movimiento no legal.');
-      const a = activate(s, u!.id);
+      // A25: las figuras del mismo tipo de la misma loseta que van al mismo destino cuentan como una activación
+      const mates = [...new Set(action.with ?? [])].filter((id) => id !== u!.id).map((id) => unitById(s, id));
+      if (mates.some((o) => !o || o.owner !== seat || o.pos !== u!.pos || o.type !== u!.type))
+        fail('Solo se mueven juntas figuras del mismo tipo en la misma loseta.');
+      const movers = [u!, ...(mates as Unit[])];
+      const leadSteps = moveTargets(s, u!.id).get(action.to);
+      if (!leadSteps) fail('Movimiento no legal.');
+      // La líder abre (o ya tiene) el grupo; las compañeras se suman a él sin gastar otra activación
+      const leadAct = activate(s, u!.id);
+      const group = activationGroup(u!.id, leadAct);
+      const plan = movers.map((o) => ({ o, steps: o === u ? leadSteps : moveTargets(s, o.id, group).get(action.to) }));
+      if (plan.some((x) => !x.steps)) fail('Movimiento no legal.');
+      const here = s.units.filter((x) => x.pos === action.to && x.owner === seat).length;
+      if (here + movers.length > MAX_STACK) fail('Como mucho 3 tropas por loseta.');
       const from = u!.pos;
-      a.moves += steps!;
-      u!.pos = action.to;
-      a.done = stepsLeft(s, u!, a) === 0 && !attackAvailable(s, u!, a);
-      log(s, `${p.name} mueve ${NAMES.unit[u!.type]} de ${coordLabel(from)} a ${coordLabel(action.to)}.`, seat);
+      for (const { o, steps } of plan) {
+        const a = activate(s, o.id, o === u ? undefined : group);
+        a.moves += steps!;
+        o.pos = action.to;
+        a.done = stepsLeft(s, o, a) === 0 && !attackAvailable(s, o, a);
+      }
+      const what = movers.length > 1 ? `${movers.length} ${NAMES.unit[u!.type]}` : NAMES.unit[u!.type];
+      log(s, `${p.name} mueve ${what} de ${coordLabel(from)} a ${coordLabel(action.to)}.`, seat);
       maybeCloseMilitary(s);
       break;
     }
@@ -811,11 +837,15 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const lead = units[0]!;
       if (units.some((u) => u!.pos !== lead.pos || u!.type !== lead.type))
         fail('Un ataque agrupado exige tropas del mismo tipo en la misma loseta.');
+      // A25: el grupo que ataca junto cuenta como una sola activación
       const acts = s.turn!.military?.activations ?? {};
-      const fresh = ids.filter((id) => !acts[id]).length;
-      if (!canUseMilitary(s) || Object.keys(acts).length + fresh > activationLimit(s))
-        fail(`Solo puedes activar ${activationLimit(s)} figuras en esta Acción Militar.`);
-      if (units.some((u) => !canActivate(s, u!))) fail('Alguna tropa no puede activarse (falta su edificio o acaba de reclutarse).');
+      const already = ids.find((id) => acts[id]);
+      const group = already ? groupOf(s, already) : lead.id;
+      const newGroup = ids.some((id) => !acts[id]) && !already ? 1 : 0;
+      if (!canUseMilitary(s) || activationsUsed(s) + newGroup > activationLimit(s))
+        fail(`Solo puedes hacer ${activationLimit(s)} activaciones en esta Acción Militar.`);
+      if (units.some((u) => !canActivate(s, u!, 0, group) && !(u === lead && canActivate(s, u!))))
+        fail('Alguna tropa no puede activarse (falta su edificio o acaba de reclutarse).');
       if (units.some((u) => !canAttackNow(s, u!))) fail('Alguna tropa no puede atacar (activación o edificio).');
       const targets = attackTargets(s, lead.id);
       let combat: Combat;
@@ -843,7 +873,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
           defenderType: null,
         };
         s.combat = combat;
-        for (const id of ids) Object.assign(activate(s, id), { attacked: true, done: true });
+        for (const id of ids) Object.assign(activate(s, id, group), { attacked: true, done: true });
       } else if (action.type === 'attack') {
         if (!targets.troops.includes(action.target)) fail('Objetivo no legal.');
         const defenders = unitsAt(s, action.target);
@@ -857,7 +887,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         };
         if (lead.type === 'arquero') ensureMilitary(s).archerShots.push(`${lead.pos}>${action.target}`);
         s.combat = combat;
-        for (const id of ids) Object.assign(activate(s, id), { attacked: true, done: true });
+        for (const id of ids) Object.assign(activate(s, id, group), { attacked: true, done: true });
         if (!combat.defenderType) {
           s.prompt = { kind: 'defenderChoice', seat: combat.defender, options: types };
           break;
@@ -873,7 +903,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
           defenderType: null,
         };
         s.combat = combat;
-        for (const id of ids) Object.assign(activate(s, id), { attacked: true, done: true });
+        for (const id of ids) Object.assign(activate(s, id, group), { attacked: true, done: true });
       }
       rollCombat(s);
       break;

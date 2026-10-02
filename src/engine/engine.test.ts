@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activationsUsed,
+  unitById,
   CAPITALS,
   RINGS,
   SIDES,
@@ -411,6 +413,47 @@ describe('Murallas y Conquista', () => {
       expect(s.lastCombat!.defenderDice.length).toBe(2);
       expect(s.units.some((u) => u.id === a)).toBe(true);
     }
+  });
+});
+
+describe('A25: grupos del mismo tipo', () => {
+  it('mover juntas figuras del mismo tipo gasta una sola activación, aunque solo quede una', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel'];
+    const a = put(s, 0, 'infanteria', 4, 1);
+    const b = put(s, 0, 'infanteria', 4, 1);
+    const c = put(s, 0, 'infanteria', 4, 4);
+    const d = put(s, 0, 'infanteria', 4, 6);
+    s = applyAction(s, 0, { type: 'move', unitId: c, to: idx(4, 5) });
+    s = applyAction(s, 0, { type: 'move', unitId: d, to: idx(3, 6) });
+    // queda 1 activación: el grupo de 2 se mueve junto
+    s = applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 2), with: [b] });
+    expect(unitById(s, a)!.pos).toBe(idx(4, 2));
+    expect(unitById(s, b)!.pos).toBe(idx(4, 2));
+    expect(activationsUsed(s)).toBe(3);
+  });
+
+  it('atacar en grupo gasta una activación y se puede tras moverse juntas', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      let s = phase2Board();
+      s.rng = seed;
+      s.players[0].buildings = ['cuartel'];
+      const a = put(s, 0, 'infanteria', 4, 1);
+      const b = put(s, 0, 'infanteria', 4, 1);
+      put(s, 1, 'infanteria', 4, 3);
+      s = applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 2), with: [b] });
+      s = applyAction(s, 0, { type: 'attack', unitIds: [a, b], target: idx(4, 3) });
+      expect(activationsUsed(s)).toBe(1);
+      expect((s.combat ?? s.lastCombat)!.attackerDice.length).toBe(2);
+    }
+  });
+
+  it('no se puede mover junta una figura de otro tipo', () => {
+    let s = phase2Board();
+    s.players[0].buildings = ['cuartel', 'arqueria'];
+    const a = put(s, 0, 'infanteria', 4, 1);
+    const b = put(s, 0, 'arquero', 4, 1);
+    expect(() => applyAction(s, 0, { type: 'move', unitId: a, to: idx(4, 2), with: [b] })).toThrow();
   });
 });
 

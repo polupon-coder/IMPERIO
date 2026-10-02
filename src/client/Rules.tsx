@@ -144,7 +144,7 @@ export function RulesSheet() {
                 <b>Acción Civil:</b> construir 1 edificio (pulsa el edificio en tu panel) o levantar/reparar 1 Muralla.
               </li>
               <li>
-                <b>Acción Militar:</b> activar hasta 3 figuras para mover y atacar, <b>o</b> reclutar 1 tropa y activar hasta 2. Solo se mueven y atacan las tropas con su edificio construido (las grises solo defienden). Si hay varias tropas en la casilla te pregunta si las mueves juntas. La
+                <b>Acción Militar:</b> hasta 3 activaciones para mover y atacar, <b>o</b> reclutar 1 tropa y 2 activaciones. Las figuras del mismo tipo de una casilla que se mueven o atacan juntas cuentan como una sola activación. Solo se mueven y atacan las tropas con su edificio construido (las grises solo defienden). Si hay varias tropas en la casilla te pregunta si las mueves juntas. La
                 tropa reclutada aparece en tu anillo y no actúa ese turno.
               </li>
               <li>Puedes terminar el turno sin hacer nada.</li>

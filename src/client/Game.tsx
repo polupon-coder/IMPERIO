@@ -20,6 +20,8 @@ import {
   canTowerAttack,
   towerTargets,
   activationLimit,
+  activationsUsed,
+  canActivate,
   canRecruitNow,
   activationOf,
   attackAvailable,
@@ -213,7 +215,12 @@ export function Game({
       const lead = mode.unitId;
       if (m === 'move') {
         const runMove = async (ids: string[]) => {
-          for (const id of ids) if (!(await send({ type: 'move', unitId: id, to: pos }, true))) break;
+          // A25: las del mismo tipo van juntas en un solo movimiento (una activación); las demás, una a una
+          const leadUnit = unitById(s, lead)!;
+          const same = ids.filter((id) => id !== lead && unitById(s, id)?.type === leadUnit.type);
+          const rest = ids.filter((id) => id !== lead && !same.includes(id));
+          if (!(await send({ type: 'move', unitId: lead, to: pos, ...(same.length ? { with: same } : {}) }, true))) return;
+          for (const id of rest) if (!(await send({ type: 'move', unitId: id, to: pos }, true))) break;
         };
         const others = moveCompanions(s, lead, pos);
         if (others.length) return setGroupAsk({ kind: 'move', lead, ids: others, run: runMove });
@@ -687,40 +694,43 @@ function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; s
   );
 }
 
-/** Tropas propias de la misma casilla que pueden ir también a `to` (respetando activaciones y pila de 3). */
+/**
+ * Tropas propias de la misma casilla que pueden ir también a `to` (pila de 3). A25: las del mismo tipo se suman
+ * al grupo de la líder sin gastar otra activación; las de otro tipo gastan la suya.
+ */
 function moveCompanions(s: GameState, leadId: string, to: number): string[] {
   const u = unitById(s, leadId);
-  if (!u) return [];
+  if (!u || !canActivate(s, u)) return [];
   const acts = s.turn?.military?.activations ?? {};
-  let budget = activationLimit(s) - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
+  // Simulación con la líder ya activada, para saber a dónde pueden ir las de su grupo
+  const sim = structuredClone(s);
+  const simActs = sim.turn!.military?.activations ?? {};
+  if (!simActs[u.id]) {
+    sim.turn!.military = sim.turn!.military ?? { open: true, activations: {}, archerShots: [], recruited: null };
+    sim.turn!.military.activations[u.id] = activationOf(sim, u);
+  }
+  const leadAct = sim.turn!.military!.activations[u.id];
+  const group = leadAct.group ?? u.id;
+  let budget = activationLimit(s) - activationsUsed(s) - (acts[u.id] ? 0 : 1);
   let room = 3 - s.units.filter((x) => x.pos === to && x.owner === u.owner).length - 1;
   const out: string[] = [];
   for (const o of s.units) {
     if (o.id === u.id || o.owner !== u.owner || o.pos !== u.pos || room <= 0) continue;
-    const fresh = !acts[o.id];
-    if (fresh && budget <= 0) continue;
-    if (!moveTargets(s, o.id).has(to)) continue;
+    const sameType = o.type === u.type;
+    const costs = !sameType && !acts[o.id];
+    if (costs && budget <= 0) continue;
+    const reach = sameType ? moveTargets(sim, o.id, group) : moveTargets(s, o.id);
+    if (!reach.has(to)) continue;
     out.push(o.id);
     room--;
-    if (fresh) budget--;
+    if (costs) budget--;
   }
   return out;
 }
 
-/** Figuras del mismo tipo y casilla que pueden unirse al ataque (respetando las 3 activaciones). */
+/** Figuras del mismo tipo y casilla que pueden unirse al ataque (A25: el grupo cuenta como una activación). */
 function attackCompanions(s: GameState, leadId: string): string[] {
-  const u = unitById(s, leadId);
-  if (!u) return [];
-  const acts = s.turn?.military?.activations ?? {};
-  let budget = activationLimit(s) - Object.keys(acts).length - (acts[u.id] ? 0 : 1);
-  const out: string[] = [];
-  for (const id of groupCandidates(s, leadId)) {
-    const fresh = !acts[id];
-    if (fresh && budget <= 0) continue;
-    out.push(id);
-    if (fresh) budget--;
-  }
-  return out;
+  return groupCandidates(s, leadId);
 }
 
 /** Se puede levantar el Torreón ahora mismo: se marca como disponible, igual que las tropas reclutables. */
@@ -743,7 +753,7 @@ function ActionStatus({ state: s }: { state: GameState }) {
   const m = t.military;
   const fresh = !t.militaryUsed && (town || !t.civilUsed);
   // Dentro de la Acción Militar (A21): lo que queda por hacer, reclutar o activar
-  const acts = m ? Object.keys(m.activations).length : 0;
+  const acts = m ? activationsUsed(s) : 0; // A25: cada grupo cuenta una vez
   const canRecruit = !!m?.open && !m.recruited && acts <= 2;
   const canAct = !!m?.open && acts < (m.recruited ? 2 : 3);
   const military = fresh || canRecruit || canAct;

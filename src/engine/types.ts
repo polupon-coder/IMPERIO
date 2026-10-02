@@ -75,6 +75,8 @@ export interface Activation {
   moves: number;
   attacked: boolean;
   done: boolean;
+  /** A25: figuras del mismo tipo que actúan juntas comparten grupo y cuentan como una sola activación. */
+  group?: string;
 }
 
 export interface MilitaryState {
@@ -186,7 +188,7 @@ export type Action =
   | { type: 'towerAttack'; target: number }
   | { type: 'attackTower'; unitIds: string[]; target: number }
   | { type: 'recruit'; unit: UnitType; pos: number }
-  | { type: 'move'; unitId: string; to: number }
+  | { type: 'move'; unitId: string; to: number; with?: string[] }
   | { type: 'attack'; unitIds: string[]; target: number }
   | { type: 'attackWall'; unitIds: string[]; capital: Seat; side: Side }
   | { type: 'conquer'; unitId: string; capital: Seat }

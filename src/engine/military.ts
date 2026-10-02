@@ -53,21 +53,32 @@ export function canUseCivil(s: GameState): boolean {
   return hasBuilding(s, t.seat, 'ayuntamiento') || !t.militaryUsed;
 }
 
-/** §57 y A21: hasta 3 figuras por Acción Militar, o 2 si en ella se ha reclutado. */
+/** §57 y A21: hasta 3 activaciones por Acción Militar, o 2 si en ella se ha reclutado. */
 export const activationLimit = (s: GameState) => (s.turn?.military?.recruited ? 2 : 3);
+
+/** A25: grupo de activación de una figura (las del mismo tipo que actúan juntas comparten grupo). */
+export const activationGroup = (id: string, a: Activation) => a.group ?? id;
+
+/** Activaciones gastadas: cada grupo (y el Torreón) cuenta una sola vez. */
+export function activationsUsed(s: GameState): number {
+  const acts = s.turn?.military?.activations ?? {};
+  return new Set(Object.entries(acts).map(([id, a]) => activationGroup(id, a))).size;
+}
 
 /**
  * A21: solo se activan (mover/atacar) tropas activas, es decir, con su edificio construido.
  * La tropa recién reclutada no actúa ese turno.
  */
-export function canActivate(s: GameState, u: Unit, extra = 0): boolean {
+export function canActivate(s: GameState, u: Unit, extra = 0, group?: string): boolean {
   if (!canUseMilitary(s) || u.owner !== s.turn!.seat) return false;
   if (!isUnlocked(s, u.owner, u.type)) return false;
   const m = s.turn!.military;
   if (m?.recruited === u.id) return false;
   const acts = m?.activations ?? {};
   if (acts[u.id]) return true;
-  return Object.keys(acts).length + extra < activationLimit(s);
+  // A25: unirse a un grupo ya activado no gasta otra activación
+  if (group && Object.entries(acts).some(([id, a]) => activationGroup(id, a) === group)) return true;
+  return activationsUsed(s) + extra < activationLimit(s);
 }
 
 /** A21: reclutar 1 tropa por Acción Militar, antes o después de activar (si se han activado 2 como mucho). */
@@ -75,7 +86,7 @@ export function canRecruitNow(s: GameState): boolean {
   if (!canUseMilitary(s)) return false;
   const m = s.turn!.military;
   if (!m) return true;
-  return m.open && !m.recruited && Object.keys(m.activations).length <= 2;
+  return m.open && !m.recruited && activationsUsed(s) <= 2;
 }
 
 /** Pasos de movimiento que le quedan a la tropa (§64–75). */
@@ -100,10 +111,10 @@ export const canAttackNow = (s: GameState, u: Unit) =>
   attackAvailable(s, u, activationOf(s, u)) && isUnlocked(s, u.owner, u.type);
 
 /** Casillas alcanzables → pasos necesarios. Nunca a través de enemigos, Agua ni Capitales. */
-export function moveTargets(s: GameState, unitId: string): Map<number, number> {
+export function moveTargets(s: GameState, unitId: string, group?: string): Map<number, number> {
   const out = new Map<number, number>();
   const u = unitById(s, unitId);
-  if (!u || !canActivate(s, u)) return out;
+  if (!u || !canActivate(s, u, 0, group)) return out;
   const a = activationOf(s, u);
   const max = stepsLeft(s, u, a);
   let frontier = [u.pos];
@@ -219,7 +230,7 @@ export function canTowerAttack(s: GameState): boolean {
   if (p.tower == null) return false;
   const acts = t.military?.activations ?? {};
   if (acts[towerKey(t.seat)]) return false;
-  return Object.keys(acts).length < activationLimit(s);
+  return activationsUsed(s) < activationLimit(s);
 }
 
 /** Casillas con tropas enemigas a las que puede disparar el Torreón (alcance 2, como un Arquero). */
@@ -236,14 +247,22 @@ export function towerTargets(s: GameState, seat: Seat): number[] {
   return out;
 }
 
-/** Figuras del mismo tipo en la misma loseta que pueden unirse al ataque de la líder (§58). */
+/** Figuras del mismo tipo en la misma loseta que pueden unirse al ataque de la líder (§58; A25: sin gastar otra activación). */
 export function groupCandidates(s: GameState, unitId: string): string[] {
   const u = unitById(s, unitId);
-  if (!u) return [];
+  if (!u || !canActivate(s, u)) return [];
+  const a = s.turn?.military?.activations[u.id];
+  const group = a ? activationGroup(u.id, a) : u.id;
   return s.units
     .filter((o) => o.id !== u.id && o.owner === u.owner && o.pos === u.pos && o.type === u.type)
-    .filter((o) => canActivate(s, o) && canAttackNow(s, o))
+    .filter((o) => (canActivate(s, o, 0, group) || canActivateAsLeadMate(s, o)) && canAttackNow(s, o))
     .map((o) => o.id);
+}
+
+/** Una compañera sin activar se suma al grupo de una líder aún sin activar: basta con que ella misma pudiera activarse sin presupuesto. */
+function canActivateAsLeadMate(s: GameState, o: Unit): boolean {
+  if (!canUseMilitary(s) || o.owner !== s.turn!.seat || !isUnlocked(s, o.owner, o.type)) return false;
+  return s.turn!.military?.recruited !== o.id;
 }
 
 /**
