@@ -499,6 +499,11 @@ function combatStage(s: GameState, stage: 'attacker' | 'defender' | 'resolve') {
   resolveCombat(s);
 }
 
+/** «1 Infantería» o «sus 2 Infanterías». */
+function lossLabel(n: number, type: UnitType) {
+  return n === 1 ? `1 ${NAMES.unit[type]}` : `sus ${n} ${NAMES.unitPlural[type]}`;
+}
+
 function removeUnit(s: GameState, id: string) {
   s.units = s.units.filter((u) => u.id !== id);
 }
@@ -517,19 +522,20 @@ function resolveCombat(s: GameState) {
     const defName = NAMES.unit[c.defenderType!];
     text = `${att} (${aName}) ataca a ${def} (${defName}) en ${coordLabel(pos)} a distancia ${c.distance}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
     if (c.result === 'attacker') {
-      const victim = unitsAt(s, pos).filter((u) => u.type === c.defenderType).at(-1)!;
-      removeUnit(s, victim.id);
-      c.casualty = victim.id;
-      text += `Gana el atacante: ${def} pierde 1 ${defName}.`;
+      // A29: mueren todas las tropas del tipo que defendió (las demás de la loseta no combatieron)
+      const victims = unitsAt(s, pos).filter((u) => u.type === c.defenderType).map((u) => u.id);
+      victims.forEach((id) => removeUnit(s, id));
+      c.casualties = victims;
+      text += `Gana el atacante: ${def} pierde ${lossLabel(victims.length, c.defenderType!)}.`;
     } else if (c.result === 'defender') {
       if (c.attackerCanLose && c.attackerTower) {
         destroyTower(s, c.attacker);
         text += `Gana el defensor: el Torreón de ${att} queda destruido.`;
       } else if (c.attackerCanLose) {
-        const victim = c.attackerUnits.filter((id) => unitById(s, id)).at(-1)!;
-        removeUnit(s, victim);
-        c.casualty = victim;
-        text += `Gana el defensor: ${att} pierde 1 ${NAMES.unit[c.attackerType]}.`;
+        const victims = c.attackerUnits.filter((id) => unitById(s, id)); // A29: todo el grupo atacante
+        victims.forEach((id) => removeUnit(s, id));
+        c.casualties = victims;
+        text += `Gana el defensor: ${att} pierde ${lossLabel(victims.length, c.attackerType)}.`;
       } else text += 'Gana el defensor, pero no puede causar daño al atacante.';
     } else text += 'Empate: no ocurre nada.';
   } else if (c.target.kind === 'tower') {
@@ -548,10 +554,10 @@ function resolveCombat(s: GameState) {
       text += 'Muralla destruida.';
     } else if (c.result === 'defender') {
       if (c.attackerCanLose) {
-        const victim = c.attackerUnits.filter((id) => unitById(s, id)).at(-1)!;
-        removeUnit(s, victim);
-        c.casualty = victim;
-        text += `La Muralla resiste: ${att} pierde 1 Artillería.`;
+        const victims = c.attackerUnits.filter((id) => unitById(s, id)); // A29: todas las Artillerías del ataque
+        victims.forEach((id) => removeUnit(s, id));
+        c.casualties = victims;
+        text += `La Muralla resiste: ${att} pierde ${lossLabel(victims.length, 'artilleria')}.`;
       } else text += 'La Muralla resiste.';
     } else text += 'Empate: no ocurre nada.';
   }
@@ -788,7 +794,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         defenderFaith: false,
         attackerCanLose: false,
         result: null,
-        casualty: null,
+        casualties: [],
         summary: '',
       };
       if (!s.combat.defenderType) {
@@ -882,7 +888,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         defenderFaith: false,
         attackerCanLose: true,
         result: null,
-        casualty: null,
+        casualties: [],
         summary: '',
       };
       if (action.type === 'attackTower') {

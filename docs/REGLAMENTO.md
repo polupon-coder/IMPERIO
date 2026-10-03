@@ -39,6 +39,7 @@ La sección **A** recoge las aclaraciones del autor; cuando contradicen el texto
 | A26 | Arqueros contra Murallas | Los Arqueros pueden atacar una Muralla desde las mismas casillas que la Artillería (A15): la casilla junto a ese lado o a distancia 2 de la Capital en línea recta o en las diagonales. Combaten como tropa convencional contra Muralla (1 dado, +1 por figura agrupada, contra 2) y nunca sufren baja. Sustituye que los Arqueros no ataquen Murallas a distancia. |
 | A27 | Paso por la propia Capital | Las tropas de un jugador pueden **atravesar su propia Capital** y **sus propias Murallas** al moverse: cruzar la Capital cuenta como un paso (como una Llanura) y no pueden detenerse en ella. Para los demás la Capital sigue bloqueada y las Murallas intactas también. Los disparos siguen bloqueados para todos por las Capitales y las Murallas intactas. Modifica A8 y A14 solo para el movimiento del dueño. |
 | A28 | Guarnición del Torreón | En la loseta del propio Torreón pueden estar hasta **2 tropas propias** (el Torreón ocupa 1 de las 3 plazas). Mientras haya tropas en esa loseta, **defienden ellas** como una pila normal y el Torreón **no puede ser atacado**; solo cuando la loseta queda vacía se puede atacar al Torreón. Tras vaciarla en cuerpo a cuerpo no se avanza a ella. Las tropas de la guarnición actúan con normalidad y el Torreón sigue disparando como un Arquero. |
+| A29 | Bajas | El bando que pierde un combate pierde **todas las tropas que combatieron**, no solo una: si ataca un grupo y gana el defensor, muere todo el grupo atacante; si gana el atacante, mueren todas las tropas del tipo que defendió (en una pila mixta, las de otros tipos no combatieron y se quedan). Contra una Muralla, si resiste, mueren todas las Artillerías del ataque. Las reglas de «sin baja» (Arquero a distancia 2 contra tropa sin alcance, Artillería a distancia 2, tropa convencional contra Muralla, defensa del Torreón) se mantienen. Sustituye la baja única de §87–92, §102 y §194. |
 
 ### Decisiones de implementación (confirmadas por el autor)
 
@@ -191,7 +192,7 @@ Aparece en una casilla válida del propio anillo: máximo 3 tropas por loseta, n
 Máximo 5 unidades de cada tipo por jugador. Una loseta admite como máximo 3 tropas del mismo jugador, de tipos distintos si se quiere. Tropas enemigas nunca comparten loseta.
 
 ### 57–61. Activación y ataques agrupados
-Cada figura se activa una sola vez por Acción Militar, con un máximo de 3 figuras distintas. Varias tropas pueden hacer un único ataque agrupado si están en la misma loseta, son del mismo tipo y están todas activadas. Por ejemplo, 3 Infanterías atacando juntas consumen 3 activaciones. Cada figura adicional suma +1 dado: 1d/2d/3d, o 2d/3d/4d si la unidad tiene ventaja. No se combinan tipos distintos en un mismo ataque. Si se ataca una pila mixta, el defensor elige qué tipo defiende: solo ese tipo cuenta para la tirada, y la baja se retira de ese tipo.
+Cada figura se activa una sola vez por Acción Militar, con un máximo de 3 figuras distintas. Varias tropas pueden hacer un único ataque agrupado si están en la misma loseta, son del mismo tipo y están todas activadas. Por ejemplo, 3 Infanterías atacando juntas consumen 3 activaciones. Cada figura adicional suma +1 dado: 1d/2d/3d, o 2d/3d/4d si la unidad tiene ventaja. No se combinan tipos distintos en un mismo ataque. Si se ataca una pila mixta, el defensor elige qué tipo defiende: solo ese tipo cuenta para la tirada, y la baja se retira de ese tipo. *(Ver A29: si pierde, caen todas las de ese tipo.)*
 
 ### 62–63. Bloqueo y avance
 Una loseta con tropas enemigas bloquea completamente el movimiento. Si un combate cuerpo a cuerpo elimina a la última tropa enemiga de una loseta, el atacante puede avanzar a ella: es opcional, no gasta activación y no se aplica tras ataques a distancia. *(Ver A10.)*
@@ -206,7 +207,7 @@ Una loseta con tropas enemigas bloquea completamente el movimiento. Si un combat
 - Ninguna tropa entra en Agua.
 
 ### 76–77. Resolución del combate
-Cada bando lanza sus d6 y solo cuenta el dado más alto. Si el atacante saca más, gana; si el defensor saca más, gana el defensor; si empatan, no pasa nada. El perdedor elimina 1 tropa participante, nunca el grupo entero.
+Cada bando lanza sus d6 y solo cuenta el dado más alto. Si el atacante saca más, gana; si el defensor saca más, gana el defensor; si empatan, no pasa nada. El perdedor elimina 1 tropa participante, nunca el grupo entero. *(Sustituido por A29: el perdedor pierde todas las tropas que combatieron.)*
 
 ### 78–83. Infantería, Caballería y Lancero
 - La Infantería tira 1 dado base.
@@ -233,7 +234,7 @@ Cada bando lanza sus d6 y solo cuenta el dado más alto. Si el atacante saca má
 
 ### 100–102. Artillería contra Murallas
 Ataca Murallas sin estar cuerpo a cuerpo, con alcance 2, e identificando la Muralla por el lado de la Capital que protege. *(Ver A15.)*
-Dados: 1 Artillería 2d, 2 Artillerías 3d y 3 Artillerías 4d, contra 1d de la Muralla. Si gana la Artillería, la Muralla queda destruida; si gana la Muralla, se elimina 1 Artillería participante; si empatan, nada. Igual desde distancia 2.
+Dados: 1 Artillería 2d, 2 Artillerías 3d y 3 Artillerías 4d, contra 1d de la Muralla. Si gana la Artillería, la Muralla queda destruida; si gana la Muralla, se elimina 1 Artillería participante; si empatan, nada. Igual desde distancia 2. *(Ver A29: si gana la Muralla, mueren todas las Artillerías del ataque.)*
 
 ### 103–108. Murallas contra tropas convencionales
 - La tropa debe estar junto al lado protegido. Tira 1 dado base (+1 por tropa igual agrupada) contra 2 de la Muralla. Las ventajas entre tipos no cuentan.

@@ -110,11 +110,12 @@ export interface Combat {
   defenderDice: number[];
   attackerFaith: boolean;
   defenderFaith: boolean;
-  /** Si el defensor gana, ¿pierde el atacante una tropa? */
+  /** Si el defensor gana, ¿pierde el atacante sus tropas? */
   attackerCanLose: boolean;
   /** Resultado final una vez resuelto. */
   result: 'attacker' | 'defender' | 'tie' | null;
-  casualty: string | null;
+  /** A29: tropas eliminadas (todas las que combatieron en el bando perdedor). */
+  casualties: string[];
   summary: string;
 }
 

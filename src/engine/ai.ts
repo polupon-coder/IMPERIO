@@ -237,7 +237,8 @@ function defenderBest(s: GameState, pos: number, attType: UnitType, n: number, d
     const m = here.filter((u) => u.type === t).length;
     const [ba, bb, canLose] = baseDice(attType, t, distance);
     const [w, l] = duel(ba + n - 1, bb + m - 1);
-    return -w + (canLose ? l * 0.5 : 0);
+    // A29: si pierde caen todas las de ese tipo; si gana, todo el grupo atacante
+    return -w * m + (canLose ? l * n * 0.5 : 0);
   })!;
 }
 
@@ -573,7 +574,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Sco
       const [w, l] = duel(ba + n - 1, bb + m - 1);
       const near = Math.min(...myOpen.map((p) => manhattan(p, pos)), 9);
       const clearsTarget = plan.target !== null && sideTowards(plan.target, pos) !== null;
-      let killValue = UNIT_VALUE[t] + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0) + (clearsTarget ? 2 : 0);
+      let killValue = UNIT_VALUE[t] * m + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0) + (clearsTarget ? 2 : 0);
       if (smart) {
         const owner = unitsAt(s, pos)[0].owner;
         // Frena al que va ganando y aprovecha las pilas que se quedan con una sola figura
@@ -581,7 +582,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Sco
         if (plan.humans.has(owner)) killValue += plan.hunter ? 1.2 : 0.4;
         if (unitsAt(s, pos).length === 1) killValue += 0.3;
       }
-      const lossValue = canLose ? UNIT_VALUE[u.type] : 0;
+      const lossValue = canLose ? UNIT_VALUE[u.type] * n : 0; // A29: se pierde el grupo entero
       // Usar varias figuras cuesta activaciones: se descuenta un poco
       const value = w * killValue - l * lossValue - (n - 1) * 0.08;
       out.push({ action: { type: 'attack', unitIds: ids, target: pos }, value });
@@ -599,7 +600,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Sco
       let goal = wl.capital === plan.target ? 2.2 : 0.8;
       // Difícil: abrir brecha en una Capital aún por conquistar vale más (y más con grupo)
       if (smart && !s.players[seat].conquests.includes(wl.capital)) goal += 1.6 + (n - 1) * 0.5;
-      const value = w * goal - (art ? l * UNIT_VALUE.artilleria : 0);
+      const value = w * goal - (art ? l * UNIT_VALUE.artilleria * n : 0);
       out.push({ action: { type: 'attackWall', unitIds: ids, capital: wl.capital, side: wl.side }, value });
     }
   }
@@ -613,7 +614,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Sco
       const [w, l] = duel(ba, bb + m - 1);
       const near = Math.min(...myOpen.map((p) => manhattan(p, pos)), 9);
       const lossValue = t === 'arquero' || t === 'artilleria' ? 3 : 0; // solo una tropa con alcance lo derriba
-      const value = w * (UNIT_VALUE[t] + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0)) - l * lossValue;
+      const value = w * (UNIT_VALUE[t] * m + (near <= 1 ? 2.5 : near <= 2 ? 1 : 0)) - l * lossValue;
       out.push({ action: { type: 'towerAttack', target: pos }, value });
     }
   }

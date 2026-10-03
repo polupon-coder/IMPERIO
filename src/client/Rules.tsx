@@ -247,7 +247,8 @@ export function RulesSheet() {
             <ul>
               <li>
                 Cada bando tira sus dados y cuenta el más alto. Gana el mayor; en empate no pasa nada. El perdedor
-                retira 1 tropa que haya participado.
+                pierde <b>todas las tropas que combatieron</b>: si atacan 3 Caballerías y pierden, caen las 3; si
+                defienden 2 Infanterías y pierden, caen las 2 (en una pila mixta, solo el tipo que defendió).
               </li>
               <li>
                 <b>Cuerpo a cuerpo:</b> contra una casilla vecina en línea recta.
@@ -320,7 +321,7 @@ export function RulesSheet() {
               </li>
               <li>
                 <b>Artillería</b> desde la casilla junto al lado o a distancia 2 (en línea o en las diagonales): 2
-                dados (+1 por figura extra) contra 1. Si pierde, retira 1 Artillería.
+                dados (+1 por figura extra) contra 1. Si pierde, caen todas las Artillerías que atacaron.
               </li>
               <li>
                 <b>Arqueros</b>: atacan la Muralla desde las mismas casillas que la Artillería (junto al lado o a distancia 2),

@@ -171,6 +171,13 @@ export const NAMES = {
     caballeria: 'Caballería',
     artilleria: 'Artillería',
   } as Record<UnitType, string>,
+  unitPlural: {
+    infanteria: 'Infanterías',
+    arquero: 'Arqueros',
+    lancero: 'Lanceros',
+    caballeria: 'Caballerías',
+    artilleria: 'Artillerías',
+  } as Record<UnitType, string>,
   building: {
     cuartel: 'Cuartel',
     arqueria: 'Arquería',

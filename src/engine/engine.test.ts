@@ -249,6 +249,55 @@ describe('Torreón (A23)', () => {
   });
 });
 
+describe('A29: el bando que pierde pierde todas las tropas que combatieron', () => {
+  /** Repite el combate con distintas tiradas hasta obtener el resultado buscado. */
+  function fight(setup: () => { s: GameState; act: Action }, want: 'attacker' | 'defender') {
+    for (let k = 1; k < 500; k++) {
+      const { s: s0, act } = setup();
+      s0.rng = k;
+      let s = applyAction(s0, 0, act);
+      if (s.prompt?.kind === 'defenderChoice') s = applyAction(s, 1, { type: 'defenderChoice', unit: 'infanteria' });
+      if (s.lastCombat?.result === want) return s;
+    }
+    throw new Error('sin resultado');
+  }
+  const mixed = () => {
+    const s = phase2Board();
+    s.players[0].buildings = ['caballerizas'];
+    const cab = [put(s, 0, 'caballeria', 3, 3), put(s, 0, 'caballeria', 3, 3), put(s, 0, 'caballeria', 3, 3)];
+    put(s, 1, 'infanteria', 3, 4);
+    put(s, 1, 'infanteria', 3, 4);
+    put(s, 1, 'arquero', 3, 4);
+    return { s, act: { type: 'attack', unitIds: cab, target: idx(3, 4) } as Action };
+  };
+
+  it('3 Caballerías contra 2 Infanterías: si ganan, mueren las 2 Infanterías (el Arquero no combatió)', () => {
+    const s = fight(mixed, 'attacker');
+    const left = s.units.filter((u) => u.owner === 1 && u.pos === idx(3, 4)).map((u) => u.type);
+    expect(left).toEqual(['arquero']);
+    expect(s.lastCombat!.casualties).toHaveLength(2);
+  });
+
+  it('si gana el defensor, mueren las 3 Caballerías', () => {
+    const s = fight(mixed, 'defender');
+    expect(s.units.filter((u) => u.owner === 0)).toHaveLength(0);
+    expect(s.units.filter((u) => u.owner === 1)).toHaveLength(3);
+  });
+
+  it('contra la Muralla: si resiste, mueren todas las Artillerías del ataque', () => {
+    const s = fight(() => {
+      const s = phase2Board();
+      s.players[0].buildings = ['herreria'];
+      s.players[1].walls = ['S'];
+      const front = sideCell(1, 'S');
+      const art = [put(s, 0, 'artilleria', Math.floor(front / 8), front % 8), put(s, 0, 'artilleria', Math.floor(front / 8), front % 8)];
+      return { s, act: { type: 'attackWall', unitIds: art, capital: 1, side: 'S' } as Action };
+    }, 'defender');
+    expect(s.units.filter((u) => u.type === 'artilleria')).toHaveLength(0);
+    expect(s.players[1].walls).toEqual(['S']);
+  });
+});
+
 describe('Dados', () => {
   it('ventajas en ambos sentidos', () => {
     expect(baseDice('caballeria', 'infanteria', 1)).toEqual([2, 1, true]);
