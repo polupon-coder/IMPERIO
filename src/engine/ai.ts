@@ -144,6 +144,33 @@ function threatLevel(s: GameState, seat: Seat) {
   return t;
 }
 
+/** Casillas laterales de tierra de la propia Capital (con o sin Muralla). */
+const landSides = (s: GameState, seat: Seat) =>
+  sideCells(seat).filter(({ pos }) => s.cells[pos].terrain === null || isLand(s.cells[pos].terrain));
+
+/**
+ * Amenaza del modo difícil. Toda tropa mueve 2 casillas y aún puede atacar o conquistar: una
+ * enemiga a 2 de un lado abierto conquista en su próximo turno, y cerca de una Muralla la puede
+ * derribar (los Arqueros y la Artillería desde más lejos) y entrar otra tropa en el mismo turno.
+ */
+function smartThreat(s: GameState, seat: Seat, only?: Set<Seat>) {
+  const open = openSides(s, seat).map((o) => o.pos);
+  const walled = landSides(s, seat).filter((o) => s.players[seat].walls.includes(o.side)).map((o) => o.pos);
+  let t = 0;
+  for (const e of enemyUnits(s, seat)) {
+    if (only && !only.has(e.owner)) continue;
+    const already = s.players[e.owner].conquests.includes(seat); // ya no puede conquistarla otra vez
+    const dOpen = Math.min(99, ...open.map((p) => manhattan(p, e.pos)));
+    const dWall = Math.min(99, ...walled.map((p) => manhattan(p, e.pos)));
+    const ranged = e.type === 'arquero' || e.type === 'artilleria';
+    let v = 0;
+    if (dOpen <= 2) v = 4;
+    else if (dWall <= (ranged ? 4 : 2)) v = 2;
+    t += already ? v * 0.3 : v;
+  }
+  return t;
+}
+
 /** Enemigos cerca de una casilla de la propia Capital (para reforzar el lado más amenazado). */
 function sideDanger(s: GameState, seat: Seat, pos: number) {
   return enemyUnits(s, seat).reduce((n, e) => n + (manhattan(e.pos, pos) <= 1 ? 1.5 : manhattan(e.pos, pos) <= 3 ? 0.5 : 0), 0);
@@ -470,11 +497,14 @@ function makePlan(s: GameState, seat: Seat, level: BotLevel, opts: BotOptions = 
       return -(walls * 1.5 + defenders * 0.8 + reach * 0.5) + prey;
     }) ?? null;
   const army = ownUnits(s, seat).length;
-  const alarm = smart && threatLevel(s, seat) >= 3;
+  // Amenazada: enemigos junto a sus lados abiertos o, si son humanos, a su alcance (lectura más fina)
+  const alarm = smart && (threatLevel(s, seat) >= 3 || smartThreat(s, seat, humans) >= 4);
   const marching =
     p.conquests.length < VICTORY.conquests &&
     (level === 'dificil'
-      ? p.buildings.length >= 4 || army >= 8
+      ? hunter
+        ? p.buildings.length >= 3 || army >= 5 // la cazadora sale antes a por el humano
+        : p.buildings.length >= 4 || army >= 8
       : level === 'normal'
         ? p.buildings.length >= 4 || army >= 9
         : p.buildings.length >= 6 || army >= 12);
@@ -526,7 +556,8 @@ interface Scored {
 
 function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Scored[] {
   const out: Scored[] = [];
-  const myOpen = openSides(s, seat).map((o) => o.pos);
+  // Difícil: también las tropas junto a sus lados amurallados (pueden derribar la Muralla)
+  const myOpen = (smart ? landSides(s, seat) : openSides(s, seat)).map((o) => o.pos);
   const leader = smart ? leaderOf(s, seat) : null;
   for (const u of ownUnits(s, seat)) {
     if (!canActivate(s, u) || !canAttackNow(s, u)) continue;
@@ -594,6 +625,7 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Score
   const threat = threatLevel(s, seat);
   const open = openSides(s, seat);
   const unguarded = new Set(open.filter(({ pos }) => !unitsAt(s, pos).some((u) => u.owner === seat)).map((o) => o.pos));
+  const guardCells = plan.alarm ? defenseCells(s, seat) : [];
   const maps = new Map<UnitType, number[]>();
   const distTo = (type: UnitType) => {
     if (plan.target === null) return null;
@@ -619,10 +651,10 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Score
       // Defensa: cubrir un lado abierto sin guardia
       if (unguarded.has(to)) value += 2 + threat * 0.6;
       if (home) {
-        // Acumular defensa en los lados abiertos, sobre todo en el más amenazado
-        const side = open.find((o) => o.pos === to);
-        const fromSide = open.some((o) => o.pos === u.pos);
-        if (side && !fromSide) value += 2.5 + sideDanger(s, seat, to);
+        // Acumular defensa en los lados, sobre todo en los abiertos y en el más amenazado
+        const side = guardCells.find((o) => o.pos === to);
+        const fromSide = guardCells.some((o) => o.pos === u.pos);
+        if (side && !fromSide) value += (side.open ? 2.5 : 1.5) + sideDanger(s, seat, to);
         if (fromSide && !side) value -= 3;
       }
       // No abandonar la guardia si hay amenaza
@@ -688,11 +720,17 @@ function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand, smart = fa
   return { type: 'recruit', unit: t, pos: guardSpot ?? (smart ? stackSpot(s, seat, t) : undefined) ?? bestSpot(s, seat, t, r) };
 }
 
-/** Lado abierto de la propia Capital más amenazado donde aún cabe una tropa de ese tipo. */
+/** Lados de tierra de la propia Capital donde defender (los abiertos primero). */
+function defenseCells(s: GameState, seat: Seat) {
+  const open = new Set(openSides(s, seat).map((o) => o.pos));
+  return landSides(s, seat).map(({ pos }) => ({ pos, open: open.has(pos) }));
+}
+
+/** Lado de la propia Capital más amenazado (abierto antes que amurallado) donde cabe una tropa de ese tipo. */
 function defenseSpot(s: GameState, seat: Seat, type: UnitType): number | undefined {
   const spots = new Set(ringSpots(s, seat, type));
-  const open = openSides(s, seat).filter((o) => spots.has(o.pos));
-  return pickBest(open, (o) => sideDanger(s, seat, o.pos))?.pos;
+  const cells = defenseCells(s, seat).filter((o) => spots.has(o.pos));
+  return pickBest(cells, (o) => (o.open ? 3 : 0) + sideDanger(s, seat, o.pos))?.pos;
 }
 
 /** Casilla del anillo donde ya hay figuras propias del mismo tipo y cabe otra (para formar grupos). */
@@ -701,8 +739,8 @@ function stackSpot(s: GameState, seat: Seat, type: UnitType): number | undefined
   return pickBest(spots, (pos) => unitsAt(s, pos).filter((u) => u.type === type).length);
 }
 
-function wallChoice(s: GameState, seat: Seat, level: BotLevel): Action | null {
-  const threat = threatLevel(s, seat);
+function wallChoice(s: GameState, seat: Seat, level: BotLevel, humans?: Set<Seat>): Action | null {
+  const threat = threatLevel(s, seat) + (humans ? smartThreat(s, seat, humans) : 0);
   const p = s.players[seat];
   // Difícil: si un rival que aún no le ha conquistado está cerca de ganar, se amuralla igualmente
   const danger =
@@ -753,7 +791,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand, opts: BotOpt
 
   // 1b. Difícil y amenazada: primero las Murallas
   if (canUseCivil(s) && plan.alarm) {
-    const wall = wallChoice(s, seat, level);
+    const wall = wallChoice(s, seat, level, plan.humans);
     if (wall) return wall;
   }
 
@@ -768,7 +806,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand, opts: BotOpt
 
   // 2b. Murallas: reparar o levantar en lados abiertos de tierra, sobre todo si hay amenaza
   if (canUseCivil(s)) {
-    const wall = wallChoice(s, seat, level);
+    const wall = wallChoice(s, seat, level, plan.humans);
     if (wall) return wall;
   }
 
