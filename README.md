@@ -23,7 +23,7 @@ Juegan en el servidor con las mismas reglas y solo con acciones legales; nunca v
 - **Normal:** construye siguiendo un plan (Mercado, Ayuntamiento, Biblioteca…), usa el Mercado para completar costes, custodia los lados abiertos de su Capital, ataca cuando los dados le favorecen, desgasta a distancia con Arqueros y Artillería y marcha sobre la Capital rival más débil.
 - **Fácil:** el mismo criterio con errores y menos agresividad.
 
-En simulación, una máquina normal (medio) gana claramente a las fáciles, y una fácil a los jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`). La difícil, con las mismas reglas pero mejor criterio (Biblioteca, Mercado y Ayuntamiento primero; arqueros y caballería agrupados; brecha en las Murallas; frena al que va ganando), gana unas 6 de cada 10 partidas contra tres medias (`npx tsx scripts/simulate-bots.ts 100 dificil,normal,normal,normal`).
+En simulación, una máquina normal (medio) gana claramente a las fáciles, y una fácil a los jugadores al azar (`npx tsx scripts/simulate-bots.ts 20 normal,facil,facil,facil`). La difícil, con las mismas reglas pero mejor criterio (Biblioteca, Mercado y Ayuntamiento primero; arqueros y caballería agrupados; brecha en las Murallas; frena al que va ganando; si se siente amenazada acumula defensa; y al menos una va a por el jugador humano), gana unas 6 de cada 10 partidas contra tres medias (`npx tsx scripts/simulate-bots.ts 100 dificil,normal,normal,normal`).
 
 Durante la partida, el tablero resalta siempre lo que es legal:
 

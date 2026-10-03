@@ -286,7 +286,8 @@ export function playGame(seed: number, maxTurns = 600): GameReport {
 // Partidas entre jugadores máquina
 // ---------------------------------------------------------------------------------------------
 
-export type SimPlayer = BotLevel | 'azar';
+/** 'humano' juega como una máquina normal, pero las difíciles lo tratan como humano. */
+export type SimPlayer = BotLevel | 'azar' | 'humano';
 
 export interface BotReport {
   state: GameState;
@@ -301,6 +302,8 @@ export function playBots(seed: number, players: SimPlayer[], maxTurns = 2000): B
   let s = createGame(TEST_PLAYERS, seed);
   const problems: string[] = [];
   let guard = 0;
+  const seatsOf = (k: SimPlayer) => players.flatMap((x, i) => (x === k ? [i as Seat] : []));
+  const opts = { humans: seatsOf('humano'), hardBots: seatsOf('dificil') };
   while (s.phase !== 'GAME_OVER' && s.turnNumber <= maxTurns) {
     if (++guard > 200000) {
       problems.push('demasiadas acciones');
@@ -325,7 +328,7 @@ export function playBots(seed: number, players: SimPlayer[], maxTurns = 2000): B
         continue;
       }
       action = weightedPick(r, phase2Candidates(s, r)).action;
-    } else action = chooseAction(s, seat, kind, r);
+    } else action = chooseAction(s, seat, kind === 'humano' ? 'normal' : kind, r, opts);
     if (!action) {
       problems.push(`máquina ${kind} sin acción con decisión pendiente (${s.phase}/${s.step}, prompt ${s.prompt?.kind})`);
       break;

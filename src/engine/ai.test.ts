@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chooseAction, duel, pendingSeats } from './index';
+import { hunterSeat } from './ai';
 import { playBots, playPhase1 } from './sim';
 
 describe('Jugadores máquina', () => {
@@ -27,6 +28,15 @@ describe('Jugadores máquina', () => {
     const rep = playBots(seed, ['dificil', 'normal', 'dificil', 'normal']);
     expect(rep.problems).toEqual([]);
     expect(rep.winner).not.toBeNull();
+  }, 60000);
+
+  it('con un humano, juegan y terminan; una difícil es la cazadora (la más cercana a su Capital)', () => {
+    const rep = playBots(8, ['humano', 'dificil', 'dificil', 'normal']);
+    expect(rep.problems).toEqual([]);
+    expect(rep.winner).not.toBeNull();
+    const hunter = hunterSeat({ humans: [0], hardBots: [1, 2] });
+    expect(hunter === 1 || hunter === 2).toBe(true);
+    expect(hunterSeat({ humans: [], hardBots: [1] })).toBeNull();
   }, 60000);
 
   it('solo decide quien tiene una decisión pendiente', () => {

@@ -51,6 +51,22 @@ import { applyAction, towerBuildSpots, unitCount, wallBuildCheck } from './game'
 export type BotLevel = 'facil' | 'normal' | 'dificil';
 type Rand = () => number;
 
+/** Lo que la máquina sabe del Mundo además del tablero: quién es humano y qué máquinas son difíciles. */
+export interface BotOptions {
+  humans?: Seat[];
+  hardBots?: Seat[];
+}
+
+/**
+ * Máquina difícil que «caza» al humano: la más cercana a la Capital del primer humano.
+ * Así al menos una va a por él aunque haya varias difíciles.
+ */
+export function hunterSeat(opts: BotOptions): Seat | null {
+  const human = opts.humans?.[0];
+  if (human === undefined || !opts.hardBots?.length) return null;
+  return pickBest(opts.hardBots, (b) => -manhattan(CAPITALS[b], CAPITALS[human]) - b * 0.01) ?? null;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Quién debe actuar
 // ---------------------------------------------------------------------------------------------
@@ -69,10 +85,10 @@ export function pendingSeats(s: GameState): Seat[] {
 }
 
 /** Acción elegida por la máquina para `seat`, o null si no le toca decidir nada. */
-export function chooseAction(s: GameState, seat: Seat, level: BotLevel, r: Rand = Math.random): Action | null {
+export function chooseAction(s: GameState, seat: Seat, level: BotLevel, r: Rand = Math.random, opts: BotOptions = {}): Action | null {
   if (!pendingSeats(s).includes(seat)) return null;
   if (s.phase === 'PHASE_1') return phase1(s, seat, level, r);
-  if (s.phase === 'PHASE_2') return phase2(s, seat, level, r);
+  if (s.phase === 'PHASE_2') return phase2(s, seat, level, r, opts);
   return null;
 }
 
@@ -126,6 +142,11 @@ function threatLevel(s: GameState, seat: Seat) {
     else if (d <= 3) t += 1;
   }
   return t;
+}
+
+/** Enemigos cerca de una casilla de la propia Capital (para reforzar el lado más amenazado). */
+function sideDanger(s: GameState, seat: Seat, pos: number) {
+  return enemyUnits(s, seat).reduce((n, e) => n + (manhattan(e.pos, pos) <= 1 ? 1.5 : manhattan(e.pos, pos) <= 3 ? 0.5 : 0), 0);
 }
 
 /** Distancia por tierra (en casillas) desde las metas, para un tipo de tropa. */
@@ -425,9 +446,15 @@ interface Plan {
   target: Seat | null; // Capital rival objetivo de la conquista
   marching: boolean; // si las tropas libres avanzan hacia ella
   guards: Set<string>; // tropas que custodian lados abiertos de la propia Capital
+  humans: Set<Seat>; // asientos humanos (el difícil tiende a ir a por ellos)
+  hunter: boolean; // esta máquina caza al humano
+  alarm: boolean; // difícil: se siente amenazada y acumula defensa
 }
 
-function makePlan(s: GameState, seat: Seat, level: BotLevel): Plan {
+function makePlan(s: GameState, seat: Seat, level: BotLevel, opts: BotOptions = {}): Plan {
+  const smart = level === 'dificil';
+  const humans = new Set(smart ? (opts.humans ?? []).filter((h) => h !== seat) : []);
+  const hunter = smart && hunterSeat(opts) === seat;
   const p = s.players[seat];
   const rivals = SEATS.filter((x) => x !== seat && !p.conquests.includes(x) && conquerable(s, x));
   const mine = ownUnits(s, seat).filter((u) => u.type !== 'artilleria');
@@ -438,9 +465,12 @@ function makePlan(s: GameState, seat: Seat, level: BotLevel): Plan {
       // Distancia media de las propias tropas a esa Capital (por tierra)
       const dist = distanceMap(s, seat, 'infanteria', goalsFor(s, seat, x, 'infanteria'));
       const reach = mine.length ? mine.reduce((n, u) => n + Math.min(dist[u.pos], 30), 0) / mine.length : manhattan(CAPITALS[seat], CAPITALS[x]);
-      return -(walls * 1.5 + defenders * 0.8 + reach * 0.5);
+      // Difícil: tendencia a ir a por el humano (mucha si es la cazadora)
+      const prey = humans.has(x) ? (hunter ? 8 : 1.5) : 0;
+      return -(walls * 1.5 + defenders * 0.8 + reach * 0.5) + prey;
     }) ?? null;
   const army = ownUnits(s, seat).length;
+  const alarm = smart && threatLevel(s, seat) >= 3;
   const marching =
     p.conquests.length < VICTORY.conquests &&
     (level === 'dificil'
@@ -453,7 +483,7 @@ function makePlan(s: GameState, seat: Seat, level: BotLevel): Plan {
     const here = unitsAt(s, pos).filter((u) => u.owner === seat);
     if (here.length) guards.add(here[0].id);
   }
-  return { target, marching, guards };
+  return { target, marching, guards, humans, hunter, alarm };
 }
 
 /**
@@ -517,6 +547,7 @@ function attackOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Sco
         const owner = unitsAt(s, pos)[0].owner;
         // Frena al que va ganando y aprovecha las pilas que se quedan con una sola figura
         if (owner === leader) killValue += 0.8;
+        if (plan.humans.has(owner)) killValue += plan.hunter ? 1.2 : 0.4;
         if (unitsAt(s, pos).length === 1) killValue += 0.3;
       }
       const lossValue = canLose ? UNIT_VALUE[u.type] : 0;
@@ -574,7 +605,9 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Score
     const targets = moveTargets(s, u.id);
     if (!targets.size) continue;
     const isGuard = plan.guards.has(u.id);
-    const dist = plan.marching && !isGuard ? distTo(u.type) : null;
+    // Difícil y amenazada: las tropas junto a la Capital se quedan a defenderla en vez de marchar
+    const home = plan.alarm && manhattan(u.pos, CAPITALS[seat]) <= 2;
+    const dist = plan.marching && !isGuard && !home ? distTo(u.type) : null;
     // Difícil: las figuras iguales de la loseta marchan juntas (A25, una sola activación)
     const acts = s.turn?.military?.activations ?? {};
     const mates =
@@ -585,6 +618,13 @@ function moveOptions(s: GameState, seat: Seat, plan: Plan, smart = false): Score
       let value = 0;
       // Defensa: cubrir un lado abierto sin guardia
       if (unguarded.has(to)) value += 2 + threat * 0.6;
+      if (home) {
+        // Acumular defensa en los lados abiertos, sobre todo en el más amenazado
+        const side = open.find((o) => o.pos === to);
+        const fromSide = open.some((o) => o.pos === u.pos);
+        if (side && !fromSide) value += 2.5 + sideDanger(s, seat, to);
+        if (fromSide && !side) value -= 3;
+      }
       // No abandonar la guardia si hay amenaza
       if (isGuard && threat > 0) value -= 4;
       if (isGuard && threat === 0 && !plan.marching) value -= 1;
@@ -644,7 +684,15 @@ function recruitChoice(s: GameState, seat: Seat, plan: Plan, r: Rand, smart = fa
     return v;
   });
   if (!t) return null;
-  return { type: 'recruit', unit: t, pos: (smart ? stackSpot(s, seat, t) : undefined) ?? bestSpot(s, seat, t, r) };
+  const guardSpot = plan.alarm ? defenseSpot(s, seat, t) : undefined;
+  return { type: 'recruit', unit: t, pos: guardSpot ?? (smart ? stackSpot(s, seat, t) : undefined) ?? bestSpot(s, seat, t, r) };
+}
+
+/** Lado abierto de la propia Capital más amenazado donde aún cabe una tropa de ese tipo. */
+function defenseSpot(s: GameState, seat: Seat, type: UnitType): number | undefined {
+  const spots = new Set(ringSpots(s, seat, type));
+  const open = openSides(s, seat).filter((o) => spots.has(o.pos));
+  return pickBest(open, (o) => sideDanger(s, seat, o.pos))?.pos;
 }
 
 /** Casilla del anillo donde ya hay figuras propias del mismo tipo y cabe otra (para formar grupos). */
@@ -687,12 +735,12 @@ function towerChoice(s: GameState, seat: Seat, smart: boolean, sloppy: boolean, 
   return worth ? { type: 'buildTower', pos: best } : null;
 }
 
-function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | null {
+function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand, opts: BotOptions = {}): Action | null {
   if (s.prompt) return s.prompt.seat === seat ? answerPrompt(s, seat, level, r) : null;
   if (s.combat || s.turn?.seat !== seat) return null;
   const p = s.players[seat];
   const t = s.turn!;
-  const plan = makePlan(s, seat, level);
+  const plan = makePlan(s, seat, level, opts);
   const sloppy = level === 'facil';
   const smart = level === 'dificil';
 
@@ -701,6 +749,12 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
     if (!canActivate(s, u)) continue;
     const caps = attackTargets(s, u.id).capitals;
     if (caps.length) return { type: 'conquer', unitId: u.id, capital: caps[0] };
+  }
+
+  // 1b. Difícil y amenazada: primero las Murallas
+  if (canUseCivil(s) && plan.alarm) {
+    const wall = wallChoice(s, seat, level);
+    if (wall) return wall;
   }
 
   // 2. Construir (con conversiones del Mercado si hacen falta)
@@ -749,7 +803,7 @@ function phase2(s: GameState, seat: Seat, level: BotLevel, r: Rand): Action | nu
       });
       // Un gran ataque de 3 figuras vale más que reclutar (reclutar deja solo 2 activaciones)
       const bigAttack = (best?.value ?? 0) >= 2.5 && best?.action.type === 'attack' && best.action.unitIds.length >= 3;
-      if (wantArmy && !savingForBuild && !bigAttack) {
+      if ((wantArmy && !savingForBuild && !bigAttack) || (plan.alarm && !bigAttack && army < 20)) {
         const rec = recruitChoice(s, seat, plan, r, smart);
         if (rec) return rec;
       }

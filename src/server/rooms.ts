@@ -315,7 +315,11 @@ export function botStep(room: Room) {
   const g = room.game;
   const seat = bot.seat!;
   const tries: Action[] = [];
-  const choice = chooseAction(g, seat, bot.bot!);
+  // Las difíciles saben qué asientos son humanos (los cedidos temporalmente a la máquina también)
+  const seated = room.players.filter((p) => p.seat !== null);
+  const humans = seated.filter((p) => !p.bot || p.takeover).map((p) => p.seat!);
+  const hardBots = seated.filter((p) => p.bot === 'dificil' && !p.takeover).map((p) => p.seat!);
+  const choice = chooseAction(g, seat, bot.bot!, Math.random, { humans, hardBots });
   if (choice) tries.push(choice);
   if (g.phase === 'PHASE_2') {
     const cands = phase2Candidates(g, Math.random).filter((c) => c.seat === seat).map((c) => c.action);
