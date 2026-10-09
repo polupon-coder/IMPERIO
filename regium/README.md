@@ -7,3 +7,10 @@
 
 Nombres: `tropa-<reino>-NN`, `lugar-<reino>-territorio-N`, `lugar-<reino>-ciudad-N`, `regente-<reino>`,
 `escudo-<emblema>`, `pergamino-<reino>`, `indicador-numeros`, `dorso-regium`, `dorso-hierro`.
+
+## Notas del autor
+
+- Escudos (reverso de los regentes): serpiente = rojo, águila = verde, cráneo con cuernos = azul; dragón y elefante: amarillo y morado (por confirmar cuál es cuál).
+- Dorsos: tropas = hierro forjado (azul).
+- `indicador-numeros-vertical.jpg` es la versión corregida (IV, VI, VII, VIII, IX) de `indicador-numeros-vertical-original.jpg`,
+  hecha con `tools/corregir_numeros.py` copiando los glifos del pergamino horizontal.
