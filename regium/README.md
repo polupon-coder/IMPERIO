@@ -10,7 +10,7 @@ Nombres: `tropa-<reino>-NN`, `lugar-<reino>-territorio-N`, `lugar-<reino>-ciudad
 
 ## Notas del autor
 
-- Escudos (reverso de los regentes): serpiente = rojo, águila = verde, cráneo con cuernos = azul; dragón y elefante: amarillo y morado (por confirmar cuál es cuál).
+- Escudos (reverso de los regentes): dragón = rojo, águila = verde, serpiente = amarillo, cráneo con cuernos = azul, elefante = morado.
 - Dorsos: tropas = hierro forjado (azul).
 - `indicador-numeros-vertical.jpg` es la versión corregida (IV, VI, VII, VIII, IX) de `indicador-numeros-vertical-original.jpg`,
   hecha con `tools/corregir_numeros.py` copiando los glifos del pergamino horizontal.
