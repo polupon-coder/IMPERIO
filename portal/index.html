@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salón de Juegos</title>
+<meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina.">
+<meta property="og:title" content="Salón de Juegos">
+<meta property="og:description" content="IMPERIO, REGIUM, HÉROES y MANA: elige un juego y pulsa para jugar.">
+<meta property="og:image" content="img/imperio.webp">
+<style>
+@font-face { font-family: Garamond; src: url(EBGaramond.ttf) format("truetype"); font-display: swap; }
+:root {
+  --fondo: #1b1612;
+  --fondo-2: #261f19;
+  --tarjeta: #2e261f;
+  --borde: #5a4a37;
+  --oro: #d9b26a;
+  --oro-claro: #f0d59a;
+  --texto: #efe6d6;
+  --texto-suave: #b9ab95;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at top, rgba(217,178,106,.12), transparent 60%),
+    linear-gradient(var(--fondo), var(--fondo-2));
+  background-color: var(--fondo);
+  color: var(--texto);
+  font-family: Garamond, Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.45;
+}
+header { text-align: center; padding: 56px 16px 28px; }
+h1 {
+  margin: 0;
+  font-size: clamp(38px, 8vw, 68px);
+  letter-spacing: .08em;
+  font-weight: 600;
+  color: var(--oro-claro);
+  text-shadow: 0 2px 0 #000, 0 0 24px rgba(217,178,106,.25);
+}
+.lema { margin: 8px 0 0; color: var(--texto-suave); font-size: 20px; font-style: italic; }
+.adorno { display: block; width: 180px; height: 1px; margin: 22px auto 0;
+  background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 12px 16px 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 24px;
+}
+.juego {
+  display: flex;
+  flex-direction: column;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.juego:hover, .juego:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--oro);
+  box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 0 1px var(--oro);
+  outline: none;
+}
+.portada { position: relative; aspect-ratio: 8 / 5; overflow: hidden; background: #000; }
+.portada img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
+.juego:hover .portada img { transform: scale(1.04); }
+.etiqueta {
+  position: absolute; left: 12px; bottom: 12px;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(20,15,10,.82); color: var(--oro-claro);
+  font-size: 15px; letter-spacing: .03em;
+}
+.datos { flex: 1; display: flex; flex-direction: column; padding: 18px 20px 20px; }
+.datos h2 { margin: 0; font-size: 30px; letter-spacing: .06em; font-weight: 600; color: var(--oro-claro); }
+.datos p { margin: 6px 0 16px; color: var(--texto-suave); flex: 1; }
+.jugar {
+  align-self: flex-start;
+  padding: 9px 22px;
+  border-radius: 6px;
+  background: linear-gradient(#e7c27a, #b88a3e);
+  color: #24190c;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: .05em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 0 #6b4c1d;
+}
+.juego:hover .jugar { background: linear-gradient(#f3d394, #c99a4b); }
+.pronto { opacity: .6; cursor: default; }
+.pronto:hover { transform: none; border-color: var(--borde); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.pronto .jugar { background: #4a3d2f; color: var(--texto-suave); box-shadow: none; }
+
+footer { text-align: center; padding: 0 16px 40px; color: var(--texto-suave); font-size: 16px; }
+footer p { max-width: 640px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Salón de Juegos</h1>
+  <p class="lema">Elige tu juego y pulsa para jugar</p>
+  <span class="adorno"></span>
+</header>
+
+<main id="juegos"></main>
+
+<footer>
+  <p>Todos se juegan en el navegador, con amigos por internet o contra la máquina.
+  Si un juego tarda en abrir, espera un momento: el servidor se está despertando (hasta un minuto).</p>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+// TUS JUEGOS. Para añadir uno nuevo, copia un bloque { … } y cámbialo.
+// «url» es la dirección donde está publicado el juego (la que da Render).
+// Si dejas url vacía (""), la tarjeta aparece como «Próximamente».
+// ─────────────────────────────────────────────────────────────────────────
+const JUEGOS = [
+  {
+    nombre: "IMPERIO",
+    url: "https://imperio.onrender.com",
+    imagen: "img/imperio.webp",
+    jugadores: "4 jugadores",
+    descripcion: "Levanta tu Capital, construye, recluta tropas y conquista el Mundo. Juego de tablero con combates a dados.",
+  },
+  {
+    nombre: "REGIUM",
+    url: "https://regium.onrender.com",
+    imagen: "img/regium.webp",
+    jugadores: "2–5 jugadores",
+    descripcion: "Juego de cartas: cinco reinos, diez guerras y siete ciudades para reinar sobre todos.",
+  },
+  {
+    nombre: "HÉROES",
+    url: "https://heroes.onrender.com",
+    imagen: "img/heroes.webp",
+    jugadores: "2–4 jugadores",
+    descripcion: "Crea tu héroe, sobrevive a 12 rondas de aventura contra monstruos y gana el torneo final.",
+  },
+  {
+    nombre: "MANA",
+    url: "https://mana.onrender.com",
+    imagen: "img/mana.webp",
+    jugadores: "2–4 jugadores",
+    descripcion: "Construye tu mazo de Elementales de Fuego, Agua, Tierra y Aire y reúne más Sellos en tres Eras.",
+  },
+];
+
+const lista = document.getElementById("juegos");
+for (const j of JUEGOS) {
+  const tarjeta = document.createElement(j.url ? "a" : "div");
+  tarjeta.className = "juego" + (j.url ? "" : " pronto");
+  if (j.url) tarjeta.href = j.url;
+  tarjeta.innerHTML = `
+    <div class="portada">
+      <img src="${j.imagen}" alt="" loading="lazy">
+      <span class="etiqueta">${j.jugadores}</span>
+    </div>
+    <div class="datos">
+      <h2>${j.nombre}</h2>
+      <p>${j.descripcion}</p>
+      <span class="jugar">${j.url ? "Jugar" : "Próximamente"}</span>
+    </div>`;
+  lista.appendChild(tarjeta);
+}
+</script>
+</body>
+</html>
