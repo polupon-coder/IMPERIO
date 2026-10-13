@@ -81,7 +81,6 @@ main {
   background: rgba(20,15,10,.82); color: var(--oro-claro);
   font-size: 15px; letter-spacing: .03em;
 }
-.etiqueta.aviso { left: auto; right: 12px; }
 .datos { flex: 1; display: flex; flex-direction: column; padding: 18px 20px 20px; }
 .datos h2 { margin: 0; font-size: 30px; letter-spacing: .06em; font-weight: 600; color: var(--oro-claro); }
 .datos p { margin: 6px 0 16px; color: var(--texto-suave); flex: 1; }
@@ -132,8 +131,8 @@ footer p { max-width: 640px; margin: 0 auto; }
 // TUS JUEGOS. Para añadir uno nuevo, copia un bloque { … } y cámbialo.
 // «url» es la dirección donde está publicado el juego (la que da Render).
 // Si dejas url vacía (""), la tarjeta aparece como «Próximamente».
-// Cada texto va en español (es) y en inglés (en); el nombre también puede ir así.
-// «soloEspanol: true» avisa en la versión inglesa de que el juego solo está en español.
+// Cada texto va en español (es) y en inglés (en). El nombre y la url también
+// pueden ir así, si el juego tiene una dirección distinta para cada idioma.
 // ─────────────────────────────────────────────────────────────────────────
 const JUEGOS = [
   {
@@ -168,9 +167,8 @@ const JUEGOS = [
   },
   {
     nombre: "MANA",
-    url: "https://mana.onrender.com",
+    url: { es: "https://mana.onrender.com", en: "https://mana.onrender.com/en" },
     imagen: "img/mana.webp",
-    soloEspanol: true, // todavía no tiene versión en inglés
     jugadores: { es: "2–4 jugadores", en: "2–4 players" },
     descripcion: {
       es: "Construye tu mazo de Elementales de Fuego, Agua, Tierra y Aire y reúne más Sellos en tres Eras.",
@@ -192,7 +190,6 @@ const TEXTOS = {
     lema: "Pick your game and click to play",
     jugar: "Play",
     pronto: "Coming soon",
-    soloEspanol: "Spanish only",
     pie: "All games run in the browser, online with friends or against the computer. If a game is slow to open, give it a moment: the server is waking up (up to a minute).",
   },
 };
@@ -215,19 +212,19 @@ function pintar(idioma) {
   const lista = document.getElementById("juegos");
   lista.replaceChildren();
   for (const j of JUEGOS) {
-    const tarjeta = document.createElement(j.url ? "a" : "div");
-    tarjeta.className = "juego" + (j.url ? "" : " pronto");
-    if (j.url) tarjeta.href = j.url;
+    const url = j.url[idioma] ?? j.url;
+    const tarjeta = document.createElement(url ? "a" : "div");
+    tarjeta.className = "juego" + (url ? "" : " pronto");
+    if (url) tarjeta.href = url;
     tarjeta.innerHTML = `
       <div class="portada">
         <img src="${j.imagen}" alt="" loading="lazy">
         <span class="etiqueta">${j.jugadores[idioma]}</span>
-        ${j.soloEspanol && t.soloEspanol ? `<span class="etiqueta aviso">${t.soloEspanol}</span>` : ""}
       </div>
       <div class="datos">
         <h2>${j.nombre[idioma] ?? j.nombre}</h2>
         <p>${j.descripcion[idioma]}</p>
-        <span class="jugar">${j.url ? t.jugar : t.pronto}</span>
+        <span class="jugar">${url ? t.jugar : t.pronto}</span>
       </div>`;
     lista.appendChild(tarjeta);
   }
