@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Salón de Juegos</title>
-<meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina.">
-<meta property="og:title" content="Salón de Juegos">
-<meta property="og:description" content="IMPERIO, REGIUM, HÉROES y MANA: elige un juego y pulsa para jugar.">
+<title>Crossroads Inn</title>
+<meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina. / Pick a game and click to play with friends or against the computer.">
+<meta property="og:title" content="Crossroads Inn">
+<meta property="og:description" content="IMPERIO, REGIUM, HÉROES, MANA — elige un juego y pulsa para jugar / pick a game and play.">
 <meta property="og:image" content="img/imperio.webp">
 <style>
 @font-face { font-family: Garamond; src: url(EBGaramond.ttf) format("truetype"); font-display: swap; }
@@ -100,22 +100,30 @@ main {
 .pronto:hover { transform: none; border-color: var(--borde); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .pronto .jugar { background: #4a3d2f; color: var(--texto-suave); box-shadow: none; }
 
+.idiomas { position: absolute; top: 16px; right: 16px; display: flex; border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; }
+.idiomas button { font: inherit; font-size: 15px; letter-spacing: .05em; padding: 4px 12px; border: 0; background: transparent; color: var(--texto-suave); cursor: pointer; }
+.idiomas button[aria-pressed="true"] { background: var(--oro); color: #24190c; font-weight: 700; }
+header { position: relative; }
+
 footer { text-align: center; padding: 0 16px 40px; color: var(--texto-suave); font-size: 16px; }
 footer p { max-width: 640px; margin: 0 auto; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Salón de Juegos</h1>
-  <p class="lema">Elige tu juego y pulsa para jugar</p>
+  <div class="idiomas" role="group" aria-label="Idioma / Language">
+    <button type="button" data-idioma="es">ES</button>
+    <button type="button" data-idioma="en">EN</button>
+  </div>
+  <h1>Crossroads Inn</h1>
+  <p class="lema" data-t="lema"></p>
   <span class="adorno"></span>
 </header>
 
 <main id="juegos"></main>
 
 <footer>
-  <p>Todos se juegan en el navegador, con amigos por internet o contra la máquina.
-  Si un juego tarda en abrir, espera un momento: el servidor se está despertando (hasta un minuto).</p>
+  <p data-t="pie"></p>
 </footer>
 
 <script>
@@ -123,55 +131,107 @@ footer p { max-width: 640px; margin: 0 auto; }
 // TUS JUEGOS. Para añadir uno nuevo, copia un bloque { … } y cámbialo.
 // «url» es la dirección donde está publicado el juego (la que da Render).
 // Si dejas url vacía (""), la tarjeta aparece como «Próximamente».
+// Cada texto va en español (es) y en inglés (en).
 // ─────────────────────────────────────────────────────────────────────────
 const JUEGOS = [
   {
     nombre: "IMPERIO",
     url: "https://imperio.onrender.com",
     imagen: "img/imperio.webp",
-    jugadores: "4 jugadores",
-    descripcion: "Levanta tu Capital, construye, recluta tropas y conquista el Mundo. Juego de tablero con combates a dados.",
+    jugadores: { es: "4 jugadores", en: "4 players" },
+    descripcion: {
+      es: "Levanta tu Capital, construye, recluta tropas y conquista el Mundo. Juego de tablero con combates a dados.",
+      en: "Raise your Capital, build, recruit troops and conquer the World. A board game with dice battles.",
+    },
   },
   {
     nombre: "REGIUM",
     url: "https://regium.onrender.com",
     imagen: "img/regium.webp",
-    jugadores: "2–5 jugadores",
-    descripcion: "Juego de cartas: cinco reinos, diez guerras y siete ciudades para reinar sobre todos.",
+    jugadores: { es: "2–5 jugadores", en: "2–5 players" },
+    descripcion: {
+      es: "Juego de cartas: cinco reinos, diez guerras y siete ciudades para reinar sobre todos.",
+      en: "A card game: five kingdoms, ten wars and seven cities to rule them all.",
+    },
   },
   {
     nombre: "HÉROES",
     url: "https://heroes.onrender.com",
     imagen: "img/heroes.webp",
-    jugadores: "2–4 jugadores",
-    descripcion: "Crea tu héroe, sobrevive a 12 rondas de aventura contra monstruos y gana el torneo final.",
+    jugadores: { es: "2–4 jugadores", en: "2–4 players" },
+    descripcion: {
+      es: "Crea tu héroe, sobrevive a 12 rondas de aventura contra monstruos y gana el torneo final.",
+      en: "Create your hero, survive 12 rounds of adventure against monsters and win the final tournament.",
+    },
   },
   {
     nombre: "MANA",
     url: "https://mana.onrender.com",
     imagen: "img/mana.webp",
-    jugadores: "2–4 jugadores",
-    descripcion: "Construye tu mazo de Elementales de Fuego, Agua, Tierra y Aire y reúne más Sellos en tres Eras.",
+    jugadores: { es: "2–4 jugadores", en: "2–4 players" },
+    descripcion: {
+      es: "Construye tu mazo de Elementales de Fuego, Agua, Tierra y Aire y reúne más Sellos en tres Eras.",
+      en: "Build your deck of Fire, Water, Earth and Air Elementals and gather the most Seals over three Eras.",
+    },
   },
 ];
 
-const lista = document.getElementById("juegos");
-for (const j of JUEGOS) {
-  const tarjeta = document.createElement(j.url ? "a" : "div");
-  tarjeta.className = "juego" + (j.url ? "" : " pronto");
-  if (j.url) tarjeta.href = j.url;
-  tarjeta.innerHTML = `
-    <div class="portada">
-      <img src="${j.imagen}" alt="" loading="lazy">
-      <span class="etiqueta">${j.jugadores}</span>
-    </div>
-    <div class="datos">
-      <h2>${j.nombre}</h2>
-      <p>${j.descripcion}</p>
-      <span class="jugar">${j.url ? "Jugar" : "Próximamente"}</span>
-    </div>`;
-  lista.appendChild(tarjeta);
+const TEXTOS = {
+  es: {
+    lema: "Elige tu juego y pulsa para jugar",
+    jugar: "Jugar",
+    pronto: "Próximamente",
+    pie: "Todos se juegan en el navegador, con amigos por internet o contra la máquina. Si un juego tarda en abrir, espera un momento: el servidor se está despertando (hasta un minuto).",
+  },
+  en: {
+    lema: "Pick your game and click to play",
+    jugar: "Play",
+    pronto: "Coming soon",
+    pie: "All games run in the browser, online with friends or against the computer. If a game is slow to open, give it a moment: the server is waking up (up to a minute).",
+  },
+};
+
+function idiomaInicial() {
+  try {
+    const guardado = localStorage.getItem("idioma");
+    if (guardado in TEXTOS) return guardado;
+  } catch {}
+  return (navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en";
 }
+
+function pintar(idioma) {
+  const t = TEXTOS[idioma];
+  document.documentElement.lang = idioma;
+  for (const el of document.querySelectorAll("[data-t]")) el.textContent = t[el.dataset.t];
+  for (const b of document.querySelectorAll("[data-idioma]")) b.setAttribute("aria-pressed", b.dataset.idioma === idioma);
+
+  const lista = document.getElementById("juegos");
+  lista.replaceChildren();
+  for (const j of JUEGOS) {
+    const tarjeta = document.createElement(j.url ? "a" : "div");
+    tarjeta.className = "juego" + (j.url ? "" : " pronto");
+    if (j.url) tarjeta.href = j.url;
+    tarjeta.innerHTML = `
+      <div class="portada">
+        <img src="${j.imagen}" alt="" loading="lazy">
+        <span class="etiqueta">${j.jugadores[idioma]}</span>
+      </div>
+      <div class="datos">
+        <h2>${j.nombre}</h2>
+        <p>${j.descripcion[idioma]}</p>
+        <span class="jugar">${j.url ? t.jugar : t.pronto}</span>
+      </div>`;
+    lista.appendChild(tarjeta);
+  }
+}
+
+for (const b of document.querySelectorAll("[data-idioma]")) {
+  b.addEventListener("click", () => {
+    try { localStorage.setItem("idioma", b.dataset.idioma); } catch {}
+    pintar(b.dataset.idioma);
+  });
+}
+pintar(idiomaInicial());
 </script>
 </body>
 </html>

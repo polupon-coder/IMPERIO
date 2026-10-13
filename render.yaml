@@ -11,7 +11,7 @@ services:
       - key: NODE_VERSION
         value: 22
 
-  # Portal con todos los juegos (página estática de la carpeta portal/).
+  # Portal Crossroads Inn con todos los juegos (página estática de la carpeta portal/).
   - type: web
     name: juegos
     runtime: static
