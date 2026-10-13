@@ -3234,3 +3234,55 @@ textarea {
   color: var(--ink-soft);
   padding-left: 8px;
 }
+
+/* ---------- Botones-escudo: escudo metálico ilustrado ---------- */
+.seal,
+.seal.green,
+.seal.dim {
+  background: url('/assets/ui/escudo-boton.webp') center / 100% 100% no-repeat !important;
+  -webkit-mask: none;
+  mask: none;
+  clip-path: none;
+  box-shadow: none;
+  width: 116px;
+  height: 143px;
+  padding: 18px 20px 38px;
+  color: var(--ink) !important;
+  filter: drop-shadow(0 3px 4px #3a220f66);
+}
+.seal::before,
+.seal::after {
+  display: none;
+}
+.seal.small {
+  width: 92px;
+  height: 114px;
+  padding: 14px 15px 30px;
+}
+.home-actions .seal {
+  width: 104px;
+  height: 128px;
+  padding: 16px 17px 34px;
+}
+.home-play.seal {
+  width: 116px;
+  height: 143px;
+  padding: 18px 20px 38px;
+}
+/* El botón principal se distingue por el texto en verde */
+.seal.green {
+  color: #24501c !important;
+  font-weight: 600;
+}
+.seal:hover:not(:disabled) {
+  transform: scale(1.04);
+  filter: drop-shadow(0 4px 6px #3a220f88) brightness(1.04);
+}
+.seal.dim {
+  color: #6f6455 !important;
+  filter: grayscale(0.7) drop-shadow(0 3px 4px #3a220f44);
+  opacity: 0.75;
+}
+.seal:disabled {
+  opacity: 0.5;
+}
