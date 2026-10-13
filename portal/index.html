@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Crossroads Inn</title>
+<title>CROSSROADS INN</title>
 <meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina. / Pick a game and click to play with friends or against the computer.">
-<meta property="og:title" content="Crossroads Inn">
+<meta property="og:title" content="CROSSROADS INN">
 <meta property="og:description" content="IMPERIO, REGIUM, HÉROES, MANA — elige un juego y pulsa para jugar / pick a game and play.">
 <meta property="og:image" content="img/imperio.webp">
 <style>
@@ -36,7 +36,7 @@ body {
 header { text-align: center; padding: 56px 16px 28px; }
 h1 {
   margin: 0;
-  font-size: clamp(38px, 8vw, 68px);
+  font-size: clamp(26px, 8vw, 68px);
   letter-spacing: .08em;
   font-weight: 600;
   color: var(--oro-claro);
@@ -115,7 +115,7 @@ footer p { max-width: 640px; margin: 0 auto; }
     <button type="button" data-idioma="es">ES</button>
     <button type="button" data-idioma="en">EN</button>
   </div>
-  <h1>Crossroads Inn</h1>
+  <h1 data-t="titulo">CROSSROADS INN</h1>
   <p class="lema" data-t="lema"></p>
   <span class="adorno"></span>
 </header>
@@ -178,12 +178,14 @@ const JUEGOS = [
 
 const TEXTOS = {
   es: {
+    titulo: "POSADA DEL CRUCE",
     lema: "Elige tu juego y pulsa para jugar",
     jugar: "Jugar",
     pronto: "Próximamente",
     pie: "Todos se juegan en el navegador, con amigos por internet o contra la máquina. Si un juego tarda en abrir, espera un momento: el servidor se está despertando (hasta un minuto).",
   },
   en: {
+    titulo: "CROSSROADS INN",
     lema: "Pick your game and click to play",
     jugar: "Play",
     pronto: "Coming soon",
@@ -202,6 +204,7 @@ function idiomaInicial() {
 function pintar(idioma) {
   const t = TEXTOS[idioma];
   document.documentElement.lang = idioma;
+  document.title = t.titulo;
   for (const el of document.querySelectorAll("[data-t]")) el.textContent = t[el.dataset.t];
   for (const b of document.querySelectorAll("[data-idioma]")) b.setAttribute("aria-pressed", b.dataset.idioma === idioma);
 
