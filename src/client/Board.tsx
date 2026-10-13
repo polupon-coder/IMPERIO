@@ -1,6 +1,5 @@
 import {
   isUnlocked,
-  NAMES,
   SIDES,
   capitalSeatAt,
   coordLabel,
@@ -11,6 +10,7 @@ import {
   type Unit,
 } from '../engine';
 import { PLAYER_COLORS, TILE_IMAGES, TOWER_SILHOUETTE, UNIT_IMAGES, capitalImage, towerFigure, unitFigure } from './assets';
+import { nm, pn, t } from './i18n';
 
 export type Mark = 'legal' | 'move' | 'attack' | 'conquer' | 'from' | 'selected';
 
@@ -58,7 +58,7 @@ export function Board(p: BoardProps) {
                   ? { boxShadow: `inset 0 0 0 2px ${colorOf(ring)}55` }
                   : undefined
               }
-              title={`${coordLabel(pos)} ${cap !== null ? 'Capital de ' + s.players[cap].name : cell.terrain ? NAMES.terrain[cell.terrain] : 'vacía'}${mark ? ' · ' + MARK_TITLE[mark] : ''}`}
+              title={`${coordLabel(pos)} ${cap !== null ? t('Capital de {0}', pn(s.players[cap].name)) : cell.terrain ? nm().terrain[cell.terrain] : t('vacía')}${mark ? ' · ' + t(MARK_TITLE[mark]) : ''}`}
               onClick={() => p.onCell(pos)}
             >
               {img && (
@@ -75,13 +75,13 @@ export function Board(p: BoardProps) {
                   key={'t' + pl.seat}
                   className={`token tower-token ${units.length ? 'garrisoned' : ''} ${p.selectedTower && pl.seat === s.turn?.seat ? 'sel' : ''}`}
                   style={{ ['--owner' as string]: colorOf(pl.seat), ...(units.length ? towerSlot() : {}) }}
-                  title={`Torreón de ${pl.name}`}
+                  title={t('Torreón de {0}', pn(pl.name))}
                   onClick={(e) => {
                     e.stopPropagation();
                     p.onTower(pl.seat, pos);
                   }}
                 >
-                  <img src={towerFigure(pl.color)} alt="Torreón" draggable={false} />
+                  <img src={towerFigure(pl.color)} alt={t('Torreón')} draggable={false} />
                   <img className="icon-alt" src={TOWER_SILHOUETTE} alt="" draggable={false} />
                 </button>
               ))}
@@ -92,20 +92,20 @@ export function Board(p: BoardProps) {
                       key={u.id}
                       className={`token ${p.selectedUnits.includes(u.id) ? 'sel' : ''} ${p.activatedUnits.includes(u.id) ? 'used' : ''} ${isUnlocked(s, u.owner, u.type) ? '' : 'locked'}`}
                       style={{ ['--owner' as string]: colorOf(u.owner), left: `${left}%`, top: `${top}%` }}
-                      title={`${NAMES.unit[u.type]} de ${s.players[u.owner].name}${isUnlocked(s, u.owner, u.type) ? '' : ' · sin activar (solo defiende)'}`}
+                      title={`${t('{0} de {1}', nm().unit[u.type], pn(s.players[u.owner].name))}${isUnlocked(s, u.owner, u.type) ? '' : ' · ' + t('sin activar (solo defiende)')}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         p.onUnit(u);
                       }}
                     >
-                      <img src={unitFigure(s.players[u.owner].color, u.type)} alt={NAMES.unit[u.type]} draggable={false} />
+                      <img src={unitFigure(s.players[u.owner].color, u.type)} alt={nm().unit[u.type]} draggable={false} />
                       <img className="icon-alt" src={UNIT_IMAGES[u.type]} alt="" draggable={false} />
                     </button>
                   ))}
                 </div>
               )}
               {p.ghosts.get(pos)?.map((g, i) => (
-                <div key={i} className="ghost" title="Tropa en reserva, pendiente de desplegar">
+                <div key={i} className="ghost" title={t('Tropa en reserva, pendiente de desplegar')}>
                   {g}
                 </div>
               ))}
@@ -152,7 +152,7 @@ function Walls({
             key={side}
             className={`wall wall-${side} ${intact ? 'intact' : 'destroyed'} ${target ? 'target' : ''}`}
             style={{ ['--owner' as string]: PLAYER_COLORS[pl.color] }}
-            title={`Muralla ${NAMES.side[side]}${intact ? '' : ' (destruida)'}${target ? ' · atacar' : ''}`}
+            title={`${t('Muralla {0}', nm().side[side])}${intact ? '' : ' ' + t('(destruida)')}${target ? ' · ' + t('atacar') : ''}`}
             onClick={(e) => {
               if (!target) return;
               e.stopPropagation();

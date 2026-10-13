@@ -6,7 +6,6 @@ import {
   BUILDINGS,
   BUILDING_COST,
   MAX_PER_TYPE,
-  NAMES,
   RESOURCES,
   SIDES,
   UNIT_COST,
@@ -59,6 +58,7 @@ import { EvolutionDialogBody } from './Evolution';
 import { BOT_LABEL, PLAYER_COLORS, TILE_IMAGES, TOWER_ICON, TOWER_SILHOUETTE, UNIT_IMAGES, WALL_ICON, WALL_SILHOUETTE, buildingImage, resourceIcon, unitFigure, coatOfArms, towerFigure, wallFigure } from './assets';
 import { Board, type Mark } from './Board';
 import { RulesSheet } from './Rules';
+import { logText, nm, pn, t, tr, useLang, withBotNames } from './i18n';
 import { call, type PublicRoom } from './socket';
 
 type Mode =
@@ -148,7 +148,7 @@ export function Game({
 
   const send = async (action: Action, keepMode = false) => {
     const r = actor.id === me.id ? await call('action', action) : await call('actAs', { playerId: actor.id, action });
-    if (!r.ok) setError(r.error ?? 'Acción no válida');
+    if (!r.ok) setError(r.error ?? t('Acción no válida'));
     else {
       setError('');
       if (!keepMode) setMode({ kind: 'none' });
@@ -186,11 +186,11 @@ export function Game({
       if (mode.kind === 'tower' && canTowerAttack(s)) mark(towerTargets(s, mySeat), 'attack');
       if (mode.kind === 'unit') {
         mark(moveTargets(s, mode.unitId).keys(), 'move');
-        const t = attackTargets(s, mode.unitId);
-        mark(t.troops, 'attack');
-        mark(t.towers, 'attack');
-        for (const c of t.capitals) marks.set(capitalPos(c), 'conquer');
-        wallTargets = t.walls;
+        const tg = attackTargets(s, mode.unitId);
+        mark(tg.troops, 'attack');
+        mark(tg.towers, 'attack');
+        for (const c of tg.capitals) marks.set(capitalPos(c), 'conquer');
+        wallTargets = tg.walls;
       }
     }
     return { marks, wallTargets };
@@ -204,7 +204,7 @@ export function Game({
       if (!p.reserve.length) continue;
       const ring = ringOf(p.seat);
       const spot = ring.find((i) => s.cells[i].terrain === null) ?? ring[0];
-      g.set(spot, [...(g.get(spot) ?? []), ...p.reserve.map((t) => NAMES.unit[t][0])]);
+      g.set(spot, [...(g.get(spot) ?? []), ...p.reserve.map((u) => nm().unit[u][0])]);
     }
     return g;
   }, [room.version]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -291,15 +291,15 @@ export function Game({
       <header className="topbar">
         <span className="brand">Imperio</span>
         <span className="phase">
-          {PHASE_LABEL[s.phase]}
+          {t(PHASE_LABEL[s.phase])}
           {s.phase === 'PHASE_2' ? (
             <>
               {' · '}
-              <span className="word-long">Ronda</span>
-              <span className="word-short">R.</span> {roman(Math.ceil(s.turnNumber / 4))}
+              <span className="word-long">{t('Ronda')}</span>
+              <span className="word-short">{t('R.')}</span> {roman(Math.ceil(s.turnNumber / 4))}
             </>
           ) : (
-            <span className="step-label"> · {STEP_LABEL[s.step]}</span>
+            <span className="step-label"> · {t(STEP_LABEL[s.step])}</span>
           )}
         </span>
         {/* Turno y acciones: segunda fila en el móvil (en ordenador, en línea como siempre) */}
@@ -309,40 +309,40 @@ export function Game({
               className="active-player"
               style={{ background: myTurn ? '#3f7d3a' : PLAYER_COLORS[s.players[active].color] }}
             >
-              {myTurn ? 'Tu turno' : `Turno de ${s.players[active].name}`}
+              {myTurn ? t('Tu turno') : t('Turno de {0}', pn(s.players[active].name))}
             </span>
           )}
           {s.phase === 'PHASE_2' && myTurn && <ActionStatus state={s} />}
           {s.phase === 'PHASE_2' && myTurn && (
             <span className="turn-actions">
               <button className="end-turn-top" disabled={!!s.prompt || !!s.combat} onClick={() => send({ type: 'endTurn' })}>
-                Terminar turno
+                {t('Terminar turno')}
               </button>
             </span>
           )}
         </span>
         <button className="rules-btn" onClick={() => setRulesOpen(true)}>
-          Reglas
+          {t('Reglas')}
         </button>
-        <button className="sound-btn" onClick={toggleMuted} title={muted ? 'Activar sonidos' : 'Silenciar sonidos'} aria-label={muted ? 'Activar sonidos' : 'Silenciar sonidos'}>
+        <button className="sound-btn" onClick={toggleMuted} title={muted ? t('Activar sonidos') : t('Silenciar sonidos')} aria-label={muted ? t('Activar sonidos') : t('Silenciar sonidos')}>
           <SpeakerIcon muted={muted} />
         </button>
         <span className="room-code">
-          <span className="room-name">Mundo {room.code}</span>
-          <button className="exit-btn" onClick={onExit} title="Salir del Mundo" aria-label="Salir del Mundo">
+          <span className="room-name">{t('Mundo {0}', room.code)}</span>
+          <button className="exit-btn" onClick={onExit} title={t('Salir del Mundo')} aria-label={t('Salir del Mundo')}>
             ×
           </button>
         </span>
       </header>
 
       {locals.length > 0 && handoffSeen !== mySeat && s.phase !== 'GAME_OVER' && (
-        <Modal title="Cambio de jugador" onClose={() => setHandoffSeen(mySeat)} noClose top>
+        <Modal title={t('Cambio de jugador')} onClose={() => setHandoffSeen(mySeat)} noClose top>
           <div className="handoff" style={{ ['--owner' as string]: PLAYER_COLORS[my.color] }}>
             <img className="handoff-coat" src={coatOfArms(my.color)} alt="" />
-            <p className="handoff-title">Turno de {my.name}</p>
-            <p className="center muted">Pásaselo a {my.name}.</p>
+            <p className="handoff-title">{t('Turno de {0}', my.name)}</p>
+            <p className="center muted">{t('Pásaselo a {0}.', my.name)}</p>
             <button className="seal green" onClick={() => setHandoffSeen(mySeat)}>
-              Empezar
+              {t('Empezar')}
             </button>
           </div>
         </Modal>
@@ -353,13 +353,17 @@ export function Game({
       <CombatDialog state={s} mySeat={mySeat} send={send} />
       <Announcements state={s} mySeat={mySeat} />
       {groupAsk && (
-        <Modal title={groupAsk.kind === 'move' ? '¿Mover juntas?' : '¿Atacar juntas?'} onClose={() => setGroupAsk(null)}>
+        <Modal title={groupAsk.kind === 'move' ? t('¿Mover juntas?') : t('¿Atacar juntas?')} onClose={() => setGroupAsk(null)}>
           <p className="center">
             {groupAsk.kind === 'move'
-              ? `En esta casilla hay ${groupAsk.ids.length === 1 ? 'otra tropa que puede' : `otras ${groupAsk.ids.length} tropas que pueden`} ir al mismo destino.`
-              : `En esta casilla ${groupAsk.ids.length === 1 ? 'hay otra figura' : `hay otras ${groupAsk.ids.length} figuras`} del mismo tipo que ${groupAsk.ids.length === 1 ? 'puede' : 'pueden'} atacar con ella (+1 dado por figura).`}
+              ? groupAsk.ids.length === 1
+                ? t('En esta casilla hay otra tropa que puede ir al mismo destino.')
+                : t('En esta casilla hay otras {0} tropas que pueden ir al mismo destino.', groupAsk.ids.length)
+              : groupAsk.ids.length === 1
+                ? t('En esta casilla hay otra figura del mismo tipo que puede atacar con ella (+1 dado por figura).')
+                : t('En esta casilla hay otras {0} figuras del mismo tipo que pueden atacar con ella (+1 dado por figura).', groupAsk.ids.length)}
             <br />
-            <small className="muted">Cada figura gasta una de las 3 activaciones de la Acción Militar.</small>
+            <small className="muted">{t('Cada figura gasta una de las 3 activaciones de la Acción Militar.')}</small>
           </p>
           <div className="row modal-actions center-actions">
             <button
@@ -370,7 +374,7 @@ export function Game({
                 g.run([g.lead, ...g.ids]);
               }}
             >
-              {groupAsk.kind === 'move' ? 'Mover' : 'Atacar con'} {groupAsk.ids.length + 1}
+              {groupAsk.kind === 'move' ? t('Mover {0}', groupAsk.ids.length + 1) : t('Atacar con {0}', groupAsk.ids.length + 1)}
             </button>
             <button
               onClick={() => {
@@ -379,14 +383,14 @@ export function Game({
                 g.run([g.lead]);
               }}
             >
-              Solo esta
+              {t('Solo esta')}
             </button>
           </div>
         </Modal>
       )}
       {wallsOpen && <WallsDialog state={s} mySeat={mySeat} send={send} onClose={() => setWallsOpen(false)} />}
       {rulesOpen && (
-        <Modal title="Reglas de Imperio" onClose={() => setRulesOpen(false)} wide>
+        <Modal title={t('Reglas de Imperio')} onClose={() => setRulesOpen(false)} wide>
           <RulesSheet />
         </Modal>
       )}
@@ -415,8 +419,8 @@ export function Game({
         <aside className="side">
           {s.phase === 'GAME_OVER' && s.winner !== null && (
             <div className="card winner">
-              <h2>¡{s.players[s.winner].name} gana Imperio!</h2>
-              <button onClick={() => setVictoryOpen(true)}>Ver la proclama</button>
+              <h2>{t('¡{0} gana Imperio!', pn(s.players[s.winner].name))}</h2>
+              <button onClick={() => setVictoryOpen(true)}>{t('Ver la proclama')}</button>
             </div>
           )}
           {error && (
@@ -440,8 +444,8 @@ export function Game({
             onTower={() => {
               if (my.tower != null) return setMode({ kind: 'tower' });
               const block = towerBuildBlock(s, mySeat) ?? (!canUseCivil(s) ? 'No te queda Acción Civil en este turno.' : null);
-              if (block) return setError(block);
-              if (!towerBuildSpots(s, mySeat).length) return setError('No hay losetas libres junto a tus tropas (y lejos de las Capitales).');
+              if (block) return setError(tr(block));
+              if (!towerBuildSpots(s, mySeat).length) return setError(t('No hay losetas libres junto a tus tropas (y lejos de las Capitales).'));
               setMode({ kind: 'towerBuild' });
             }}
             recruiting={mode.kind === 'recruit' ? mode.unit : null}
@@ -464,7 +468,7 @@ function TileChip({ t }: { t: Terrain }) {
   return (
     <span className="tile-chip">
       <img src={TILE_IMAGES[t]} alt="" />
-      {NAMES.terrain[t]}
+      {nm().terrain[t]}
     </span>
   );
 }
@@ -483,10 +487,10 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
     };
     return (
       <div className="card waiting">
-        Esperando a <b>{who.name}</b>: {what[pr.kind]}…
+        {t('Esperando a')} <b>{pn(who.name)}</b>: {t(what[pr.kind])}…
         {pr.kind === 'trade' && pr.from === mySeat && (
           <button className="link" onClick={() => send({ type: 'cancelTrade' })}>
-            Retirar oferta
+            {t('Retirar oferta')}
           </button>
         )}
       </div>
@@ -496,13 +500,13 @@ function PromptPanel({ state: s, mySeat, send }: { state: GameState; mySeat: Sea
   if (pr.kind !== 'library') return null;
   // Ventana flotante: al elegir el recurso, el aviso desaparece solo.
   return (
-    <Modal title="Biblioteca" onClose={() => {}} noClose>
-      <p>Tu Biblioteca te da 1 recurso. ¿Cuál quieres?</p>
+    <Modal title={t('Biblioteca')} onClose={() => {}} noClose>
+      <p>{t('Tu Biblioteca te da 1 recurso. ¿Cuál quieres?')}</p>
       <div className="reward-options">
         {RESOURCES.map((r) => (
           <button key={r} onClick={() => send({ type: 'libraryChoice', resource: r })}>
             <img className="res-big" src={resourceIcon(r)} alt="" draggable={false} />
-            <span>{NAMES.resource[r]}</span>
+            <span>{nm().resource[r]}</span>
           </button>
         ))}
       </div>
@@ -531,7 +535,7 @@ function Phase1Panel({
     <div className="card phase1-guide">
       {front?.kind === 'deploy' && (
         <p className="hint">
-          Coloca tu <b>{NAMES.unit[front.unit]}</b>: pulsa una casilla resaltada de tu anillo.
+          {t('Coloca tu')} <b>{nm().unit[front.unit]}</b>: {t('pulsa una casilla resaltada de tu anillo.')}
         </p>
       )}
       {s.step === 'INITIAL_PLACEMENT' && !front && (
@@ -539,23 +543,23 @@ function Phase1Panel({
           {my.initialTiles.length ? (
             <>
               <p>
-                <b>Coloca tus 4 losetas iniciales alrededor de tu Capital.</b> Elige una y pulsa una casilla
-                resaltada de tu anillo:
+                <b>{t('Coloca tus 4 losetas iniciales alrededor de tu Capital.')}</b>{' '}
+                {t('Elige una y pulsa una casilla resaltada de tu anillo:')}
               </p>
               <div className="row tile-choices">
-                {my.initialTiles.map((t, i) => (
+                {my.initialTiles.map((tile, i) => (
                   <button
-                    key={t + i}
-                    className={mode.kind === 'initial' && mode.terrain === t ? 'selected' : ''}
-                    onClick={() => setMode({ kind: 'initial', terrain: t })}
+                    key={tile + i}
+                    className={mode.kind === 'initial' && mode.terrain === tile ? 'selected' : ''}
+                    onClick={() => setMode({ kind: 'initial', terrain: tile })}
                   >
-                    <TileChip t={t} />
+                    <TileChip t={tile} />
                   </button>
                 ))}
               </div>
             </>
           ) : (
-            <p className="muted">Esperando a que los demás coloquen sus losetas iniciales…</p>
+            <p className="muted">{t('Esperando a que los demás coloquen sus losetas iniciales…')}</p>
           )}
         </>
       )}
@@ -564,47 +568,46 @@ function Phase1Panel({
         <div className="drawn">
           <img src={TILE_IMAGES[s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]]} alt="" />
           <p>
-            Te ha tocado: <b>{NAMES.terrain[s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]]}</b>.
-            {s.step === 'PILE_PLACEMENT' && <> ¿Dónde la quieres poner? Pulsa una casilla resaltada.</>}
+            {t('Te ha tocado:')} <b>{nm().terrain[s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]]}</b>.
+            {s.step === 'PILE_PLACEMENT' && <> {t('¿Dónde la quieres poner? Pulsa una casilla resaltada.')}</>}
           </p>
         </div>
       )}
       {(s.step === 'PILE_PLACEMENT' || s.step === 'EXCHANGE') && !myTurn && (
         <p className="muted">
-          {s.players[active].name} está colocando{' '}
+          {t('{0} está colocando', pn(s.players[active].name))}{' '}
           <TileChip t={s.step === 'EXCHANGE' ? s.exchangeTile! : s.pile[0]} />
         </p>
       )}
       {s.step === 'EXCHANGE' && myTurn && (
         <p className="hint">
-          Bloqueo absoluto. Elige una loseta terrestre a mover (resaltada) y después su nuevo destino. La loseta
-          pendiente ocupará el hueco.
+          {t('Bloqueo absoluto. Elige una loseta terrestre a mover (resaltada) y después su nuevo destino. La loseta pendiente ocupará el hueco.')}
         </p>
       )}
-      {s.step === 'BLOCKED' && <p className="error">Bloqueo sin solución prevista por el reglamento.</p>}
+      {s.step === 'BLOCKED' && <p className="error">{t('Bloqueo sin solución prevista por el reglamento.')}</p>}
       <p className="muted">
-        Pila: {s.pile.length} losetas · Te quedan {my.placementsLeft} colocaciones
+        {t('Pila: {0} losetas · Te quedan {1} colocaciones', s.pile.length, my.placementsLeft)}
       </p>
 
       {my.reserve.length > 0 && (
         <div className="prompt-inline">
-          <p>Tropas en reserva (sin casilla legal al recibirlas):</p>
+          <p>{t('Tropas en reserva (sin casilla legal al recibirlas):')}</p>
           <div className="row">
-            {my.reserve.map((t, i) => (
+            {my.reserve.map((u, i) => (
               <button
                 key={i}
                 className={mode.kind === 'reserve' && mode.index === i ? 'selected' : ''}
-                disabled={ringSpots(s, mySeat, t).length === 0}
+                disabled={ringSpots(s, mySeat, u).length === 0}
                 onClick={() => setMode({ kind: 'reserve', index: i })}
               >
-                Desplegar {NAMES.unit[t]}
+                {t('Desplegar {0}', nm().unit[u])}
               </button>
             ))}
           </div>
         </div>
       )}
       {s.step === 'FINAL_DEPLOY' && !my.reserve.length && (
-        <p className="muted">Esperando a que los demás desplieguen su reserva…</p>
+        <p className="muted">{t('Esperando a que los demás desplieguen su reserva…')}</p>
       )}
     </div>
   );
@@ -632,15 +635,15 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
 /** Máquina, desconectado y, para el anfitrión, ceder a la máquina el sitio de un desconectado. */
 function SeatStatus({ lobby, room, meId }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; meId: number }) {
   if (!lobby) return null;
-  if (lobby.bot) return <span className="bot-tag" title={`Juega el sistema (${BOT_LABEL[lobby.bot]})`}>sistema</span>;
+  if (lobby.bot) return <span className="bot-tag" title={t('Juega el sistema ({0})', t(BOT_LABEL[lobby.bot]))}>{t('sistema')}</span>;
   if (lobby.online) return null;
   const host = meId === room.hostId && room.game?.phase !== 'GAME_OVER';
   return (
     <>
-      <span className="offline">desconectado</span>
+      <span className="offline">{t('desconectado')}</span>
       {host && (
-        <button className="link takeover" title="El sistema jugará por este jugador hasta que vuelva" onClick={() => call('takeover', { playerId: lobby.id, level: 'normal' })}>
-          ceder al sistema
+        <button className="link takeover" title={t('El sistema jugará por este jugador hasta que vuelva')} onClick={() => call('takeover', { playerId: lobby.id, level: 'normal' })}>
+          {t('ceder al sistema')}
         </button>
       )}
     </>
@@ -670,13 +673,13 @@ function AutoEndTurn({ state: s, send }: { state: GameState; send: Send }) {
   return (
     <div className="card auto-end">
       <p>
-        <b>Has terminado tu turno.</b> Pasa al siguiente jugador en {Math.max(0, left)} s.
+        <b>{t('Has terminado tu turno.')}</b> {t('Pasa al siguiente jugador en {0} s.', Math.max(0, left))}
       </p>
       <div className="row">
         <button className="primary" onClick={() => send({ type: 'endTurn' })}>
-          Pasar ya
+          {t('Pasar ya')}
         </button>
-        <button onClick={() => setWaitKey(key)}>Esperar</button>
+        <button onClick={() => setWaitKey(key)}>{t('Esperar')}</button>
       </div>
     </div>
   );
@@ -689,32 +692,32 @@ function TurnHint({ state: s, mode, setMode }: { state: GameState; mode: Mode; s
     <div className="card turn-hint">
       {mode.kind === 'towerBuild' && (
         <p>
-          Elige dónde levantar el Torreón: loseta vacía junto a una tropa tuya, nunca al lado de una Capital.
-          {s.turn?.military?.open && ` ${MILITARY_CLOSE_NOTE}`}{' '}
+          {t('Elige dónde levantar el Torreón: loseta vacía junto a una tropa tuya, nunca al lado de una Capital.')}
+          {s.turn?.military?.open && ` ${t(MILITARY_CLOSE_NOTE)}`}{' '}
           <button className="link" onClick={() => setMode({ kind: 'none' })}>
-            cancelar
+            {t('cancelar')}
           </button>
         </p>
       )}
       {mode.kind === 'tower' && (
         <p>
-          <b>Torreón</b> seleccionado ·{' '}
+          <b>{t('Torreón')}</b> {t('seleccionado')} ·{' '}
           {canTowerAttack(s)
             ? towerTargets(s, s.turn!.seat).length
-              ? 'dispara como un Arquero (alcance 2): pulsa un objetivo en rojo. Gasta una activación.'
-              : 'no hay enemigos a su alcance.'
-            : 'ya no puede atacar en este turno.'}{' '}
+              ? t('dispara como un Arquero (alcance 2): pulsa un objetivo en rojo. Gasta una activación.')
+              : t('no hay enemigos a su alcance.')
+            : t('ya no puede atacar en este turno.')}{' '}
           <button className="link" onClick={() => setMode({ kind: 'none' })}>
-            cancelar
+            {t('cancelar')}
           </button>
         </p>
       )}
       {mode.kind === 'unit' && <UnitPanel state={s} mode={mode} setMode={setMode} />}
       {mode.kind === 'recruit' && (
         <p>
-          Elige una casilla resaltada de tu anillo para el {NAMES.unit[mode.unit]}.{' '}
+          {t('Elige una casilla resaltada de tu anillo para el {0}.', nm().unit[mode.unit])}{' '}
           <button className="link" onClick={() => setMode({ kind: 'none' })}>
-            cancelar
+            {t('cancelar')}
           </button>
         </p>
       )}
@@ -768,19 +771,23 @@ const towerBuildable = (s: GameState, seat: Seat, myTurn: boolean) =>
 
 function towerTitle(s: GameState, seat: Seat, myTurn: boolean) {
   const p = s.players[seat];
-  if (p.tower != null) return 'Tu Torreón: pulsa para dispararle con él (como un Arquero)';
+  if (p.tower != null) return t('Tu Torreón: pulsa para dispararle con él (como un Arquero)');
   const block = towerBuildBlock(s, seat);
-  return block ? `Torreón (4 Piedra + 2 Madera, Acción Civil): ${block}` : myTurn ? 'Levantar Torreón (4 Piedra + 2 Madera, Acción Civil)' : 'Torreón';
+  return block
+    ? `${t('Torreón (4 Piedra + 2 Madera, Acción Civil)')}: ${tr(block)}`
+    : myTurn
+      ? t('Levantar Torreón (4 Piedra + 2 Madera, Acción Civil)')
+      : t('Torreón');
 }
 
 /** Barra superior: Civil y Militar en verde si aún se pueden usar este turno; apagadas si no. */
 function ActionStatus({ state: s }: { state: GameState }) {
-  const t = s.turn;
-  if (!t) return null;
-  const town = s.players[t.seat].buildings.includes('ayuntamiento');
-  const civil = !t.civilUsed && (town || !t.militaryUsed);
-  const m = t.military;
-  const fresh = !t.militaryUsed && (town || !t.civilUsed);
+  const turn = s.turn;
+  if (!turn) return null;
+  const town = s.players[turn.seat].buildings.includes('ayuntamiento');
+  const civil = !turn.civilUsed && (town || !turn.militaryUsed);
+  const m = turn.military;
+  const fresh = !turn.militaryUsed && (town || !turn.civilUsed);
   // Dentro de la Acción Militar (A21): lo que queda por hacer, reclutar o activar
   const acts = m ? activationsUsed(s) : 0; // A25: cada grupo cuenta una vez
   const canRecruit = !!m?.open && !m.recruited && acts <= 2;
@@ -788,11 +795,11 @@ function ActionStatus({ state: s }: { state: GameState }) {
   const military = fresh || canRecruit || canAct;
   // Tras reclutar queda la «Acción» (mover/atacar); tras mover o atacar queda «Reclutar»
   const militaryLabel = !m?.open ? 'Militar' : m.recruited ? 'Acción' : acts > 0 ? (canRecruit ? 'Reclutar' : 'Acción') : 'Militar';
-  const tip = town ? 'Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar' : 'Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar';
+  const tip = town ? t('Con Ayuntamiento: 1 Acción Civil + 1 Acción Militar') : t('Sin Ayuntamiento: 1 Acción Civil o 1 Acción Militar');
   return (
     <span className="action-status" title={tip}>
-      <span className={`act ${civil ? 'on' : 'off'}`}>Civil</span>
-      <span className={`act ${military ? 'on' : 'off'}`}>{military ? militaryLabel : 'Militar'}</span>
+      <span className={`act ${civil ? 'on' : 'off'}`}>{t('Civil')}</span>
+      <span className={`act ${military ? 'on' : 'off'}`}>{military ? t(militaryLabel) : t('Militar')}</span>
     </span>
   );
 }
@@ -804,34 +811,34 @@ function WallsDialog({ state: s, mySeat, send, onClose }: { state: GameState; my
   const p = s.players[mySeat];
   const civil = s.turn?.seat === mySeat && canUseCivil(s);
   return (
-    <Modal title="Murallas de tu Capital" onClose={onClose}>
+    <Modal title={t('Murallas de tu Capital')} onClose={onClose}>
       <p className="muted center">
-        Con la Acción Civil: levantar una nueva (<Cost r={{ comida: 0, madera: 1, piedra: 4, agua: 0 }} />) o reparar una destruida (
-        <Cost r={{ comida: 0, madera: 0, piedra: 3, agua: 0 }} />). Máximo 4.
+        {t('Con la Acción Civil: levantar una nueva')} (<Cost r={{ comida: 0, madera: 1, piedra: 4, agua: 0 }} />) {t('o reparar una destruida')} (
+        <Cost r={{ comida: 0, madera: 0, piedra: 3, agua: 0 }} />). {t('Máximo 4.')}
       </p>
-      {!civil && <p className="error center">No te queda Acción Civil en este turno.</p>}
-      {civil && s.turn?.military?.open && <p className="muted center">{MILITARY_CLOSE_NOTE}</p>}
+      {!civil && <p className="error center">{t('No te queda Acción Civil en este turno.')}</p>}
+      {civil && s.turn?.military?.open && <p className="muted center">{t(MILITARY_CLOSE_NOTE)}</p>}
       <div className="walls-list">
         {SIDES.map((side) => {
           const intact = p.walls.includes(side);
           const check = wallBuildCheck(s, mySeat, side);
-          const label = { N: 'Norte', S: 'Sur', E: 'Este', O: 'Oeste' }[side];
-          const state = intact ? 'en pie' : p.originalWalls.includes(side) ? 'destruida' : 'sin Muralla';
+          const label = t({ N: 'Norte', S: 'Sur', E: 'Este', O: 'Oeste' }[side]);
+          const state = t(intact ? 'en pie' : p.originalWalls.includes(side) ? 'destruida' : 'sin Muralla');
           return (
             <div key={side} className="wall-row">
               <b>{label}</b> <span className="muted">· {state}</span>
               {!intact && (
                 <button
                   disabled={!civil || !check.ok}
-                  title={!civil ? 'No te queda Acción Civil este turno' : check.ok ? '' : check.reason}
+                  title={!civil ? t('No te queda Acción Civil este turno') : check.ok ? '' : tr(check.reason)}
                   onClick={async () => {
                     if (await send({ type: 'buildWall', side })) onClose();
                   }}
                 >
-                  {check.repair ? 'Reparar' : 'Levantar'} <Cost r={check.cost} />
+                  {check.repair ? t('Reparar') : t('Levantar')} <Cost r={check.cost} />
                 </button>
               )}
-              {!intact && !check.ok && civil && <small className="error">{check.reason}</small>}
+              {!intact && !check.ok && civil && <small className="error">{tr(check.reason)}</small>}
             </div>
           );
         })}
@@ -858,16 +865,16 @@ function UnitPanel({
   return (
     <div className="unit-panel">
       <p>
-        <img className="icon" src={UNIT_IMAGES[u.type]} alt="" /> <b>{NAMES.unit[u.type]}</b> seleccionada ·{' '}
+        <img className="icon" src={UNIT_IMAGES[u.type]} alt="" /> <b>{nm().unit[u.type]}</b> {t('seleccionada')} ·{' '}
         {!unlocked
-          ? 'inactiva: falta su edificio, solo defiende'
+          ? t('inactiva: falta su edificio, solo defiende')
           : s.turn?.military?.recruited === u.id
-            ? 'recién reclutada: actuará el próximo turno'
-            : `${steps ? `puede mover ${steps}` : 'sin movimiento'} · ${canAtt ? 'puede atacar' : 'sin ataque'}`}
+            ? t('recién reclutada: actuará el próximo turno')
+            : `${steps ? t('puede mover {0}', steps) : t('sin movimiento')} · ${canAtt ? t('puede atacar') : t('sin ataque')}`}
       </p>
       <p className="legend">
-        <span className="lg move" /> mover <span className="lg attack" /> atacar <span className="lg conquer" /> conquistar
-        · Murallas atacables parpadean
+        <span className="lg move" /> {t('mover')} <span className="lg attack" /> {t('atacar')} <span className="lg conquer" /> {t('conquistar')}
+        · {t('Murallas atacables parpadean')}
       </p>
     </div>
   );
@@ -878,7 +885,7 @@ function Sel({ value, onChange }: { value: Resource; onChange: (r: Resource) => 
     <select value={value} onChange={(e) => onChange(e.target.value as Resource)}>
       {RESOURCES.map((r) => (
         <option key={r} value={r}>
-          {NAMES.resource[r]}
+          {nm().resource[r]}
         </option>
       ))}
     </select>
@@ -890,9 +897,9 @@ function Cost({ r }: { r: Resources }) {
   return (
     <span className="cost">
       {RESOURCES.filter((k) => r[k] > 0).map((k) => (
-        <span key={k} title={NAMES.resource[k]}>
+        <span key={k} title={nm().resource[k]}>
           {r[k]}
-          <img src={resourceIcon(k)} alt={NAMES.resource[k]} />
+          <img src={resourceIcon(k)} alt={nm().resource[k]} />
         </span>
       ))}
     </span>
@@ -1004,16 +1011,16 @@ function PlayersPanel({
             <div key={seat} className={`player summary ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
               <div className="player-head">
                 <img className="coat" src={coatOfArms(p.color)} alt="" />
-                <b>{p.name}</b>
+                <b>{pn(p.name)}</b>
                 <SeatStatus lobby={lobby} room={room} meId={meId} />
-                <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
+                <span className="conquests" title={t('Conquistas (hacen falta {0}, de Capitales distintas)', VICTORY.conquests)}>
                   ⚑ {p.conquests.length}/{VICTORY.conquests}
                 </span>
               </div>
               <div className="sum-row bld-chips">
                 {builtFirst(p.buildings).map((b) => (
-                  <span key={b} className={`bld-chip ${p.buildings.includes(b) ? 'on' : ''}`} title={NAMES.building[b]}>
-                    {NAMES.building[b]}
+                  <span key={b} className={`bld-chip ${p.buildings.includes(b) ? 'on' : ''}`} title={nm().building[b]}>
+                    {nm().building[b]}
                   </span>
                 ))}
               </div>
@@ -1023,24 +1030,24 @@ function PlayersPanel({
                   return (
                     <span
                       key={u}
-                      title={`${NAMES.unit[u]}${isUnlocked(s, seat, u) ? '' : ' · sin activar'}`}
+                      title={`${nm().unit[u]}${isUnlocked(s, seat, u) ? '' : ' · ' + t('sin activar')}`}
                       className={`res unit-pill ${n ? '' : 'zero'} ${isUnlocked(s, seat, u) ? '' : 'locked'}`}
                     >
-                      <img src={UNIT_IMAGES[u]} alt={NAMES.unit[u]} /> <b>{n}</b>
+                      <img src={UNIT_IMAGES[u]} alt={nm().unit[u]} /> <b>{n}</b>
                     </span>
                   );
                 })}
-                <span title="Murallas" className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
-                  <img src={WALL_SILHOUETTE} alt="Murallas" /> <b>{p.walls.length}</b>
+                <span title={t('Murallas')} className={`res unit-pill ${p.walls.length ? '' : 'zero'}`}>
+                  <img src={WALL_SILHOUETTE} alt={t('Murallas')} /> <b>{p.walls.length}</b>
                 </span>
-                <span title={p.tower != null ? 'Torreón levantado' : 'Sin Torreón'} className={`res unit-pill ${p.tower != null ? '' : 'zero'}`}>
-                  <img src={TOWER_SILHOUETTE} alt="Torreón" /> <b>{p.tower != null ? 1 : 0}</b>
+                <span title={p.tower != null ? t('Torreón levantado') : t('Sin Torreón')} className={`res unit-pill ${p.tower != null ? '' : 'zero'}`}>
+                  <img src={TOWER_SILHOUETTE} alt={t('Torreón')} /> <b>{p.tower != null ? 1 : 0}</b>
                 </span>
               </div>
               <div className="sum-row">
                 {RESOURCES.map((r) => (
-                  <span key={r} className={`res res-${r}`} title={NAMES.resource[r]}>
-                    <img src={resourceIcon(r)} alt={NAMES.resource[r]} /> <b>{p.resources[r]}</b>
+                  <span key={r} className={`res res-${r}`} title={nm().resource[r]}>
+                    <img src={resourceIcon(r)} alt={nm().resource[r]} /> <b>{p.resources[r]}</b>
                   </span>
                 ))}
               </div>
@@ -1050,10 +1057,10 @@ function PlayersPanel({
           <div key={seat} className={`player mine ${active ? 'active' : ''}`} style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
             <div className="player-head">
               <img className="coat coat-big" src={coatOfArms(p.color)} alt="" />
-              <b>{p.name}</b>
-              {seat === mySeat && <em> (tú)</em>}
+              <b>{pn(p.name)}</b>
+              {seat === mySeat && <em> {t('(tú)')}</em>}
               <SeatStatus lobby={lobby} room={room} meId={meId} />
-              <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
+              <span className="conquests" title={t('Conquistas (hacen falta {0}, de Capitales distintas)', VICTORY.conquests)}>
                 ⚑ {p.conquests.length}/{VICTORY.conquests}
               </span>
             </div>
@@ -1067,9 +1074,9 @@ function PlayersPanel({
                     className={`bld ${built ? 'on' : ''} ${can ? 'can' : ''}`}
                     onClick={() => !built && myTurnNow && setConfirm({ kind: 'build', b })}
                   >
-                    <CostTip title={NAMES.building[b]} cost={BUILDING_COST[b]} note={built ? 'Construido' : undefined} />
-                    <img src={buildingImage(b)} alt={NAMES.building[b]} draggable={false} />
-                    <figcaption>{NAMES.building[b]}</figcaption>
+                    <CostTip title={nm().building[b]} cost={BUILDING_COST[b]} note={built ? t('Construido') : undefined} />
+                    <img src={buildingImage(b)} alt={nm().building[b]} draggable={false} />
+                    <figcaption>{nm().building[b]}</figcaption>
                   </figure>
                 );
               })}
@@ -1083,28 +1090,28 @@ function PlayersPanel({
                     className={`${n ? 'on' : ''} ${recruitable(s, mySeat, u) ? 'can' : ''} ${recruiting === u ? 'sel' : ''} ${isUnlocked(s, mySeat, u) ? '' : 'locked'}`}
                     onClick={() => myTurnNow && setConfirm({ kind: 'recruit', u })}
                   >
-                    <CostTip title={NAMES.unit[u]} cost={UNIT_COST[u]} />
+                    <CostTip title={nm().unit[u]} cost={UNIT_COST[u]} />
                     <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
-                      <img src={unitFigure(p.color, u)} alt={NAMES.unit[u]} draggable={false} />
+                      <img src={unitFigure(p.color, u)} alt={nm().unit[u]} draggable={false} />
                       <img className="icon-alt" src={UNIT_IMAGES[u]} alt="" draggable={false} />
                     </span>
                     <figcaption>
-                      {NAMES.unit[u]} <b>{n}</b>/5
+                      {nm().unit[u]} <b>{n}</b>/5
                     </figcaption>
                   </figure>
                 );
               })}
               <figure
                 className={`${p.walls.length ? 'on' : ''} ${mine && myTurnNow ? 'clickable' : ''}`}
-                title={mine && myTurnNow ? 'Levantar o reparar Murallas' : 'Murallas intactas / originales'}
+                title={mine && myTurnNow ? t('Levantar o reparar Murallas') : t('Murallas intactas / originales')}
                 onClick={() => mine && myTurnNow && onWalls()}
               >
                 <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
-                  <img src={wallFigure(p.color)} alt="Murallas" draggable={false} />
+                  <img src={wallFigure(p.color)} alt={t('Murallas')} draggable={false} />
                   <img className="icon-alt" src={WALL_SILHOUETTE} alt="" draggable={false} />
                 </span>
                 <figcaption>
-                  Murallas <b>{p.walls.length}</b>/4
+                  {t('Murallas')} <b>{p.walls.length}</b>/4
                 </figcaption>
               </figure>
               {mine && (
@@ -1114,21 +1121,21 @@ function PlayersPanel({
                   onClick={() => myTurnNow && onTower()}
                 >
                   <span className="mini-token" style={{ borderColor: PLAYER_COLORS[p.color], ['--owner' as string]: PLAYER_COLORS[p.color] }}>
-                    <img src={p.tower != null ? towerFigure(p.color) : TOWER_ICON} alt="Torreón" draggable={false} />
+                    <img src={p.tower != null ? towerFigure(p.color) : TOWER_ICON} alt={t('Torreón')} draggable={false} />
                     <img className="icon-alt" src={TOWER_SILHOUETTE} alt="" draggable={false} />
                   </span>
                   <figcaption>
-                    Torreón <b>{p.tower != null ? 1 : 0}</b>/1
+                    {t('Torreón')} <b>{p.tower != null ? 1 : 0}</b>/1
                   </figcaption>
                 </figure>
               )}
             </div>
             <div className="army-figures resource-figures">
               {RESOURCES.map((r) => (
-                <figure key={r} className="on" title={NAMES.resource[r]}>
-                  <img className="res-big" src={resourceIcon(r)} alt={NAMES.resource[r]} draggable={false} />
+                <figure key={r} className="on" title={nm().resource[r]}>
+                  <img className="res-big" src={resourceIcon(r)} alt={nm().resource[r]} draggable={false} />
                   <figcaption>
-                    {NAMES.resource[r]} <b>{p.resources[r]}</b>
+                    {nm().resource[r]} <b>{p.resources[r]}</b>
                   </figcaption>
                 </figure>
               ))}
@@ -1162,6 +1169,7 @@ type FeedItem = { key: string; ts: number; kind: 'msg' | 'ev'; color: string; wh
 
 /** Chat y registro de acciones en un único hilo, ordenado en el tiempo. */
 function useFeed(room: PublicRoom, s: GameState): FeedItem[] {
+  const lang = useLang();
   return useMemo(() => {
     const colorOfPlayer = (id: number) => {
       const lp = room.players.find((x) => x.id === id);
@@ -1176,7 +1184,7 @@ function useFeed(room: PublicRoom, s: GameState): FeedItem[] {
         ts: last + e.n / 1e6,
         kind: 'ev',
         color: e.seat !== undefined ? PLAYER_COLORS[s.players[e.seat].color] : '#cbb994',
-        text: e.text,
+        text: logText(e),
       });
     }
     for (const m of room.chat ?? []) {
@@ -1184,7 +1192,7 @@ function useFeed(room: PublicRoom, s: GameState): FeedItem[] {
       items.push({ key: 'm' + m.n, ts: m.ts, kind: 'msg', color: colorOfPlayer(m.playerId), who: lp?.name ?? '¿?', text: m.text });
     }
     return items.sort((x, y) => x.ts - y.ts);
-  }, [room.version, room.chat?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [room.version, room.chat?.length, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 function FeedLine({ item }: { item: FeedItem }) {
@@ -1206,11 +1214,11 @@ function ChatInput({ className, autoFocus }: { className?: string; autoFocus?: b
       className={className}
       onSubmit={async (e) => {
         e.preventDefault();
-        const t = text.trim();
-        if (t && (await call('chat', { text: t })).ok) setText('');
+        const msg = text.trim();
+        if (msg && (await call('chat', { text: msg })).ok) setText('');
       }}
     >
-      <input value={text} maxLength={300} autoFocus={autoFocus} placeholder="Escribe un mensaje…" onChange={(e) => setText(e.target.value)} />
+      <input value={text} maxLength={300} autoFocus={autoFocus} placeholder={t('Escribe un mensaje…')} onChange={(e) => setText(e.target.value)} />
     </form>
   );
 }
@@ -1231,18 +1239,20 @@ function ChatBar({
   const lastItem = feed.at(-1);
   const hasMarket = s.players[mySeat].buildings.includes('mercado');
   const tradeOk = canOpenMarket(s, mySeat);
-  const tradeTitle = !hasMarket
-    ? 'Necesitas construir el Mercado'
-    : tradeOk
-      ? 'Convertir recursos o proponer un intercambio'
-      : s.turn?.seat !== mySeat
-        ? 'Solo puedes comerciar durante tu turno'
-        : 'Hay una decisión pendiente';
+  const tradeTitle = t(
+    !hasMarket
+      ? 'Necesitas construir el Mercado'
+      : tradeOk
+        ? 'Convertir recursos o proponer un intercambio'
+        : s.turn?.seat !== mySeat
+          ? 'Solo puedes comerciar durante tu turno'
+          : 'Hay una decisión pendiente',
+  );
   return (
     <>
       <div className="card chat-bar">
         <button disabled={!tradeOk} title={tradeTitle} onClick={onTrade}>
-          Comerciar
+          {t('Comerciar')}
         </button>
         <div className="chat-line">
           {lastItem && (
@@ -1253,7 +1263,7 @@ function ChatBar({
           )}
           <ChatInput />
         </div>
-        <button className="chat-expand" title="Ver el historial del chat" onClick={() => setOpen(true)}>
+        <button className="chat-expand" title={t('Ver el historial del chat')} onClick={() => setOpen(true)}>
           ▴
         </button>
       </div>
@@ -1268,7 +1278,7 @@ function ChatHistory({ feed, onClose }: { feed: FeedItem[]; onClose: () => void 
     ref.current?.scrollTo({ top: ref.current.scrollHeight });
   }, [feed.length]);
   return (
-    <Modal title="Chat y registro de la partida" onClose={onClose} wide>
+    <Modal title={t('Chat y registro de la partida')} onClose={onClose} wide>
       <div className="chat-history" ref={ref}>
         {feed.map((it) => (
           <FeedLine key={it.key} item={it} />
@@ -1300,7 +1310,7 @@ function Modal({
     <div className={`modal-backdrop ${top ? 'top' : ''}`} onClick={noClose ? undefined : onClose}>
       <div className={`modal card ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         {!noClose && (
-          <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">
+          <button className="modal-close" onClick={onClose} aria-label={t('Cerrar')} title={t('Cerrar')}>
             ×
           </button>
         )}
@@ -1329,11 +1339,11 @@ function ResourcePicker({
           key={r}
           className={value === r ? 'selected' : ''}
           disabled={available[r] < 1}
-          title={`${NAMES.resource[r]} (tiene ${available[r]})`}
+          title={t('{0} (tiene {1})', nm().resource[r], available[r])}
           onClick={() => onChange(r)}
         >
           <img src={resourceIcon(r)} alt="" />
-          <span>{NAMES.resource[r]}</span>
+          <span>{nm().resource[r]}</span>
           <small>{available[r]}</small>
         </button>
       ))}
@@ -1367,7 +1377,7 @@ function ConfirmDialog({
 }) {
   const my = s.players[mySeat];
   const build = item.kind === 'build';
-  const name = build ? NAMES.building[item.b] : NAMES.unit[item.u];
+  const name = build ? nm().building[item.b] : nm().unit[item.u];
   const cost = build ? BUILDING_COST[item.b] : UNIT_COST[item.u];
   const ok = build ? buildable(s, mySeat, item.b) : recruitable(s, mySeat, item.u);
   let why = '';
@@ -1379,9 +1389,10 @@ function ConfirmDialog({
     else if (unitCount(s, mySeat, item.u) >= MAX_PER_TYPE) why = 'Ya tienes 5 unidades de este tipo.';
     else if (!ringSpots(s, mySeat, item.u).length) why = 'No hay ninguna casilla libre válida en tu anillo.';
     else why = 'No te queda Acción Militar en este turno.';
+    why = t(why);
   }
   return (
-    <Modal title={build ? `¿Construir ${name}?` : `¿Reclutar ${name}?`} onClose={onClose}>
+    <Modal title={build ? t('¿Construir {0}?', name) : t('¿Reclutar {0}?', name)} onClose={onClose}>
       <div className="confirm-body">
         <img
           className={build ? 'confirm-bld' : 'confirm-unit'}
@@ -1390,18 +1401,18 @@ function ConfirmDialog({
           style={build ? undefined : { borderColor: PLAYER_COLORS[my.color] }}
         />
         <div>
-          <p>Coste:</p>
+          <p>{t('Coste:')}</p>
           <Cost r={cost} />
-          {!build && ok && <p className="muted">Después elige una casilla de tu anillo en el tablero.</p>}
-          {build && ok && s.turn?.military?.open && <p className="muted">{MILITARY_CLOSE_NOTE}</p>}
+          {!build && ok && <p className="muted">{t('Después elige una casilla de tu anillo en el tablero.')}</p>}
+          {build && ok && s.turn?.military?.open && <p className="muted">{t(MILITARY_CLOSE_NOTE)}</p>}
           {why && <p className="error">{why}</p>}
         </div>
       </div>
       <div className="row modal-actions">
         <button className="primary" disabled={!ok} onClick={onConfirm}>
-          {build ? 'Construir' : 'Reclutar'}
+          {build ? t('Construir') : t('Reclutar')}
         </button>
-        <button onClick={onClose}>Cancelar</button>
+        <button onClick={onClose}>{t('Cancelar')}</button>
       </div>
     </Modal>
   );
@@ -1414,11 +1425,11 @@ function ConvertRow({ state: s, mySeat, send }: { state: GameState; mySeat: Seat
   const [get, setGet] = useState<Resource>('madera');
   return (
     <>
-      <h4>Convertir ({CONVERT_RATE} iguales → 1 cualquiera)</h4>
+      <h4>{t('Convertir ({0} iguales → 1 cualquiera)', CONVERT_RATE)}</h4>
       <div className="row">
         {CONVERT_RATE} <Sel value={give} onChange={setGive} /> → 1 <Sel value={get} onChange={setGet} />
         <button disabled={my.resources[give] < CONVERT_RATE || give === get} onClick={() => send({ type: 'convert', give, get }, true)}>
-          Convertir
+          {t('Convertir')}
         </button>
       </div>
     </>
@@ -1444,10 +1455,10 @@ function TradeDialog({
   const target = to !== null ? s.players[to] : null;
   const ready = to !== null && give && want && canTrade(s, mySeat);
   return (
-    <Modal title="Comerciar" onClose={onClose}>
+    <Modal title={t('Comerciar')} onClose={onClose}>
       <ConvertRow state={s} mySeat={mySeat} send={send} />
-      <h4>Intercambio con un jugador (1 recurso por 1)</h4>
-      {s.turn?.tradeDone && <p className="muted">Ya has hecho tu intercambio de este turno.</p>}
+      <h4>{t('Intercambio con un jugador (1 recurso por 1)')}</h4>
+      {s.turn?.tradeDone && <p className="muted">{t('Ya has hecho tu intercambio de este turno.')}</p>}
       {!s.turn?.tradeDone && (
         <>
       <div className="trade-players">
@@ -1463,13 +1474,13 @@ function TradeDialog({
                 setWant(null);
               }}
             >
-              <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} /> {p.name}
+              <span className="dot" style={{ background: PLAYER_COLORS[p.color] }} /> {pn(p.name)}
             </button>
           ))}
       </div>
-      <h4>Ofreces</h4>
+      <h4>{t('Ofreces')}</h4>
       <ResourcePicker value={give} onChange={setGive} available={s.players[mySeat].resources} />
-      <h4>Quieres a cambio{target ? ` (de ${target.name})` : ''}</h4>
+      <h4>{target ? t('Quieres a cambio (de {0})', pn(target.name)) : t('Quieres a cambio')}</h4>
       <ResourcePicker value={want} onChange={setWant} available={target ? target.resources : emptyResources()} />
       <div className="row modal-actions">
         <button
@@ -1479,15 +1490,15 @@ function TradeDialog({
             if (await send({ type: 'proposeTrade', to: to!, give: one(give!), receive: one(want!) }, true)) onClose();
           }}
         >
-          Proponer intercambio
+          {t('Proponer intercambio')}
         </button>
-        <button onClick={onClose}>Cancelar</button>
+        <button onClick={onClose}>{t('Cancelar')}</button>
       </div>
         </>
       )}
       {s.turn?.tradeDone && (
         <div className="row modal-actions">
-          <button onClick={onClose}>Cerrar</button>
+          <button onClick={onClose}>{t('Cerrar')}</button>
         </div>
       )}
     </Modal>
@@ -1500,23 +1511,23 @@ function OfferDialog({ state: s, send }: { state: GameState; send: Send }) {
   const from = s.players[pr.from];
   const reject = () => send({ type: 'respondTrade', accept: false });
   return (
-    <Modal title={`Oferta de ${from.name}`} onClose={reject}>
+    <Modal title={t('Oferta de {0}', pn(from.name))} onClose={reject}>
       <div className="offer">
         <div>
-          <small>Te da</small>
+          <small>{t('Te da')}</small>
           <Cost r={pr.give} />
         </div>
         <div className="offer-arrow">⇄</div>
         <div>
-          <small>A cambio de</small>
+          <small>{t('A cambio de')}</small>
           <Cost r={pr.receive} />
         </div>
       </div>
       <div className="row modal-actions">
         <button className="primary" onClick={() => send({ type: 'respondTrade', accept: true })}>
-          Aceptar
+          {t('Aceptar')}
         </button>
-        <button onClick={reject}>Rechazar</button>
+        <button onClick={reject}>{t('Rechazar')}</button>
       </div>
     </Modal>
   );
@@ -1536,16 +1547,16 @@ function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
   if (front.kind === 'deploy') {
     if (seen === key) return null;
     return (
-      <Modal title="Recompensa del anillo" onClose={() => setSeen(key)}>
+      <Modal title={t('Recompensa del anillo')} onClose={() => setSeen(key)}>
         <div className="confirm-body">
           <img className="confirm-unit" src={unitFigure(my.color, front.unit)} alt="" style={{ borderColor: PLAYER_COLORS[my.color] }} />
           <p>
-            Recibes <b>1 {NAMES.unit[front.unit]}</b>. Colócala en una casilla resaltada de tu anillo.
+            {t('Recibes')} <b>1 {nm().unit[front.unit]}</b>. {t('Colócala en una casilla resaltada de tu anillo.')}
           </p>
         </div>
         <div className="row modal-actions">
           <button className="primary" onClick={() => setSeen(key)}>
-            Elegir casilla
+            {t('Elegir casilla')}
           </button>
         </div>
       </Modal>
@@ -1553,8 +1564,8 @@ function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
   }
   if (front.kind === 'choose')
     return (
-      <Modal title={`Recompensa de ${NAMES.terrain[front.from]}`} onClose={() => {}} noClose>
-        <p>¿Qué quieres recibir?</p>
+      <Modal title={t('Recompensa de {0}', nm().terrain[front.from])} onClose={() => {}} noClose>
+        <p>{t('¿Qué quieres recibir?')}</p>
         <div className="reward-options">
           {front.options.map((o) => (
             <button key={o} onClick={() => send({ type: 'chooseReward', option: o })}>
@@ -1564,19 +1575,19 @@ function RewardDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
                 alt=""
                 style={{ borderColor: PLAYER_COLORS[my.color] }}
               />
-              <span>{o === 'muralla' ? 'Muralla' : NAMES.unit[o]}</span>
+              <span>{o === 'muralla' ? t('Muralla') : nm().unit[o]}</span>
             </button>
           ))}
         </div>
       </Modal>
     );
   return (
-    <Modal title="Coloca tu Muralla" onClose={() => {}} noClose>
-      <p>¿En qué lado de tu Capital la levantas?</p>
+    <Modal title={t('Coloca tu Muralla')} onClose={() => {}} noClose>
+      <p>{t('¿En qué lado de tu Capital la levantas?')}</p>
       <div className="row">
         {SIDES.filter((x) => !my.originalWalls.includes(x)).map((x) => (
           <button key={x} onClick={() => send({ type: 'placeWall', side: x })}>
-            {NAMES.side[x][0].toUpperCase() + NAMES.side[x].slice(1)}
+            {nm().side[x][0].toUpperCase() + nm().side[x].slice(1)}
           </button>
         ))}
       </div>
@@ -1625,60 +1636,59 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
     else if (!mine) setClosed(key);
   };
   return (
-    <Modal title={s.combat && !s.combat.result ? 'Combate' : 'Resultado del combate'} onClose={onClose} noClose={mine?.kind === 'defenderChoice'}>
+    <Modal title={s.combat && !s.combat.result ? t('Combate') : t('Resultado del combate')} onClose={onClose} noClose={mine?.kind === 'defenderChoice'}>
       <div className="dice-board">
         <div className="side-dice">
           <p>
-            <span className="dot" style={{ background: PLAYER_COLORS[A.color] }} /> <b>{A.name}</b>
+            <span className="dot" style={{ background: PLAYER_COLORS[A.color] }} /> <b>{pn(A.name)}</b>
             <br />
             <small>
-              {c.attackerTower ? 'Torreón' : `${c.attackerUnits.length} ${NAMES.unit[c.attackerType]}`}
+              {c.attackerTower ? t('Torreón') : `${c.attackerUnits.length} ${nm().unit[c.attackerType]}`}
             </small>
           </p>
           {c.attackerDice.length > 0 ? <Dice values={c.attackerDice} big /> : <p className="muted">…</p>}
-          {c.attackerFaith && <small className="faith-used">Fe usada</small>}
+          {c.attackerFaith && <small className="faith-used">{t('Fe usada')}</small>}
         </div>
-        <div className="vs">contra</div>
+        <div className="vs">{t('contra')}</div>
         <div className="side-dice">
           <p>
-            <span className="dot" style={{ background: PLAYER_COLORS[D.color] }} /> <b>{D.name}</b>
+            <span className="dot" style={{ background: PLAYER_COLORS[D.color] }} /> <b>{pn(D.name)}</b>
             <br />
             <small>
               {c.target.kind === 'wall'
-                ? `Muralla ${NAMES.side[c.target.side]}`
+                ? t('Muralla {0}', nm().side[c.target.side])
                 : c.target.kind === 'tower'
-                  ? 'Torreón'
+                  ? t('Torreón')
                   : c.defenderType
-                    ? NAMES.unit[c.defenderType]
-                    : 'elige defensor…'}
+                    ? nm().unit[c.defenderType]
+                    : t('elige defensor…')}
             </small>
           </p>
           {c.defenderDice.length > 0 ? <Dice values={c.defenderDice} big /> : <p className="muted">…</p>}
-          {c.defenderFaith && <small className="faith-used">Fe usada</small>}
+          {c.defenderFaith && <small className="faith-used">{t('Fe usada')}</small>}
         </div>
       </div>
-      {c.summary && <p className="combat-summary">{c.summary.replace(/^.*?\]\. /, '')}</p>}
+      {c.summary && <p className="combat-summary">{logText({ text: c.summary, en: c.summaryEn }).replace(/^.*?\]\. /, '')}</p>}
       {mine?.kind === 'faith' && (
         <div className="faith-ask">
           <p>
-            Tienes Iglesia: ¿pagas <b>{FAITH_COST} Agua</b> para usar la Fe y repetir toda tu tirada? El nuevo resultado es
-            obligatorio.
+            {t('Tienes Iglesia: ¿pagas {0} Agua para usar la Fe y repetir toda tu tirada? El nuevo resultado es obligatorio.', FAITH_COST)}
           </p>
           <div className="row modal-actions">
             <button className="primary" onClick={() => send({ type: 'faith', use: true })}>
-              Usar Fe ({FAITH_COST} Agua)
+              {t('Usar Fe ({0} Agua)', FAITH_COST)}
             </button>
-            <button onClick={() => send({ type: 'faith', use: false })}>No</button>
+            <button onClick={() => send({ type: 'faith', use: false })}>{t('No')}</button>
           </div>
         </div>
       )}
       {mine?.kind === 'defenderChoice' && (
         <>
-          <p>¡Te atacan! Elige qué tipo de tropa defiende:</p>
+          <p>{t('¡Te atacan! Elige qué tipo de tropa defiende:')}</p>
           <div className="row">
             {mine.options.map((u) => (
               <button key={u} onClick={() => send({ type: 'defenderChoice', unit: u })}>
-                {NAMES.unit[u]}
+                {nm().unit[u]}
               </button>
             ))}
           </div>
@@ -1686,19 +1696,19 @@ function CombatDialog({ state: s, mySeat, send }: { state: GameState; mySeat: Se
       )}
       {mine?.kind === 'advance' && (
         <>
-          <p>La loseta ha quedado libre. ¿Avanza toda tu formación?</p>
+          <p>{t('La loseta ha quedado libre. ¿Avanza toda tu formación?')}</p>
           <div className="row modal-actions">
             <button className="primary" onClick={() => send({ type: 'advance', accept: true })}>
-              Avanzar
+              {t('Avanzar')}
             </button>
-            <button onClick={() => send({ type: 'advance', accept: false })}>Quedarse</button>
+            <button onClick={() => send({ type: 'advance', accept: false })}>{t('Quedarse')}</button>
           </div>
         </>
       )}
       {waiting && (
         <p className="muted">
-          Esperando a {s.players[waiting.seat].name}
-          {waiting.kind === 'faith' ? ' (decide si usa la Fe)' : waiting.kind === 'defenderChoice' ? ' (elige defensor)' : ' (decide si avanza)'}…
+          {t('Esperando a')} {pn(s.players[waiting.seat].name)}{' '}
+          {t(waiting.kind === 'faith' ? '(decide si usa la Fe)' : waiting.kind === 'defenderChoice' ? '(elige defensor)' : '(decide si avanza)')}…
         </p>
       )}
     </Modal>
@@ -1720,23 +1730,29 @@ function Announcements({ state: s, mySeat }: { state: GameState; mySeat: Seat })
       const gain = emptyResources();
       for (const r of got) gain[r] = s.players[mySeat].resources[r] - before.players[mySeat].resources[r];
       const id = Date.now() + Math.random();
-      setToasts((t) => [...t, { id, node: <>Ganas <Cost r={gain} /></> }]);
-      setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+      setToasts((list) => [...list, { id, node: <>{t('Ganas')} <Cost r={gain} /></> }]);
+      setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), 3500);
     }
     // Comienza la Fase II
     if (before.phase === 'PHASE_1' && s.phase === 'PHASE_2')
-      setBanner({ title: 'Empieza la Fase II', text: 'El mapa está completo.\nComienza la lucha por el Imperio.' });
+      setBanner({ title: t('Empieza la Fase II'), text: t('El mapa está completo.\nComienza la lucha por el Imperio.') });
     // Los 8 edificios (si completarlos da la victoria, ya lo anuncia la proclama)
     if (s.phase !== 'GAME_OVER') for (const p of s.players) {
       if (p.buildings.length === 8 && before.players[p.seat].buildings.length < 8) {
         const left = Math.max(0, VICTORY.conquests - p.conquests.length);
-        const need = left === 1 ? '1 Conquista' : `${left} Conquistas`;
         setBanner(
           p.seat === mySeat
-            ? { title: '¡Enhorabuena!', text: `Has construido los 8 edificios.
-Te ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` }
-            : { title: 'Ocho edificios', text: `${p.name} ha construido los 8 edificios.
-Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
+            ? {
+                title: t('¡Enhorabuena!'),
+                text: left === 1 ? t('Has construido los 8 edificios.\nTe falta 1 Conquista para ganar Imperio.') : t('Has construido los 8 edificios.\nTe faltan {0} Conquistas para ganar Imperio.', left),
+              }
+            : {
+                title: t('Ocho edificios'),
+                text:
+                  left === 1
+                    ? t('{0} ha construido los 8 edificios.\nLe falta 1 Conquista para ganar Imperio.', pn(p.name))
+                    : t('{0} ha construido los 8 edificios.\nLe faltan {1} Conquistas para ganar Imperio.', pn(p.name), left),
+              },
         );
       }
     }
@@ -1746,13 +1762,13 @@ Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
       if (p.conquests.length > nb) {
         const victim = s.players[p.conquests[p.conquests.length - 1]];
         setBanner({
-          title: '¡Conquista!',
+          title: t('¡Conquista!'),
           text:
             p.seat === mySeat
-              ? `Has conquistado la Capital de ${victim.name}.`
+              ? t('Has conquistado la Capital de {0}.', pn(victim.name))
               : victim.seat === mySeat
-                ? `${p.name} ha conquistado tu Capital.`
-                : `${p.name} ha conquistado la Capital de ${victim.name}.`,
+                ? t('{0} ha conquistado tu Capital.', pn(p.name))
+                : t('{0} ha conquistado la Capital de {1}.', pn(p.name), pn(victim.name)),
         });
       }
     }
@@ -1760,9 +1776,9 @@ Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
   return (
     <>
       <div className="toasts">
-        {toasts.map((t) => (
-          <div key={t.id} className="toast">
-            {t.node}
+        {toasts.map((x) => (
+          <div key={x.id} className="toast">
+            {x.node}
           </div>
         ))}
       </div>
@@ -1771,7 +1787,7 @@ Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
           <p className="banner-text">{banner.text}</p>
           <div className="row modal-actions">
             <button className="primary" onClick={() => setBanner(null)}>
-              Continuar
+              {t('Continuar')}
             </button>
           </div>
         </Modal>
@@ -1779,6 +1795,10 @@ Le ${left === 1 ? 'falta' : 'faltan'} ${need} para ganar Imperio.` },
     </>
   );
 }
+
+/** Texto con saltos de línea (botones-sello de dos líneas). */
+const lines2 = (text: string) =>
+  text.split('\n').flatMap((l, i) => (i > 0 ? [<br key={'b' + i} />, l] : [l]));
 
 /** Proclama de victoria: escudo del león arriba y el rótulo «Imperio» abajo. */
 function VictoryDialog({
@@ -1798,37 +1818,33 @@ function VictoryDialog({
   const [evoOpen, setEvoOpen] = useState(false);
   const feed = useFeed(room, s);
   return (
-    <Modal title="Proclama Real" onClose={onClose} wide>
+    <Modal title={t('Proclama Real')} onClose={onClose} wide>
       <div className="victory">
-        <p className="victory-line">Sea sabido por todos los reinos que</p>
+        <p className="victory-line">{t('Sea sabido por todos los reinos que')}</p>
         <div className="victory-name" style={{ color }}>
-          <img className="coat" src={coatOfArms(w.color)} alt="" /> {w.name}
+          <img className="coat" src={coatOfArms(w.color)} alt="" /> {pn(w.name)}
         </div>
-        <p className="victory-line">reina desde hoy sobre el</p>
+        <p className="victory-line">{t('reina desde hoy sobre el')}</p>
         <img className="victory-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
         <div className="row victory-actions">
           <button className="seal small green" onClick={onClose}>
-            Ver el
-            <br />
-            tablero
+            {lines2(t('Ver el\ntablero'))}
           </button>
           <button className="seal small" onClick={() => setChatOpen(true)}>
-            Chat
+            {t('Chat')}
           </button>
           {(s.history?.length ?? 0) >= 2 && (
             <button className="seal small" onClick={() => setEvoOpen(true)}>
-              Evolución
+              {t('Evolución')}
             </button>
           )}
           <button className="seal small" onClick={onExit}>
-            Volver a la
-            <br />
-            portada
+            {lines2(t('Volver a la\nportada'))}
           </button>
         </div>
         {chatOpen && <ChatHistory feed={feed} onClose={() => setChatOpen(false)} />}
         {evoOpen && (
-          <Modal title="Evolución de la partida" onClose={() => setEvoOpen(false)} wide>
+          <Modal title={t('Evolución de la partida')} onClose={() => setEvoOpen(false)} wide>
             <EvolutionDialogBody state={s} />
           </Modal>
         )}

@@ -31,6 +31,7 @@ import {
   MAX_STACK,
   MAX_WALLS,
   NAMES,
+  NAMES_EN,
   PILE_COMPOSITION,
   PILE_PLACEMENTS,
   RESOURCES,
@@ -91,8 +92,11 @@ export interface NewPlayer {
 
 const pname = (s: GameState, seat: Seat) => s.players[seat].name;
 
-function log(s: GameState, text: string, seat?: Seat) {
-  s.log.push({ n: (s.log.at(-1)?.n ?? 0) + 1, text, seat, ts: Date.now() });
+/** Mensaje en los dos idiomas del juego (el español es el texto principal). */
+type Msg = string | { es: string; en: string };
+function log(s: GameState, msg: Msg, seat?: Seat) {
+  const [text, en] = typeof msg === 'string' ? [msg, undefined] : [msg.es, msg.en];
+  s.log.push({ n: (s.log.at(-1)?.n ?? 0) + 1, text, en, seat, ts: Date.now() });
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
 }
 
@@ -152,19 +156,28 @@ export function createGame(players: NewPlayer[], seed: number): GameState {
     const rolls: Partial<Record<Seat, number>> = {};
     for (const seat of contenders) rolls[seat] = rollD6(s);
     s.firstPlayerRolls.push(rolls);
-    log(s, 'Tirada de primer jugador: ' + contenders.map((c) => `${pname(s, c)} ${rolls[c]}`).join(' · '));
+    {
+      const list = contenders.map((c) => `${pname(s, c)} ${rolls[c]}`).join(' · ');
+      log(s, { es: 'Tirada de primer jugador: ' + list, en: 'Roll for first player: ' + list });
+    }
     const max = Math.max(...contenders.map((c) => rolls[c]!));
     contenders = contenders.filter((c) => rolls[c] === max);
     if (contenders.length === 1) break;
-    log(s, 'Empate: repiten ' + contenders.map((c) => pname(s, c)).join(', '));
+    log(s, { es: 'Empate: repiten ' + contenders.map((c) => pname(s, c)).join(', '), en: 'Tie: reroll ' + contenders.map((c) => pname(s, c)).join(', ') });
   }
   const first = contenders[0];
   s.order = [0, 1, 2, 3].map((k) => ((first + k) % 4) as Seat);
-  log(s, `Empieza ${pname(s, first)}. Orden de turno (horario): ${s.order.map((x) => pname(s, x)).join(' → ')}`);
+  log(s, {
+    es: `Empieza ${pname(s, first)}. Orden de turno (horario): ${s.order.map((x) => pname(s, x)).join(' → ')}`,
+    en: `${pname(s, first)} goes first. Turn order (clockwise): ${s.order.map((x) => pname(s, x)).join(' → ')}`,
+  });
 
   s.phase = 'PHASE_1';
   s.step = 'INITIAL_PLACEMENT';
-  log(s, 'Fase I — Creación del Mundo. Cada jugador coloca a la vez sus 4 losetas iniciales en su anillo.');
+  log(s, {
+    es: 'Fase I — Creación del Mundo. Cada jugador coloca a la vez sus 4 losetas iniciales en su anillo.',
+    en: 'Phase I — Creation of the World. Every player places their 4 starting tiles in their ring at the same time.',
+  });
   return s;
 }
 
@@ -214,11 +227,18 @@ function pushReward(s: GameState, seat: Seat, t: Terrain) {
     o === 'muralla' ? wallsCommitted(s, seat) < MAX_WALLS : underLimit(s, seat, o),
   );
   if (!possible.length) {
-    log(s, `${p.name} no puede recibir la recompensa de ${NAMES.terrain[t]} (límites alcanzados).`, seat);
+    log(s, { es: `${p.name} no puede recibir la recompensa de ${NAMES.terrain[t]} (límites alcanzados).`, en: `${p.name} cannot receive the ${NAMES_EN.terrain[t]} reward (limits reached).` }, seat);
     return;
   }
   if (possible.length === 1 && options.length > 1)
-    log(s, `${p.name}: solo es posible ${possible[0] === 'muralla' ? 'Muralla' : NAMES.unit[possible[0]]}.`, seat);
+    log(
+      s,
+      {
+        es: `${p.name}: solo es posible ${possible[0] === 'muralla' ? 'Muralla' : NAMES.unit[possible[0]]}.`,
+        en: `${p.name}: only ${possible[0] === 'muralla' ? 'Wall' : NAMES_EN.unit[possible[0]]} is possible.`,
+      },
+      seat,
+    );
   p.rewardQueue.push(
     possible.length === 1 ? rewardFromChoice(possible[0]) : { kind: 'choose', from: t, options: possible },
   );
@@ -233,7 +253,7 @@ function normalizeQueue(s: GameState, seat: Seat) {
     if (front?.kind === 'deploy' && ringSpots(s, seat, front.unit).length === 0) {
       p.rewardQueue.shift();
       p.reserve.push(front.unit);
-      log(s, `${p.name}: ${NAMES.unit[front.unit]} sin casilla legal ahora; queda en reserva.`, seat);
+      log(s, { es: `${p.name}: ${NAMES.unit[front.unit]} sin casilla legal ahora; queda en reserva.`, en: `${p.name}: ${NAMES_EN.unit[front.unit]} has no legal square now; it stays in reserve.` }, seat);
       continue;
     }
     break;
@@ -254,7 +274,10 @@ function checkInitialDone(s: GameState) {
   if (s.players.some((p) => p.initialTiles.length || p.rewardQueue.length)) return;
   s.step = 'PILE_PLACEMENT';
   s.current = 0;
-  log(s, 'Losetas iniciales colocadas. Empiezan los turnos con la pila común (11 losetas por jugador).');
+  log(s, {
+    es: 'Losetas iniciales colocadas. Empiezan los turnos con la pila común (11 losetas por jugador).',
+    en: 'Starting tiles placed. Turns with the common pile begin (11 tiles per player).',
+  });
   startPileTurn(s);
 }
 
@@ -268,7 +291,7 @@ function startPileTurn(s: GameState) {
     tried++;
   }
   if (tried > 0 && tried < n)
-    log(s, `${tried} loseta(s) sin posición legal para ${pname(s, seat)} pasan al fondo de la pila.`, seat);
+    log(s, { es: `${tried} loseta(s) sin posición legal para ${pname(s, seat)} pasan al fondo de la pila.`, en: `${tried} tile(s) with no legal position for ${pname(s, seat)} go to the bottom of the pile.` }, seat);
   if (tried < n) {
     s.step = 'PILE_PLACEMENT';
     return;
@@ -278,12 +301,22 @@ function startPileTurn(s: GameState) {
     if (exchangeOptions(s, seat, s.pile[i]).length) {
       s.exchangeTile = s.pile.splice(i, 1)[0];
       s.step = 'EXCHANGE';
-      log(s, `Bloqueo absoluto: ${pname(s, seat)} debe hacer un intercambio de emergencia con ${NAMES.terrain[s.exchangeTile]}.`, seat);
+      log(
+        s,
+        {
+          es: `Bloqueo absoluto: ${pname(s, seat)} debe hacer un intercambio de emergencia con ${NAMES.terrain[s.exchangeTile]}.`,
+          en: `Total block: ${pname(s, seat)} must make an emergency exchange with ${NAMES_EN.terrain[s.exchangeTile]}.`,
+        },
+        seat,
+      );
       return;
     }
   }
   s.step = 'BLOCKED';
-  log(s, 'Bloqueo sin solución: ninguna loseta puede colocarse ni mediante intercambio. Situación no cubierta por el reglamento.');
+  log(s, {
+    es: 'Bloqueo sin solución: ninguna loseta puede colocarse ni mediante intercambio. Situación no cubierta por el reglamento.',
+    en: 'Unsolvable block: no tile can be placed, not even by exchange. Situation not covered by the rules.',
+  });
 }
 
 function endPileTurn(s: GameState) {
@@ -294,7 +327,7 @@ function endPileTurn(s: GameState) {
 }
 
 function endPhase1(s: GameState) {
-  log(s, 'Las 60 losetas están colocadas. Fin de la Fase I.');
+  log(s, { es: 'Las 60 losetas están colocadas. Fin de la Fase I.', en: 'All 60 tiles are placed. End of Phase I.' });
   s.step = 'FINAL_DEPLOY';
   checkFinalDeploy(s);
 }
@@ -304,7 +337,7 @@ function checkFinalDeploy(s: GameState) {
   for (const p of s.players) {
     p.reserve = p.reserve.filter((t) => {
       if (ringSpots(s, p.seat, t).length) return true;
-      log(s, `${p.name}: ${NAMES.unit[t]} no tiene posición legal y no se recibe.`, p.seat);
+      log(s, { es: `${p.name}: ${NAMES.unit[t]} no tiene posición legal y no se recibe.`, en: `${p.name}: ${NAMES_EN.unit[t]} has no legal position and is not received.` }, p.seat);
       return false;
     });
   }
@@ -313,7 +346,7 @@ function checkFinalDeploy(s: GameState) {
   s.step = 'TURN';
   s.current = 0;
   for (const c of s.cells) c.placedBy = null; // §9: al comenzar la Fase II ninguna loseta pertenece a nadie
-  log(s, 'Fase II — El Imperio.');
+  log(s, { es: 'Fase II — El Imperio.', en: 'Phase II — The Empire.' });
   startTurn(s);
 }
 
@@ -353,12 +386,13 @@ function startTurn(s: GameState) {
     if (t) got[TERRAIN_RESOURCE[t]]++;
   }
   for (const r of RESOURCES) p.resources[r] += got[r];
+  const produced = (names: typeof NAMES | typeof NAMES_EN) =>
+    RESOURCES.filter((r) => got[r])
+      .map((r) => `+${got[r]} ${names.resource[r]}`)
+      .join(', ');
   log(
     s,
-    `Turno ${s.turnNumber} — ${p.name}. Producción: ` +
-      RESOURCES.filter((r) => got[r])
-        .map((r) => `+${got[r]} ${NAMES.resource[r]}`)
-        .join(', '),
+    { es: `Turno ${s.turnNumber} — ${p.name}. Producción: ` + produced(NAMES), en: `Turn ${s.turnNumber} — ${p.name}. Production: ` + produced(NAMES_EN) },
     seat,
   );
   // §26: Biblioteca construida antes del comienzo del turno
@@ -412,7 +446,7 @@ function maybeCloseMilitary(s: GameState) {
   });
   if (allDone) {
     m.open = false;
-    log(s, 'Acción militar completada.', s.turn!.seat);
+    log(s, { es: 'Acción militar completada.', en: 'Military action completed.' }, s.turn!.seat);
   }
 }
 
@@ -421,7 +455,7 @@ function closeMilitaryForCivil(s: GameState, seat: Seat) {
   const m = s.turn?.military;
   if (!m?.open) return;
   m.open = false;
-  log(s, `${s.players[seat].name} termina su Acción Militar.`, seat);
+  log(s, { es: `${s.players[seat].name} termina su Acción Militar.`, en: `${s.players[seat].name} ends their Military Action.` }, seat);
 }
 
 function checkVictory(s: GameState, seat: Seat) {
@@ -432,7 +466,14 @@ function checkVictory(s: GameState, seat: Seat) {
     s.winner = seat;
     recordHistory(s);
     s.prompt = null;
-    log(s, `¡${p.name} completa 8 edificios y tiene ${p.conquests.length} Conquista(s): gana Imperio!`, seat);
+    log(
+      s,
+      {
+        es: `¡${p.name} completa 8 edificios y tiene ${p.conquests.length} Conquista(s): gana Imperio!`,
+        en: `${p.name} completes 8 buildings and has ${p.conquests.length} Conquest(s): they win Imperio!`,
+      },
+      seat,
+    );
   }
 }
 
@@ -499,9 +540,12 @@ function combatStage(s: GameState, stage: 'attacker' | 'defender' | 'resolve') {
   resolveCombat(s);
 }
 
-/** «1 Infantería» o «sus 2 Infanterías». */
+/** «1 Infantería» o «sus 2 Infanterías» (en inglés, «1 Infantry» / «its 2 Archers»). */
 function lossLabel(n: number, type: UnitType) {
   return n === 1 ? `1 ${NAMES.unit[type]}` : `sus ${n} ${NAMES.unitPlural[type]}`;
+}
+function lossLabelEn(n: number, type: UnitType) {
+  return n === 1 ? `1 ${NAMES_EN.unit[type]}` : `all ${n} ${NAMES_EN.unitPlural[type]}`;
 }
 
 function removeUnit(s: GameState, id: string) {
@@ -516,53 +560,79 @@ function resolveCombat(s: GameState) {
   const att = pname(s, c.attacker);
   const def = pname(s, c.defender);
   const aName = c.attackerTower ? 'Torreón' : `${c.attackerUnits.length} ${NAMES.unit[c.attackerType]}`;
+  const aNameEn = c.attackerTower ? 'Tower' : `${c.attackerUnits.length} ${(c.attackerUnits.length > 1 ? NAMES_EN.unitPlural : NAMES_EN.unit)[c.attackerType]}`;
+  const dice = `[${c.attackerDice.join(',')}]`;
+  const ddice = `[${c.defenderDice.join(',')}]`;
   let text = '';
+  let en = '';
+  const tie = () => {
+    text += 'Empate: no ocurre nada.';
+    en += 'Tie: nothing happens.';
+  };
   if (c.target.kind === 'troops') {
     const pos = c.target.pos;
     const defName = NAMES.unit[c.defenderType!];
-    text = `${att} (${aName}) ataca a ${def} (${defName}) en ${coordLabel(pos)} a distancia ${c.distance}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
+    text = `${att} (${aName}) ataca a ${def} (${defName}) en ${coordLabel(pos)} a distancia ${c.distance}: ${dice} contra ${ddice}. `;
+    en = `${att} (${aNameEn}) attacks ${def} (${NAMES_EN.unit[c.defenderType!]}) at ${coordLabel(pos)} at distance ${c.distance}: ${dice} vs ${ddice}. `;
     if (c.result === 'attacker') {
       // A29: mueren todas las tropas del tipo que defendió (las demás de la loseta no combatieron)
       const victims = unitsAt(s, pos).filter((u) => u.type === c.defenderType).map((u) => u.id);
       victims.forEach((id) => removeUnit(s, id));
       c.casualties = victims;
       text += `Gana el atacante: ${def} pierde ${lossLabel(victims.length, c.defenderType!)}.`;
+      en += `The attacker wins: ${def} loses ${lossLabelEn(victims.length, c.defenderType!)}.`;
     } else if (c.result === 'defender') {
       if (c.attackerCanLose && c.attackerTower) {
         destroyTower(s, c.attacker);
         text += `Gana el defensor: el Torreón de ${att} queda destruido.`;
+        en += `The defender wins: ${att}'s Tower is destroyed.`;
       } else if (c.attackerCanLose) {
         const victims = c.attackerUnits.filter((id) => unitById(s, id)); // A29: todo el grupo atacante
         victims.forEach((id) => removeUnit(s, id));
         c.casualties = victims;
         text += `Gana el defensor: ${att} pierde ${lossLabel(victims.length, c.attackerType)}.`;
-      } else text += 'Gana el defensor, pero no puede causar daño al atacante.';
-    } else text += 'Empate: no ocurre nada.';
+        en += `The defender wins: ${att} loses ${lossLabelEn(victims.length, c.attackerType)}.`;
+      } else {
+        text += 'Gana el defensor, pero no puede causar daño al atacante.';
+        en += 'The defender wins, but cannot harm the attacker.';
+      }
+    } else tie();
   } else if (c.target.kind === 'tower') {
-    text = `${att} (${aName}) ataca el Torreón de ${def} en ${coordLabel(c.target.pos)}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
+    text = `${att} (${aName}) ataca el Torreón de ${def} en ${coordLabel(c.target.pos)}: ${dice} contra ${ddice}. `;
+    en = `${att} (${aNameEn}) attacks ${def}'s Tower at ${coordLabel(c.target.pos)}: ${dice} vs ${ddice}. `;
     if (c.result === 'attacker') {
       destroyTower(s, c.defender);
       text += 'Torreón destruido.';
-    } else if (c.result === 'defender') text += 'El Torreón resiste.';
-    else text += 'Empate: no ocurre nada.';
+      en += 'Tower destroyed.';
+    } else if (c.result === 'defender') {
+      text += 'El Torreón resiste.';
+      en += 'The Tower holds.';
+    } else tie();
   } else {
     const { capital, side } = c.target;
-    text = `${att} (${aName}) ataca la Muralla ${NAMES.side[side]} de la Capital de ${def}: [${c.attackerDice.join(',')}] contra [${c.defenderDice.join(',')}]. `;
+    text = `${att} (${aName}) ataca la Muralla ${NAMES.side[side]} de la Capital de ${def}: ${dice} contra ${ddice}. `;
+    en = `${att} (${aNameEn}) attacks the ${NAMES_EN.side[side]} Wall of ${def}'s Capital: ${dice} vs ${ddice}. `;
     if (c.result === 'attacker') {
       s.players[capital].walls = s.players[capital].walls.filter((w) => w !== side);
       (s.players[capital].wallDestroyedTurn ??= {})[side] = s.turnNumber;
       text += 'Muralla destruida.';
+      en += 'Wall destroyed.';
     } else if (c.result === 'defender') {
       if (c.attackerCanLose) {
         const victims = c.attackerUnits.filter((id) => unitById(s, id)); // A29: todas las Artillerías del ataque
         victims.forEach((id) => removeUnit(s, id));
         c.casualties = victims;
         text += `La Muralla resiste: ${att} pierde ${lossLabel(victims.length, 'artilleria')}.`;
-      } else text += 'La Muralla resiste.';
-    } else text += 'Empate: no ocurre nada.';
+        en += `The Wall holds: ${att} loses ${lossLabelEn(victims.length, 'artilleria')}.`;
+      } else {
+        text += 'La Muralla resiste.';
+        en += 'The Wall holds.';
+      }
+    } else tie();
   }
   c.summary = text;
-  log(s, text, c.attacker);
+  c.summaryEn = en;
+  log(s, { es: text, en }, c.attacker);
   s.lastCombat = structuredClone(c);
 
   // §63 + aclaración 10: avance de toda la formación tras vaciar la loseta en cuerpo a cuerpo.
@@ -628,7 +698,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       s.cells[action.pos] = { terrain: action.terrain, placedBy: seat };
       p.initialTiles.splice(p.initialTiles.indexOf(action.terrain), 1);
       gain(s, seat, action.terrain);
-      log(s, `${p.name} coloca ${NAMES.terrain[action.terrain]} inicial en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} coloca ${NAMES.terrain[action.terrain]} inicial en ${coordLabel(action.pos)}.`, en: `${p.name} places starting ${NAMES_EN.terrain[action.terrain]} at ${coordLabel(action.pos)}.` }, seat);
       if (isLand(action.terrain)) pushReward(s, seat, action.terrain);
       checkInitialDone(s);
       break;
@@ -642,7 +712,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       s.cells[action.pos] = { terrain: tile, placedBy: seat };
       p.placementsLeft--;
       gain(s, seat, tile);
-      log(s, `${p.name} coloca ${NAMES.terrain[tile]} en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} coloca ${NAMES.terrain[tile]} en ${coordLabel(action.pos)}.`, en: `${p.name} places ${NAMES_EN.terrain[tile]} at ${coordLabel(action.pos)}.` }, seat);
       if (ringOwner(action.pos) === seat && isLand(tile)) pushReward(s, seat, tile);
       if (!p.rewardQueue.length) endPileTurn(s);
       break;
@@ -660,7 +730,10 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       gain(s, seat, tile); // §16: la loseta pendiente sí genera recurso; sin recompensa militar
       log(
         s,
-        `${p.name} mueve ${NAMES.terrain[moved]} de ${coordLabel(action.from)} a ${coordLabel(action.to)} y coloca ${NAMES.terrain[tile]} en ${coordLabel(action.from)}.`,
+        {
+          es: `${p.name} mueve ${NAMES.terrain[moved]} de ${coordLabel(action.from)} a ${coordLabel(action.to)} y coloca ${NAMES.terrain[tile]} en ${coordLabel(action.from)}.`,
+          en: `${p.name} moves ${NAMES_EN.terrain[moved]} from ${coordLabel(action.from)} to ${coordLabel(action.to)} and places ${NAMES_EN.terrain[tile]} at ${coordLabel(action.from)}.`,
+        },
         seat,
       );
       s.step = 'PILE_PLACEMENT';
@@ -672,7 +745,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (s.phase !== 'PHASE_1' || front?.kind !== 'choose') fail('No hay elección pendiente.');
       if (!(front as { options: string[] }).options.includes(action.option)) fail('Opción no válida.');
       p.rewardQueue[0] = rewardFromChoice(action.option);
-      log(s, `${p.name} elige ${action.option === 'muralla' ? 'Muralla' : NAMES.unit[action.option]}.`, seat);
+      log(s, { es: `${p.name} elige ${action.option === 'muralla' ? 'Muralla' : NAMES.unit[action.option]}.`, en: `${p.name} chooses ${action.option === 'muralla' ? 'Wall' : NAMES_EN.unit[action.option]}.` }, seat);
       normalizeQueue(s, seat);
       afterReward(s, seat);
       break;
@@ -684,7 +757,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!ringSpots(s, seat, unit).includes(action.pos)) fail('Casilla no válida para desplegar.');
       addUnit(s, seat, unit, action.pos);
       p.rewardQueue.shift();
-      log(s, `${p.name} despliega ${NAMES.unit[unit]} en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} despliega ${NAMES.unit[unit]} en ${coordLabel(action.pos)}.`, en: `${p.name} deploys ${NAMES_EN.unit[unit]} at ${coordLabel(action.pos)}.` }, seat);
       normalizeQueue(s, seat);
       afterReward(s, seat);
       break;
@@ -696,7 +769,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       p.originalWalls.push(action.side);
       p.walls.push(action.side);
       p.rewardQueue.shift();
-      log(s, `${p.name} levanta una Muralla en el lado ${NAMES.side[action.side]} de su Capital.`, seat);
+      log(s, { es: `${p.name} levanta una Muralla en el lado ${NAMES.side[action.side]} de su Capital.`, en: `${p.name} raises a Wall on the ${NAMES_EN.side[action.side]} side of their Capital.` }, seat);
       normalizeQueue(s, seat);
       afterReward(s, seat);
       break;
@@ -708,7 +781,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!ringSpots(s, seat, unit).includes(action.pos)) fail('Casilla no válida para desplegar.');
       addUnit(s, seat, unit, action.pos);
       p.reserve.splice(action.index, 1);
-      log(s, `${p.name} despliega ${NAMES.unit[unit]} de la reserva en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} despliega ${NAMES.unit[unit]} de la reserva en ${coordLabel(action.pos)}.`, en: `${p.name} deploys ${NAMES_EN.unit[unit]} from the reserve at ${coordLabel(action.pos)}.` }, seat);
       if (s.step === 'FINAL_DEPLOY') checkFinalDeploy(s);
       break;
     }
@@ -719,7 +792,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!RESOURCES.includes(action.resource)) fail('Recurso no válido.');
       p.resources[action.resource]++;
       s.prompt = null;
-      log(s, `${p.name} obtiene 1 ${NAMES.resource[action.resource]} de su Biblioteca.`, seat);
+      log(s, { es: `${p.name} obtiene 1 ${NAMES.resource[action.resource]} de su Biblioteca.`, en: `${p.name} gets 1 ${NAMES_EN.resource[action.resource]} from their Library.` }, seat);
       break;
     }
     case 'build': {
@@ -734,7 +807,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       pay(p.resources, BUILDING_COST[b]);
       p.buildings.push(b);
       s.turn!.civilUsed = true;
-      log(s, `${p.name} construye ${NAMES.building[b]}.`, seat);
+      log(s, { es: `${p.name} construye ${NAMES.building[b]}.`, en: `${p.name} builds ${NAMES_EN.building[b]}.` }, seat);
       checkVictory(s, seat);
       break;
     }
@@ -748,11 +821,11 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (check.repair) {
         p.walls.push(action.side);
         delete p.wallDestroyedTurn?.[action.side];
-        log(s, `${p.name} repara la Muralla ${NAMES.side[action.side]} de su Capital.`, seat);
+        log(s, { es: `${p.name} repara la Muralla ${NAMES.side[action.side]} de su Capital.`, en: `${p.name} repairs the ${NAMES_EN.side[action.side]} Wall of their Capital.` }, seat);
       } else {
         p.walls.push(action.side);
         p.originalWalls.push(action.side);
-        log(s, `${p.name} levanta una nueva Muralla en el lado ${NAMES.side[action.side]} de su Capital.`, seat);
+        log(s, { es: `${p.name} levanta una nueva Muralla en el lado ${NAMES.side[action.side]} de su Capital.`, en: `${p.name} raises a new Wall on the ${NAMES_EN.side[action.side]} side of their Capital.` }, seat);
       }
       s.turn!.civilUsed = true;
       break;
@@ -768,7 +841,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       pay(p.resources, TOWER_COST);
       p.tower = action.pos;
       s.turn!.civilUsed = true;
-      log(s, `${p.name} levanta un Torreón en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} levanta un Torreón en ${coordLabel(action.pos)}.`, en: `${p.name} raises a Tower at ${coordLabel(action.pos)}.` }, seat);
       break;
     }
     case 'towerAttack': {
@@ -817,7 +890,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const newId = `u${s.nextUnitId}`;
       addUnit(s, seat, t, action.pos);
       ensureMilitary(s).recruited = newId;
-      log(s, `${p.name} recluta ${NAMES.unit[t]} en ${coordLabel(action.pos)}.`, seat);
+      log(s, { es: `${p.name} recluta ${NAMES.unit[t]} en ${coordLabel(action.pos)}.`, en: `${p.name} recruits ${NAMES_EN.unit[t]} at ${coordLabel(action.pos)}.` }, seat);
       maybeCloseMilitary(s);
       break;
     }
@@ -849,7 +922,12 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
         a.done = stepsLeft(s, o, a) === 0 && !attackAvailable(s, o, a);
       }
       const what = movers.length > 1 ? `${movers.length} ${NAMES.unit[u!.type]}` : NAMES.unit[u!.type];
-      log(s, `${p.name} mueve ${what} de ${coordLabel(from)} a ${coordLabel(action.to)}.`, seat);
+      const whatEn = movers.length > 1 ? `${movers.length} ${NAMES_EN.unitPlural[u!.type]}` : NAMES_EN.unit[u!.type];
+      log(
+        s,
+        { es: `${p.name} mueve ${what} de ${coordLabel(from)} a ${coordLabel(action.to)}.`, en: `${p.name} moves ${whatEn} from ${coordLabel(from)} to ${coordLabel(action.to)}.` },
+        seat,
+      );
       maybeCloseMilitary(s);
       break;
     }
@@ -949,8 +1027,14 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       victim.wallDestroyedTurn = {};
       log(
         s,
-        `¡${p.name} conquista la Capital de ${victim.name} con ${NAMES.unit[u!.type]} desde ${coordLabel(u!.pos)}!` +
-          (victim.originalWalls.length ? ' Sus Murallas originales se restauran.' : ''),
+        {
+          es:
+            `¡${p.name} conquista la Capital de ${victim.name} con ${NAMES.unit[u!.type]} desde ${coordLabel(u!.pos)}!` +
+            (victim.originalWalls.length ? ' Sus Murallas originales se restauran.' : ''),
+          en:
+            `${p.name} conquers the Capital of ${victim.name} with ${NAMES_EN.unit[u!.type]} from ${coordLabel(u!.pos)}!` +
+            (victim.originalWalls.length ? ' Its original Walls are restored.' : ''),
+        },
         seat,
       );
       checkVictory(s, seat);
@@ -962,7 +1046,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const m = s.turn!.military;
       if (!m?.open) fail('No hay Acción Militar en curso.');
       m.open = false;
-      log(s, `${p.name} termina su Acción Militar.`, seat);
+      log(s, { es: `${p.name} termina su Acción Militar.`, en: `${p.name} ends their Military Action.` }, seat);
       break;
     }
     case 'defenderChoice': {
@@ -971,7 +1055,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!pr.options.includes(action.unit)) fail('Tipo no presente en la loseta.');
       s.prompt = null;
       s.combat!.defenderType = action.unit;
-      log(s, `${p.name} defiende con ${NAMES.unit[action.unit]}.`, seat);
+      log(s, { es: `${p.name} defiende con ${NAMES.unit[action.unit]}.`, en: `${p.name} defends with ${NAMES_EN.unit[action.unit]}.` }, seat);
       rollCombat(s);
       break;
     }
@@ -987,12 +1071,12 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
           const old = c.attackerDice;
           c.attackerDice = rollDice(s, old.length);
           c.attackerFaith = true;
-          log(s, `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.attackerDice.join(',')}].`, seat);
+          log(s, { es: `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.attackerDice.join(',')}].`, en: `${p.name} uses Faith (${FAITH_COST} Water): [${old.join(',')}] → [${c.attackerDice.join(',')}].` }, seat);
         } else {
           const old = c.defenderDice;
           c.defenderDice = rollDice(s, old.length);
           c.defenderFaith = true;
-          log(s, `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.defenderDice.join(',')}].`, seat);
+          log(s, { es: `${p.name} usa Fe (${FAITH_COST} Agua): [${old.join(',')}] → [${c.defenderDice.join(',')}].`, en: `${p.name} uses Faith (${FAITH_COST} Water): [${old.join(',')}] → [${c.defenderDice.join(',')}].` }, seat);
         }
       }
       combatStage(s, pr.role === 'attacker' ? 'defender' : 'resolve');
@@ -1005,7 +1089,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (action.accept) {
         const movers = advancers(s, seat, pr.from, pr.to);
         for (const u of movers) if (canStand(s, seat, u.type, pr.to)) u.pos = pr.to;
-        log(s, `${p.name} avanza con su formación a ${coordLabel(pr.to)}.`, seat);
+        log(s, { es: `${p.name} avanza con su formación a ${coordLabel(pr.to)}.`, en: `${p.name} advances their formation to ${coordLabel(pr.to)}.` }, seat);
       }
       s.combat = null;
       maybeCloseMilitary(s);
@@ -1019,7 +1103,14 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (p.resources[action.give] < CONVERT_RATE) fail(`Necesitas ${CONVERT_RATE} recursos iguales.`);
       p.resources[action.give] -= CONVERT_RATE;
       p.resources[action.get] += 1;
-      log(s, `${p.name} convierte ${CONVERT_RATE} ${NAMES.resource[action.give]} en 1 ${NAMES.resource[action.get]}.`, seat);
+      log(
+        s,
+        {
+          es: `${p.name} convierte ${CONVERT_RATE} ${NAMES.resource[action.give]} en 1 ${NAMES.resource[action.get]}.`,
+          en: `${p.name} converts ${CONVERT_RATE} ${NAMES_EN.resource[action.give]} into 1 ${NAMES_EN.resource[action.get]}.`,
+        },
+        seat,
+      );
       break;
     }
     case 'proposeTrade': {
@@ -1035,7 +1126,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       if (!canAfford(p.resources, give)) fail('No tienes esos recursos.');
       if (!canAfford(s.players[action.to].resources, receive)) fail('El otro jugador no tiene esos recursos.');
       s.prompt = { kind: 'trade', seat: action.to, from: seat, give, receive };
-      log(s, `${p.name} propone un intercambio a ${pname(s, action.to)}.`, seat);
+      log(s, { es: `${p.name} propone un intercambio a ${pname(s, action.to)}.`, en: `${p.name} offers a trade to ${pname(s, action.to)}.` }, seat);
       break;
     }
     case 'respondTrade': {
@@ -1053,8 +1144,8 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
           from.resources[r] += pr.receive[r];
         }
         s.turn!.tradeDone = true;
-        log(s, `${p.name} acepta el intercambio de ${from.name}.`, seat);
-      } else log(s, `${p.name} rechaza el intercambio de ${from.name}.`, seat);
+        log(s, { es: `${p.name} acepta el intercambio de ${from.name}.`, en: `${p.name} accepts ${from.name}'s trade.` }, seat);
+      } else log(s, { es: `${p.name} rechaza el intercambio de ${from.name}.`, en: `${p.name} rejects ${from.name}'s trade.` }, seat);
       break;
     }
     case 'cancelTrade': {
@@ -1062,12 +1153,12 @@ export function applyAction(state: GameState, seat: Seat, action: Action): GameS
       const pr = s.prompt;
       if (pr?.kind !== 'trade' || pr.from !== seat) fail('No tienes ninguna oferta pendiente.');
       s.prompt = null;
-      log(s, `${p.name} retira su oferta de intercambio.`, seat);
+      log(s, { es: `${p.name} retira su oferta de intercambio.`, en: `${p.name} withdraws their trade offer.` }, seat);
       break;
     }
     case 'endTurn': {
       requireTurn(s, seat);
-      log(s, `${p.name} termina su turno.`, seat);
+      log(s, { es: `${p.name} termina su turno.`, en: `${p.name} ends their turn.` }, seat);
       s.current = (s.current + 1) % 4;
       startTurn(s);
       break;

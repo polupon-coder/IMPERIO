@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client';
 import type { PublicRoom } from '../server/rooms';
+import { tr } from './i18n';
 
 export type { PublicRoom };
 export const socket = io({ transports: ['websocket', 'polling'] });
@@ -12,8 +13,9 @@ export interface Reply {
   playerId?: number;
 }
 
+/** Los errores del servidor llegan en español: se traducen al idioma de la interfaz. */
 export const call = (event: string, data?: unknown) =>
-  new Promise<Reply>((resolve) => socket.emit(event, data, (r: Reply) => resolve(r)));
+  new Promise<Reply>((resolve) => socket.emit(event, data, (r: Reply) => resolve(r.error ? { ...r, error: tr(r.error) } : r)));
 
 const KEY = 'imperio:sessions';
 type Sessions = Record<string, string>;

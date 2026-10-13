@@ -117,6 +117,7 @@ export interface Combat {
   /** A29: tropas eliminadas (todas las que combatieron en el bando perdedor). */
   casualties: string[];
   summary: string;
+  summaryEn?: string;
 }
 
 export interface TurnState {
@@ -141,6 +142,8 @@ export type Step =
 export interface LogEntry {
   n: number;
   text: string;
+  /** Mismo texto en inglés (partidas antiguas: ausente). */
+  en?: string;
   seat?: Seat;
   /** Momento del evento (ms), para intercalarlo con el chat. */
   ts?: number;

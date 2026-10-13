@@ -1,4 +1,5 @@
 // Gráficos de evolución al terminar la partida: progreso hacia la victoria, quién iba en cabeza y detalle.
+import { pn, t } from './i18n';
 import { useState } from 'react';
 import { progress, type GameState, type HistoryPoint, type Seat } from '../engine';
 import { PLAYER_COLORS } from './assets';
@@ -58,20 +59,20 @@ function LineChart({ s, history, metric, height, big }: { s: GameState; history:
 
   return (
     <figure className={`evo-chart ${big ? 'big' : ''}`}>
-      <figcaption>{metric.title}</figcaption>
+      <figcaption>{t(metric.title)}</figcaption>
       <div className="evo-plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${metric.title} por ronda`}>
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={pad.l} x2={pad.l + iw} y1={y(t)} y2={y(t)} className="evo-grid" />
-              <text x={pad.l - 6} y={y(t) + 4} className="evo-axis" textAnchor="end">
-                {t}
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('{0} por ronda', t(metric.title))}>
+          {ticks.map((tk) => (
+            <g key={tk}>
+              <line x1={pad.l} x2={pad.l + iw} y1={y(tk)} y2={y(tk)} className="evo-grid" />
+              <text x={pad.l - 6} y={y(tk) + 4} className="evo-axis" textAnchor="end">
+                {tk}
               </text>
             </g>
           ))}
-          {xTicks.map((t) => (
-            <text key={t.i} x={x(t.i)} y={H - 6} className="evo-axis" textAnchor="middle">
-              {t.r}
+          {xTicks.map((tk) => (
+            <text key={tk.i} x={x(tk.i)} y={H - 6} className="evo-axis" textAnchor="middle">
+              {tk.r}
             </text>
           ))}
           {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t + ih} className="evo-cross" />}
@@ -93,14 +94,14 @@ function LineChart({ s, history, metric, height, big }: { s: GameState; history:
             labelOk &&
             ends.map((e) => (
               <text key={e.seat} x={pad.l + iw + 10} y={e.y + 4} className="evo-label">
-                {s.players[e.seat].name}
+                {pn(s.players[e.seat].name)}
               </text>
             ))}
           <rect x={pad.l} y={pad.t} width={iw} height={ih} fill="transparent" onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
         </svg>
         {hp && (
           <div className="evo-tip" style={{ left: `${(x(hover!) / W) * 100}%` }}>
-            <b>Ronda {hp.round}</b>
+            <b>{t('Ronda {0}', hp.round)}</b>
             {seats
               .map((seat) => ({ seat, v: metric.value(hp.players[seat]) }))
               .sort((a, b) => b.v - a.v)
@@ -109,11 +110,11 @@ function LineChart({ s, history, metric, height, big }: { s: GameState; history:
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                     <Marker seat={seat} x={7} y={7} color={PLAYER_COLORS[s.players[seat].color]} r={4} />
                   </svg>
-                  <span>{s.players[seat].name}</span>
+                  <span>{pn(s.players[seat].name)}</span>
                   <b>{v}</b>
                   {big && (
                     <small className="evo-tip-parts">
-                      {hp.players[seat].buildings} ed. · {hp.players[seat].conquests} conq. · {hp.players[seat].units} trop.
+                      {t('{0} ed. · {1} conq. · {2} trop.', hp.players[seat].buildings, hp.players[seat].conquests, hp.players[seat].units)}
                     </small>
                   )}
                 </div>
@@ -139,7 +140,7 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
   const history = s.history ?? [];
   const [table, setTable] = useState(false);
   const seats = s.order.slice().sort((a, b) => a - b) as Seat[];
-  if (history.length < 2) return <p className="center muted">No hay datos suficientes de esta partida.</p>;
+  if (history.length < 2) return <p className="center muted">{t('No hay datos suficientes de esta partida.')}</p>;
   const lead = leaders(history, seats);
   const counts = seats.map((seat) => ({ seat, n: lead.filter((l) => l === seat).length })).sort((a, b) => b.n - a.n);
   return (
@@ -150,11 +151,11 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <Marker seat={seat} x={7} y={7} color={PLAYER_COLORS[s.players[seat].color]} r={4} />
             </svg>
-            {s.players[seat].name}
+            {pn(s.players[seat].name)}
           </span>
         ))}
-        <button className="link" onClick={() => setTable((t) => !t)}>
-          {table ? 'Ver gráficos' : 'Ver tabla'}
+        <button className="link" onClick={() => setTable((v) => !v)}>
+          {table ? t('Ver gráficos') : t('Ver tabla')}
         </button>
       </div>
       {table ? (
@@ -162,9 +163,9 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
           <table className="evo-table">
             <thead>
               <tr>
-                <th>Ronda</th>
+                <th>{t('Ronda')}</th>
                 {seats.map((seat) => (
-                  <th key={seat}>{s.players[seat].name}</th>
+                  <th key={seat}>{pn(s.players[seat].name)}</th>
                 ))}
               </tr>
             </thead>
@@ -174,7 +175,7 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
                   <td>{h.round}</td>
                   {seats.map((seat) => (
                     <td key={seat}>
-                      {progress(h.players[seat])} <small>({h.players[seat].buildings} ed. · {h.players[seat].conquests} conq. · {h.players[seat].units} trop.)</small>
+                      {progress(h.players[seat])} <small>({t('{0} ed. · {1} conq. · {2} trop.', h.players[seat].buildings, h.players[seat].conquests, h.players[seat].units)})</small>
                     </td>
                   ))}
                 </tr>
@@ -186,12 +187,12 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
         <>
           <LineChart s={s} history={history} metric={PROGRESS} height={300} big />
           <div className="evo-lead">
-            <span className="evo-lead-title">En cabeza</span>
+            <span className="evo-lead-title">{t('En cabeza')}</span>
             <div className="evo-strip">
               {lead.map((l, i) => (
                 <span
                   key={i}
-                  title={`Ronda ${history[i].round}: ${l === null ? 'empate' : s.players[l].name}`}
+                  title={`${t('Ronda {0}', history[i].round)}: ${l === null ? t('empate') : pn(s.players[l].name)}`}
                   style={{ background: l === null ? '#cbbd9f' : PLAYER_COLORS[s.players[l].color] }}
                 />
               ))}
@@ -200,13 +201,12 @@ export function EvolutionDialogBody({ state: s }: { state: GameState }) {
           <p className="evo-summary">
             {counts
               .filter((c) => c.n > 0)
-              .map((c) => `${s.players[c.seat].name} fue en cabeza ${c.n} ${c.n === 1 ? 'ronda' : 'rondas'}`)
+              .map((c) => (c.n === 1 ? t('{0} fue en cabeza 1 ronda', pn(s.players[c.seat].name)) : t('{0} fue en cabeza {1} rondas', pn(s.players[c.seat].name), c.n)))
               .join(' · ')}
             .
           </p>
           <p className="evo-note">
-            Un solo índice que lo integra todo: edificios hasta 40 puntos (5 por edificio), Conquistas hasta 40 (20 por
-            Conquista) y tropas hasta 20 (1 por tropa). Quien gana termina con al menos 80.
+            {t('Un solo índice que lo integra todo: edificios hasta 40 puntos (5 por edificio), Conquistas hasta 40 (20 por Conquista) y tropas hasta 20 (1 por tropa). Quien gana termina con al menos 80.')}
           </p>
         </>
       )}

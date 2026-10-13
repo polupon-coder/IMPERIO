@@ -161,6 +161,38 @@ export const UNIT_REQUIRES: Record<UnitType, Building[]> = {
 /** Unidades con alcance 2 (§84, §94). */
 export const RANGED: UnitType[] = ['arquero', 'artilleria'];
 
+/** Nombres en inglés (versión inglesa del juego). */
+export const NAMES_EN = {
+  terrain: { llanura: 'Plains', bosque: 'Forest', montana: 'Mountain', agua: 'Water' } as Record<Terrain, string>,
+  resource: { comida: 'Food', madera: 'Wood', piedra: 'Stone', agua: 'Water' } as Record<Resource, string>,
+  unit: {
+    infanteria: 'Infantry',
+    arquero: 'Archer',
+    lancero: 'Spearman',
+    caballeria: 'Cavalry',
+    artilleria: 'Artillery',
+  } as Record<UnitType, string>,
+  unitPlural: {
+    infanteria: 'Infantry',
+    arquero: 'Archers',
+    lancero: 'Spearmen',
+    caballeria: 'Cavalry',
+    artilleria: 'Artillery',
+  } as Record<UnitType, string>,
+  building: {
+    cuartel: 'Barracks',
+    arqueria: 'Archery Range',
+    caballerizas: 'Stables',
+    herreria: 'Blacksmith',
+    iglesia: 'Church',
+    mercado: 'Market',
+    biblioteca: 'Library',
+    ayuntamiento: 'Town Hall',
+  } as Record<Building, string>,
+  side: { N: 'north', S: 'south', E: 'east', O: 'west' } as Record<Side, string>,
+  color: { rojo: 'Red', azul: 'Blue', amarillo: 'Yellow', verde: 'Green' },
+};
+
 export const NAMES = {
   terrain: { llanura: 'Llanura', bosque: 'Bosque', montana: 'Montaña', agua: 'Agua' } as Record<Terrain, string>,
   resource: { comida: 'Comida', madera: 'Madera', piedra: 'Piedra', agua: 'Agua' } as Record<Resource, string>,

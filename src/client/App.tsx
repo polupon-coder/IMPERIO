@@ -4,6 +4,7 @@ import { BOT_LABEL, BOT_LEVELS, PLAYER_COLORS, coatOfArms } from './assets';
 import { Game } from './Game';
 import { installButtonSounds, setMusic, useMuted } from './sounds';
 import { SpeakerIcon } from './icons';
+import { pn, setLang, t, useLang } from './i18n';
 import { call, forgetSession, lastCode, loadSessions, saveSession, socket, tabSessions, type PublicRoom } from './socket';
 
 /** Cada Capital tiene siempre el mismo color (igual que en el servidor). */
@@ -50,7 +51,7 @@ export function App() {
   }, []);
 
   const entered = (r: { ok: boolean; error?: string; code?: string; token?: string; playerId?: number }) => {
-    if (!r.ok) return setError(r.error ?? 'Error');
+    if (!r.ok) return setError(r.error ?? t('Error'));
     setError('');
     saveSession(r.code!, r.token!);
     setMyId(r.playerId!);
@@ -70,13 +71,18 @@ export function App() {
   const inGame = !!(room && me && room.game);
   useEffect(() => setMusic(!inGame), [inGame]);
   const [muted, toggleMuted] = useMuted();
+  useLang(); // vuelve a pintar todo al cambiar de idioma
+  const musicLabel = muted ? t('Activar música y sonidos') : t('Silenciar música y sonidos');
   return (
     <div className="app">
-      {!connected && <div className="banner">Conectando con el servidor…</div>}
+      {!connected && <div className="banner">{t('Conectando con el servidor…')}</div>}
       {!inGame && (
-        <button className="music-btn" onClick={toggleMuted} title={muted ? 'Activar música y sonidos' : 'Silenciar música y sonidos'} aria-label={muted ? 'Activar música y sonidos' : 'Silenciar música y sonidos'}>
-          <SpeakerIcon muted={muted} />
-        </button>
+        <div className="corner-btns">
+          <LangSwitch />
+          <button className="music-btn" onClick={toggleMuted} title={musicLabel} aria-label={musicLabel}>
+            <SpeakerIcon muted={muted} />
+          </button>
+        </div>
       )}
       {!room || !me ? (
         <Home onEnter={entered} error={error} />
@@ -88,6 +94,24 @@ export function App() {
     </div>
   );
 }
+
+/** Selector de idioma (cada dispositivo guarda el suyo). */
+export function LangSwitch() {
+  const lang = useLang();
+  return (
+    <span className="lang-switch" role="group" aria-label="Idioma / Language">
+      {(['es', 'en'] as const).map((l) => (
+        <button key={l} className={lang === l ? 'on' : ''} aria-pressed={lang === l} onClick={() => setLang(l)}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/** Texto con saltos de línea (botones-sello de dos líneas). */
+const lines = (text: string) =>
+  text.split('\n').flatMap((l, i) => (i > 0 ? [<br key={'b' + i} />, l] : [l]));
 
 function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) {
   const [name, setName] = useState(() => {
@@ -116,15 +140,15 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
     <div className="home">
       <div className="home-sheet home-battle">
         <img className="home-title" src="/assets/ui/victoria-titulo.webp" alt="Imperio" />
-        <p className="home-credit">Un juego de Pol Lupon</p>
+        <p className="home-credit">{t('Un juego de Pol Lupon')}</p>
         <button className="seal home-play" onClick={() => setOpen(true)}>
-          Jugar
+          {t('Jugar')}
         </button>
       </div>
       {(open || !!error) && (
         <div className="modal-backdrop" onClick={() => setOpen(false)}>
-          <div className="modal card home-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Jugar">
-            <button className="modal-close" onClick={() => setOpen(false)} aria-label="Cerrar" title="Cerrar">
+          <div className="modal card home-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t('Jugar')}>
+            <button className="modal-close" onClick={() => setOpen(false)} aria-label={t('Cerrar')} title={t('Cerrar')}>
               ×
             </button>
         <div className="home-form">
@@ -134,8 +158,8 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
             value={name}
             maxLength={20}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Tu nombre"
-            aria-label="Tu nombre"
+            placeholder={t('Tu nombre')}
+            aria-label={t('Tu nombre')}
           />
           {joining && !invited ? (
             <div className="home-actions">
@@ -145,23 +169,21 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
                 maxLength={5}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && code.length === 5 && join()}
-                placeholder="Código del Mundo"
-                aria-label="Código del Mundo"
+                placeholder={t('Código del Mundo')}
+                aria-label={t('Código del Mundo')}
                 className="ink-input code-input"
               />
               <button className="seal" disabled={code.length < 5} onClick={join}>
-                Entrar
+                {t('Entrar')}
               </button>
               <button className="link home-back" onClick={() => setJoining(false)}>
-                volver
+                {t('volver')}
               </button>
             </div>
           ) : invited ? (
             <div className="home-actions">
               <button className="seal" disabled={!name.trim()} onClick={join}>
-                Entrar al
-                <br />
-                Mundo {invited}
+                {lines(t('Entrar al\nMundo {0}', invited))}
               </button>
             </div>
           ) : (
@@ -174,12 +196,10 @@ function Home({ onEnter, error }: { onEnter: (r: any) => void; error: string }) 
                   onEnter(await call('createRoom', { name }));
                 }}
               >
-                Crear
-                <br />
-                partida
+                {lines(t('Crear\npartida'))}
               </button>
               <button className="seal" disabled={!name.trim()} onClick={() => setJoining(true)}>
-                Unirse
+                {t('Unirse')}
               </button>
             </div>
           )}
@@ -220,11 +240,11 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
   return (
     <div className="lobby">
       <div className="parchment lobby-sheet">
-        <h1 className="lobby-title">Mundo {room.code}</h1>
+        <h1 className="lobby-title">{t('Mundo {0}', room.code)}</h1>
         <div className="row share">
           <input readOnly value={link} className="ink-input link-input" onFocus={(e) => e.target.select()} />
           <button onClick={() => navigator.clipboard?.writeText(link).then(() => setCopied(true))}>
-            {copied ? 'Copiado' : 'Copiar enlace'}
+            {copied ? t('Copiado') : t('Copiar enlace')}
           </button>
         </div>
         <div className="seats">
@@ -237,14 +257,16 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                 <div className="seat-info">
                   {p?.bot ? (
                     <>
-                      <div className="seat-name">{p.name}</div>
+                      <div className="seat-name">{pn(p.name)}</div>
                       <div className="seat-meta">
-                        <em>sistema · {BOT_LABEL[p.bot]}</em>
+                        <em>
+                          {t('sistema')} · {t(BOT_LABEL[p.bot])}
+                        </em>
                       </div>
-                      <div className="ok">✔ Preparado</div>
+                      <div className="ok">✔ {t('Preparado')}</div>
                       {isHost && (
                         <button className="link" onClick={() => botCall('removeBot', { playerId: p.id })}>
-                          Quitar sistema
+                          {t('Quitar sistema')}
                         </button>
                       )}
                     </>
@@ -252,12 +274,12 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                     <>
                       <div className="seat-name">{p.name}</div>
                       <div className="seat-meta">
-                        <em>{p.local === me.id ? 'en este ordenador' : `con ${room.players.find((x) => x.id === p.local)?.name ?? '—'}`}</em>
+                        <em>{p.local === me.id ? t('en este ordenador') : t('con {0}', room.players.find((x) => x.id === p.local)?.name ?? '—')}</em>
                       </div>
-                      <div className="ok">✔ Preparado</div>
+                      <div className="ok">✔ {t('Preparado')}</div>
                       {(p.local === me.id || isHost) && (
                         <button className="link" onClick={() => botCall('removeLocal', { playerId: p.id })}>
-                          Quitar jugador
+                          {t('Quitar jugador')}
                         </button>
                       )}
                     </>
@@ -265,16 +287,16 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                     <>
                       <div className="seat-name">{p.name}</div>
                       <div className="seat-meta">
-                        {p.id === room.hostId && <em>anfitrión</em>} {p.id === me.id && <em>(tú)</em>}
-                        {!p.online && <span className="offline"> desconectado</span>}
+                        {p.id === room.hostId && <em>{t('anfitrión')}</em>} {p.id === me.id && <em>{t('(tú)')}</em>}
+                        {!p.online && <span className="offline"> {t('desconectado')}</span>}
                       </div>
-                      <div className={p.ready ? 'ok' : 'muted'}>{p.ready ? '✔ Preparado' : 'Sin confirmar'}</div>
+                      <div className={p.ready ? 'ok' : 'muted'}>{p.ready ? `✔ ${t('Preparado')}` : t('Sin confirmar')}</div>
                     </>
                   ) : (
                     <>
-                      <div className="seat-name muted">Trono vacante</div>
+                      <div className="seat-name muted">{t('Trono vacante')}</div>
                       <div className="seat-free-actions">
-                        {me.seat !== seat && <button onClick={() => update({ seat })}>Ocupar esta Capital</button>}
+                        {me.seat !== seat && <button onClick={() => update({ seat })}>{t('Ocupar esta Capital')}</button>}
                         {me.local == null &&
                           (localSeat === seat ? (
                             <form
@@ -288,27 +310,27 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                                 autoFocus
                                 className="ink-input"
                                 maxLength={20}
-                                placeholder="Nombre"
+                                placeholder={t('Nombre')}
                                 value={localName}
                                 onChange={(e) => setLocalName(e.target.value)}
                               />
                               <button type="submit" disabled={!localName.trim()}>
-                                Añadir
+                                {t('Añadir')}
                               </button>
-                              <button type="button" className="link" onClick={() => setLocalSeat(null)} aria-label="Cancelar">
+                              <button type="button" className="link" onClick={() => setLocalSeat(null)} aria-label={t('Cancelar')}>
                                 ×
                               </button>
                             </form>
                           ) : (
                             <button
                               className="add-local-btn"
-                              title="Otra persona jugará en este mismo ordenador, por turnos"
+                              title={t('Otra persona jugará en este mismo ordenador, por turnos')}
                               onClick={() => {
                                 setLocalSeat(seat);
                                 setLocalName('');
                               }}
                             >
-                              + Jugador aquí
+                              {t('+ Jugador aquí')}
                             </button>
                           ))}
                         {isHost && (
@@ -316,7 +338,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                             COM:
                             {BOT_LEVELS.map((level) => (
                               <button key={level} onClick={() => botCall('addBot', { seat, level })}>
-                                {BOT_LABEL[level]}
+                                {t(BOT_LABEL[level])}
                               </button>
                             ))}
                           </span>
@@ -332,22 +354,10 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
         <div className="row lobby-actions">
           <button
             className={`seal ${me.ready ? 'dim' : 'green'}`}
-            title={me.ready ? 'Pulsa de nuevo si aún no estás preparado' : ''}
+            title={me.ready ? t('Pulsa de nuevo si aún no estás preparado') : ''}
             onClick={() => update({ ready: !me.ready })}
           >
-            {me.ready ? (
-              <>
-                No estoy
-                <br />
-                preparado
-              </>
-            ) : (
-              <>
-                Estoy
-                <br />
-                preparado
-              </>
-            )}
+            {lines(me.ready ? t('No estoy\npreparado') : t('Estoy\npreparado'))}
           </button>
           {isHost && (
             <button
@@ -358,17 +368,15 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                 setError(r.ok ? '' : r.error ?? '');
               }}
             >
-              Iniciar
-              <br />
-              partida
+              {lines(t('Iniciar\npartida'))}
             </button>
           )}
         </div>
         <p className="muted center">
-          {room.players.length}/4 jugadores.{' '}
+          {t('{0}/4 jugadores.', room.players.length)}{' '}
           {isHost
-            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con el sistema o con jugadores en este ordenador.'
-            : 'El anfitrión iniciará la partida.'}{' '}
+            ? t('Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con el sistema o con jugadores en este ordenador.')
+            : t('El anfitrión iniciará la partida.')}{' '}
           <button
             className="link"
             onClick={async () => {
@@ -376,7 +384,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
               onExit();
             }}
           >
-            Salir del mundo
+            {t('Salir del mundo')}
           </button>
         </p>
         {error && <p className="error center">{error}</p>}

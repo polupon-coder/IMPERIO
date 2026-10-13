@@ -11,6 +11,8 @@ import {
   type Resources,
 } from '../engine';
 import { UNIT_IMAGES, buildingImage, resourceIcon } from './assets';
+import { t, useLang } from './i18n';
+import { RulesEnBody } from './RulesEn';
 
 const TABS = ['Objetivo', 'Fase I', 'Fase II', 'Edificios', 'Tropas', 'Combate', 'Murallas, Torreón y Capitales'] as const;
 type Tab = (typeof TABS)[number];
@@ -41,16 +43,26 @@ function Cost({ r }: { r: Resources }) {
 
 export function RulesSheet() {
   const [tab, setTab] = useState<Tab>('Objetivo');
+  const lang = useLang();
   return (
     <div className="rules">
       <nav className="rules-tabs">
-        {TABS.map((t) => (
-          <button key={t} className={t === tab ? 'selected' : ''} onClick={() => setTab(t)}>
-            {t}
+        {TABS.map((x) => (
+          <button key={x} className={x === tab ? 'selected' : ''} onClick={() => setTab(x)}>
+            {t(x)}
           </button>
         ))}
       </nav>
       <div className="rules-body">
+        {lang === 'en' ? <RulesEnBody tab={tab} /> : <RulesEsBody tab={tab} />}
+      </div>
+    </div>
+  );
+}
+
+function RulesEsBody({ tab }: { tab: Tab }) {
+  return (
+    <>
         {tab === 'Objetivo' && (
           <>
             <p className="rules-lead">
@@ -373,7 +385,6 @@ export function RulesSheet() {
             </ul>
           </>
         )}
-      </div>
-    </div>
+    </>
   );
 }
