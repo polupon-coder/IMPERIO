@@ -51,6 +51,7 @@ import {
   type Terrain,
   type Unit,
   type UnitType,
+  pendingSeats,
 } from '../engine';
 import { useGameSounds, useMuted } from './sounds';
 import { SpeakerIcon } from './icons';
@@ -107,7 +108,18 @@ export function Game({
   onExit: () => void;
 }) {
   const s = room.game!;
-  const mySeat = me.seat as Seat;
+  // Modo local: este ordenador juega también por sus jugadores locales; la pantalla pasa al que
+  // tenga que decidir (y se queda en el último mientras deciden otros).
+  const locals = room.players.filter((p) => p.local === me.id && !p.bot && p.seat !== null);
+  const controlled = [me.seat as Seat, ...locals.map((p) => p.seat as Seat)];
+  const lastActor = useRef<Seat>(me.seat as Seat);
+  const pending = s.phase === 'GAME_OVER' ? [] : pendingSeats(s);
+  const nextActor = pending.find((x) => controlled.includes(x));
+  if (nextActor !== undefined) lastActor.current = nextActor;
+  if (!controlled.includes(lastActor.current)) lastActor.current = me.seat as Seat;
+  const mySeat = lastActor.current;
+  const actor = room.players.find((p) => p.seat === mySeat)!;
+  const [handoffSeen, setHandoffSeen] = useState<Seat | null>(null);
   const my = s.players[mySeat];
   const active = s.order[s.current];
   const myTurn = active === mySeat;
@@ -131,8 +143,11 @@ export function Game({
       setMode({ kind: 'none' });
   }, [room.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Al cambiar de jugador en este ordenador se limpia la selección
+  useEffect(() => setMode({ kind: 'none' }), [mySeat]);
+
   const send = async (action: Action, keepMode = false) => {
-    const r = await call('action', action);
+    const r = actor.id === me.id ? await call('action', action) : await call('actAs', { playerId: actor.id, action });
     if (!r.ok) setError(r.error ?? 'Acción no válida');
     else {
       setError('');
@@ -320,6 +335,18 @@ export function Game({
         </span>
       </header>
 
+      {locals.length > 0 && handoffSeen !== mySeat && s.phase !== 'GAME_OVER' && (
+        <Modal title="Cambio de jugador" onClose={() => setHandoffSeen(mySeat)} noClose top>
+          <div className="handoff" style={{ ['--owner' as string]: PLAYER_COLORS[my.color] }}>
+            <img className="handoff-coat" src={coatOfArms(my.color)} alt="" />
+            <p className="handoff-title">Turno de {my.name}</p>
+            <p className="center muted">Pásaselo a {my.name}.</p>
+            <button className="seal green" onClick={() => setHandoffSeen(mySeat)}>
+              Empezar
+            </button>
+          </div>
+        </Modal>
+      )}
       {tradeOpen && <TradeDialog state={s} mySeat={mySeat} send={send} onClose={() => setTradeOpen(false)} />}
       {s.prompt?.kind === 'trade' && s.prompt.seat === mySeat && <OfferDialog state={s} send={send} />}
       <RewardDialog state={s} mySeat={mySeat} send={send} />
@@ -406,6 +433,7 @@ export function Game({
             state={s}
             room={room}
             mySeat={mySeat}
+            meId={me.id}
             onBuild={(b) => send({ type: 'build', building: b })}
             onRecruit={(u) => setMode({ kind: 'recruit', unit: u })}
             onWalls={() => setWallsOpen(true)}
@@ -602,12 +630,11 @@ function recruitable(s: GameState, seat: Seat, u: UnitType) {
 }
 
 /** Máquina, desconectado y, para el anfitrión, ceder a la máquina el sitio de un desconectado. */
-function SeatStatus({ lobby, room, mySeat }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; mySeat: Seat }) {
+function SeatStatus({ lobby, room, meId }: { lobby?: PublicRoom['players'][number]; room: PublicRoom; meId: number }) {
   if (!lobby) return null;
   if (lobby.bot) return <span className="bot-tag" title={`Juega el sistema (${BOT_LABEL[lobby.bot]})`}>sistema</span>;
   if (lobby.online) return null;
-  const me = room.players.find((x) => x.seat === mySeat);
-  const host = me && me.id === room.hostId && room.game?.phase !== 'GAME_OVER';
+  const host = meId === room.hostId && room.game?.phase !== 'GAME_OVER';
   return (
     <>
       <span className="offline">desconectado</span>
@@ -901,6 +928,7 @@ function PlayersPanel({
   state: s,
   room,
   mySeat,
+  meId,
   onBuild,
   onRecruit,
   onWalls,
@@ -910,6 +938,7 @@ function PlayersPanel({
   state: GameState;
   room: PublicRoom;
   mySeat: Seat;
+  meId: number;
   onBuild: (b: Building) => void;
   onRecruit: (u: UnitType) => void;
   onWalls: () => void;
@@ -976,7 +1005,7 @@ function PlayersPanel({
               <div className="player-head">
                 <img className="coat" src={coatOfArms(p.color)} alt="" />
                 <b>{p.name}</b>
-                <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
+                <SeatStatus lobby={lobby} room={room} meId={meId} />
                 <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
                   ⚑ {p.conquests.length}/{VICTORY.conquests}
                 </span>
@@ -1023,7 +1052,7 @@ function PlayersPanel({
               <img className="coat coat-big" src={coatOfArms(p.color)} alt="" />
               <b>{p.name}</b>
               {seat === mySeat && <em> (tú)</em>}
-              <SeatStatus lobby={lobby} room={room} mySeat={mySeat} />
+              <SeatStatus lobby={lobby} room={room} meId={meId} />
               <span className="conquests" title={`Conquistas (hacen falta ${VICTORY.conquests}, de Capitales distintas)`}>
                 ⚑ {p.conquests.length}/{VICTORY.conquests}
               </span>
@@ -1256,16 +1285,19 @@ function Modal({
   children,
   wide,
   noClose,
+  top,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   wide?: boolean;
   noClose?: boolean;
+  /** Por encima de cualquier otra ventana (cambio de jugador en el mismo ordenador). */
+  top?: boolean;
 }) {
   // Portal al <body>: la ventana flota sobre toda la página aunque se abra desde un panel.
   return createPortal(
-    <div className="modal-backdrop" onClick={noClose ? undefined : onClose}>
+    <div className={`modal-backdrop ${top ? 'top' : ''}`} onClick={noClose ? undefined : onClose}>
       <div className={`modal card ${wide ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         {!noClose && (
           <button className="modal-close" onClick={onClose} aria-label="Cerrar" title="Cerrar">

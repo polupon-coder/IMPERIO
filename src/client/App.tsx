@@ -209,6 +209,13 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
     setError(r.ok ? '' : r.error ?? '');
   };
   const allReady = room.players.length === 4 && room.players.every((p) => p.ready);
+  // Capital en la que se está escribiendo el nombre de un jugador local
+  const [localSeat, setLocalSeat] = useState<Seat | null>(null);
+  const [localName, setLocalName] = useState('');
+  const addLocal = async (seat: Seat) => {
+    await botCall('addLocal', { seat, name: localName });
+    setLocalSeat(null);
+  };
 
   return (
     <div className="lobby">
@@ -241,6 +248,19 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                         </button>
                       )}
                     </>
+                  ) : p?.local != null ? (
+                    <>
+                      <div className="seat-name">{p.name}</div>
+                      <div className="seat-meta">
+                        <em>{p.local === me.id ? 'en este ordenador' : `con ${room.players.find((x) => x.id === p.local)?.name ?? '—'}`}</em>
+                      </div>
+                      <div className="ok">✔ Preparado</div>
+                      {(p.local === me.id || isHost) && (
+                        <button className="link" onClick={() => botCall('removeLocal', { playerId: p.id })}>
+                          Quitar jugador
+                        </button>
+                      )}
+                    </>
                   ) : p ? (
                     <>
                       <div className="seat-name">{p.name}</div>
@@ -255,6 +275,42 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
                       <div className="seat-name muted">Trono vacante</div>
                       <div className="seat-free-actions">
                         {me.seat !== seat && <button onClick={() => update({ seat })}>Ocupar esta Capital</button>}
+                        {me.local == null &&
+                          (localSeat === seat ? (
+                            <form
+                              className="add-local"
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                addLocal(seat);
+                              }}
+                            >
+                              <input
+                                autoFocus
+                                className="ink-input"
+                                maxLength={20}
+                                placeholder="Nombre"
+                                value={localName}
+                                onChange={(e) => setLocalName(e.target.value)}
+                              />
+                              <button type="submit" disabled={!localName.trim()}>
+                                Añadir
+                              </button>
+                              <button type="button" className="link" onClick={() => setLocalSeat(null)} aria-label="Cancelar">
+                                ×
+                              </button>
+                            </form>
+                          ) : (
+                            <button
+                              className="add-local-btn"
+                              title="Otra persona jugará en este mismo ordenador, por turnos"
+                              onClick={() => {
+                                setLocalSeat(seat);
+                                setLocalName('');
+                              }}
+                            >
+                              + Jugador aquí
+                            </button>
+                          ))}
                         {isHost && (
                           <span className="add-bot">
                             COM:
@@ -311,7 +367,7 @@ function Lobby({ room, me, onExit }: { room: PublicRoom; me: PublicRoom['players
         <p className="muted center">
           {room.players.length}/4 jugadores.{' '}
           {isHost
-            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con el sistema.'
+            ? 'Podrás iniciar la partida cuando los 4 estén preparados. Puedes completar las Capitales vacías con el sistema o con jugadores en este ordenador.'
             : 'El anfitrión iniciará la partida.'}{' '}
           <button
             className="link"

@@ -16,6 +16,8 @@ export interface LobbyPlayer {
   bot?: BotLevel | null;
   /** Sitio de un humano cedido a la máquina: lo recupera al volver. */
   takeover?: boolean;
+  /** Jugador local: juega en el mismo ordenador que el jugador con este id (que actúa por él). */
+  local?: number | null;
 }
 
 export interface Room {
@@ -169,8 +171,9 @@ export function updateLobby(
 export function leaveLobby(room: Room, token: string) {
   if (room.game) return;
   const p = playerByToken(room, token);
-  room.players = room.players.filter((x) => x !== p);
-  const human = room.players.find((x) => !x.bot);
+  // Con él se van los jugadores locales de su ordenador
+  room.players = room.players.filter((x) => x !== p && x.local !== p.id);
+  const human = room.players.find((x) => !x.bot && x.local == null);
   if (room.hostId === p.id && human) room.hostId = human.id;
   save(room);
 }
@@ -188,9 +191,16 @@ export function startGame(room: Room, token: string) {
   save(room);
 }
 
-export function act(room: Room, token: string, action: Action) {
+export function act(room: Room, token: string, action: Action, asPlayer?: number) {
   if (!room.game) throw new RoomError('La partida no ha empezado.');
-  const p = playerByToken(room, token);
+  let p = playerByToken(room, token);
+  if (asPlayer !== undefined && asPlayer !== p.id) {
+    // Jugador local: solo puede actuar por él quien lo tiene en su ordenador
+    const local = room.players.find((x) => x.id === asPlayer);
+    if (!local || local.local !== p.id) throw new RoomError('Ese jugador no está en tu ordenador.');
+    if (local.bot) throw new RoomError('Ese sitio lo juega ahora la máquina.');
+    p = local;
+  }
   try {
     room.game = applyAction(room.game, p.seat!, action);
   } catch (e) {
@@ -223,8 +233,10 @@ export function publicRoom(room: Room, online: Set<number>) {
       seat: p.seat,
       color: p.color,
       ready: p.ready,
-      online: online.has(p.id),
+      // Un jugador local está conectado si lo está el ordenador en el que juega
+      online: online.has(p.id) || (p.local != null && online.has(p.local)),
       bot: p.bot ?? null,
+      local: p.local ?? null,
     })),
     game,
     chat: room.chat ?? [],
@@ -274,6 +286,41 @@ export function removeBot(room: Room, token: string, playerId: number) {
   save(room);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Jugadores locales (varias personas en el mismo ordenador)
+// ---------------------------------------------------------------------------------------------
+
+/** Añade un jugador que juega en el ordenador de quien lo añade, por turnos en la misma pantalla. */
+export function addLocal(room: Room, token: string, seat: Seat, name: unknown) {
+  const owner = playerByToken(room, token);
+  if (owner.local != null) throw new RoomError('Un jugador local no puede añadir otros.');
+  if (room.game) throw new RoomError('La partida ya ha empezado.');
+  if (![0, 1, 2, 3].includes(seat)) throw new RoomError('Capital no válida.');
+  if (room.players.some((p) => p.seat === seat)) throw new RoomError('Esa Capital ya está ocupada.');
+  if (room.players.length >= 4) throw new RoomError('El Mundo está completo (4 jugadores).');
+  room.players.push({
+    id: room.players.reduce((m, x) => Math.max(m, x.id), -1) + 1,
+    token: randomBytes(16).toString('hex'),
+    name: cleanName(name),
+    seat,
+    color: SEAT_COLOR[seat],
+    ready: true,
+    local: owner.id,
+  });
+  save(room);
+}
+
+/** Quita un jugador local (quien lo añadió o el anfitrión). */
+export function removeLocal(room: Room, token: string, playerId: number) {
+  const me = playerByToken(room, token);
+  if (room.game) throw new RoomError('La partida ya ha empezado.');
+  const p = room.players.find((x) => x.id === playerId);
+  if (p?.local == null) throw new RoomError('Ese jugador no es local.');
+  if (p.local !== me.id && me.id !== room.hostId) throw new RoomError('Solo quien lo añadió puede quitarlo.');
+  room.players = room.players.filter((x) => x !== p);
+  save(room);
+}
+
 /** El anfitrión cede a la máquina el sitio de un jugador desconectado (lo recupera al volver). */
 export function takeover(room: Room, token: string, playerId: number, level: BotLevel, online: Set<number>) {
   requireHost(room, token);
@@ -287,12 +334,15 @@ export function takeover(room: Room, token: string, playerId: number, level: Bot
   save(room);
 }
 
-/** Al volver, el humano recupera su sitio. Devuelve true si estaba cedido. */
+/** Al volver, el humano recupera su sitio (y los de sus jugadores locales). Devuelve true si estaba cedido. */
 export function releaseTakeover(room: Room, token: string) {
   const p = playerByToken(room, token);
-  if (!p.takeover) return false;
-  p.bot = null;
-  p.takeover = false;
+  const back = room.players.filter((x) => x.takeover && (x === p || x.local === p.id));
+  if (!back.length) return false;
+  for (const x of back) {
+    x.bot = null;
+    x.takeover = false;
+  }
   save(room);
   return true;
 }

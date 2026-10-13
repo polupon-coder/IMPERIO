@@ -12,9 +12,10 @@ en tiempo real y el servidor aplica automáticamente todas las reglas.
 2. Comparte el enlace (`…/?sala=CÓDIGO`) o el código de 5 letras.
 3. Cada jugador elige su Capital (Noroeste, Noreste, Sureste o Suroeste) y su color, y pulsa **Estoy preparado**.
 4. Las Capitales vacías se pueden completar con **jugadores máquina** (nivel fácil, medio o difícil): el anfitrión pulsa *COM: fácil / medio / difícil* en el trono vacante. Así se puede jugar 1 contra 3, 2 contra 2, etc.
-5. Cuando están los 4 preparados, el anfitrión pulsa **Iniciar partida**.
-6. Si alguien cierra el navegador, al volver a abrir el enlace entra automáticamente en su sitio. La sesión se guarda en el navegador y la partida en el servidor.
-7. Si un jugador se desconecta, el anfitrión puede pulsar **ceder a la máquina** junto a su nombre: la máquina juega por él hasta que vuelve, y entonces recupera su sitio.
+5. **Varios en el mismo ordenador**: en un trono vacante, *+ Jugador aquí* añade a otra persona que juega en tu pantalla. Durante la partida la pantalla pasa sola al jugador que tiene que decidir, con un aviso «Turno de …». Se puede combinar con jugadores conectados desde otro dispositivo y con máquinas.
+6. Cuando están los 4 preparados, el anfitrión pulsa **Iniciar partida**.
+7. Si alguien cierra el navegador, al volver a abrir el enlace entra automáticamente en su sitio. La sesión se guarda en el navegador y la partida en el servidor.
+8. Si un jugador se desconecta, el anfitrión puede pulsar **ceder a la máquina** junto a su nombre: la máquina juega por él hasta que vuelve, y entonces recupera su sitio.
 
 ### Jugadores máquina
 

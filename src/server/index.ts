@@ -7,6 +7,8 @@ import { Server, type Socket } from 'socket.io';
 import {
   act,
   addBot,
+  addLocal,
+  removeLocal,
   addChat,
   allRooms,
   botStep,
@@ -126,7 +128,7 @@ io.on('connection', (socket: Socket) => {
   const attach = (room: Room, token: string) => {
     detach();
     const p = playerByToken(room, token);
-    if (p.takeover) releaseTakeover(room, token); // el humano recupera su sitio
+    releaseTakeover(room, token); // el humano recupera su sitio (y el de sus jugadores locales)
     session = { code: room.code, token, id: p.id };
     socket.join(room.code);
     const m = online.get(room.code) ?? new Map<number, number>();
@@ -249,6 +251,31 @@ io.on('connection', (socket: Socket) => {
     handle(ack, () => {
       const { room, token } = current();
       act(room, token, action);
+      broadcast(room);
+    }),
+  );
+
+  // Acción de un jugador local (mismo ordenador)
+  socket.on('actAs', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      act(room, token, data?.action, Number(data?.playerId));
+      broadcast(room);
+    }),
+  );
+
+  socket.on('addLocal', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      addLocal(room, token, data?.seat, data?.name);
+      broadcast(room);
+    }),
+  );
+
+  socket.on('removeLocal', (data, ack) =>
+    handle(ack, () => {
+      const { room, token } = current();
+      removeLocal(room, token, Number(data?.playerId));
       broadcast(room);
     }),
   );
