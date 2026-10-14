@@ -55,14 +55,19 @@ header { position: relative; text-align: center; padding: 28px 16px 8px; }
 h1 { margin: 0; }
 .lema { margin: 10px 0 0; color: var(--texto); font-size: 21px; font-style: italic; text-shadow: 0 2px 6px #000; }
 
+/* Los juegos llegan por los lados hasta el borde exterior de la primera banda de
+   hierro del fondo y tapan sus pernos. La madera mide 941 × 1672 y se escala como
+   «cover», así que se calcula con la misma escala: --s píxeles por píxel de imagen.
+   La banda empieza a 120 px del borde izquierdo de la imagen y a 117 del derecho. */
 main {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 20px 16px 40px;
+  --s: max(100vw / 941, 100vh / 1672);
+  --margen: calc((100vw - 941 * var(--s)) / 2);
+  padding: 20px max(12px, calc(var(--margen) + 117 * var(--s))) 40px max(12px, calc(var(--margen) + 120 * var(--s)));
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  grid-template-columns: 1fr;
   gap: 34px 30px;
 }
+@media (min-width: 800px) { main { grid-template-columns: 1fr 1fr; } }
 .juego {
   display: flex;
   flex-direction: column;
@@ -88,7 +93,7 @@ main {
 }
 .datos {
   flex: 1; display: flex; flex-direction: column;
-  margin: 4px 3% 0;
+  margin: 4px 0 0;
   padding: 14px 20px 18px;
   background: var(--panel);
   border: 1px solid rgba(217,178,106,.25);
