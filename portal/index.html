@@ -7,86 +7,102 @@
 <meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina. / Pick a game and click to play with friends or against the computer.">
 <meta property="og:title" content="CROSSROADS INN">
 <meta property="og:description" content="IMPERIO, REGIUM, HÉROES, MANA — elige un juego y pulsa para jugar / pick a game and play.">
-<meta property="og:image" content="img/imperio.webp">
+<meta property="og:image" content="img/cartel.webp">
 <style>
 @font-face { font-family: Garamond; src: url(EBGaramond.ttf) format("truetype"); font-display: swap; }
 :root {
-  --fondo: #1b1612;
-  --fondo-2: #261f19;
-  --tarjeta: #2e261f;
+  --fondo: #140e09;
+  --panel: rgba(22, 15, 9, .78);
   --borde: #5a4a37;
   --oro: #d9b26a;
   --oro-claro: #f0d59a;
   --texto: #efe6d6;
-  --texto-suave: #b9ab95;
+  --texto-suave: #c9b99f;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse at top, rgba(217,178,106,.12), transparent 60%),
-    linear-gradient(var(--fondo), var(--fondo-2));
   background-color: var(--fondo);
   color: var(--texto);
   font-family: Garamond, Georgia, "Times New Roman", serif;
   font-size: 18px;
   line-height: 1.45;
 }
-header { text-align: center; padding: 56px 16px 28px; }
-h1 {
-  margin: 0;
-  font-size: clamp(26px, 8vw, 68px);
-  letter-spacing: .08em;
-  font-weight: 600;
-  color: var(--oro-claro);
-  text-shadow: 0 2px 0 #000, 0 0 24px rgba(217,178,106,.25);
+/* La taberna, fija detrás de todo y oscurecida para que se lea el texto. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(20,12,6,.15), rgba(12,8,4,.7) 70%),
+    linear-gradient(rgba(12,8,4,.35), rgba(12,8,4,.8)),
+    url(img/taberna.webp) center / cover no-repeat;
 }
-.lema { margin: 8px 0 0; color: var(--texto-suave); font-size: 20px; font-style: italic; }
-.adorno { display: block; width: 180px; height: 1px; margin: 22px auto 0;
-  background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+
+header { position: relative; text-align: center; padding: 28px 16px 8px; }
+.cartel {
+  display: block;
+  width: min(560px, 86vw);
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.7));
+  transform-origin: 50% 0;
+  animation: balanceo 6s ease-in-out infinite;
+}
+@keyframes balanceo { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+@media (prefers-reduced-motion: reduce) { .cartel { animation: none; } }
+h1 { margin: 0; }
+.nombre-es { margin: 10px 0 0; font-size: 22px; letter-spacing: .14em; color: var(--oro-claro); text-shadow: 0 2px 6px #000; }
+.nombre-es:empty { display: none; }
+.lema { margin: 6px 0 0; color: var(--texto); font-size: 21px; font-style: italic; text-shadow: 0 2px 6px #000; }
 
 main {
-  max-width: 920px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 12px 16px 40px;
+  padding: 20px 16px 40px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 34px 30px;
 }
 .juego {
   display: flex;
   flex-direction: column;
-  background: var(--tarjeta);
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  overflow: hidden;
   color: inherit;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,.35);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transition: transform .2s ease;
 }
-.juego:hover, .juego:focus-visible {
-  transform: translateY(-4px);
-  border-color: var(--oro);
-  box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 0 1px var(--oro);
-  outline: none;
+.juego:hover, .juego:focus-visible { transform: translateY(-5px); outline: none; }
+.portada { position: relative; aspect-ratio: 800 / 581; }
+.portada img {
+  width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.65));
+  transition: filter .2s ease;
 }
-.portada { position: relative; aspect-ratio: 8 / 5; overflow: hidden; background: #000; }
-.portada img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
-.juego:hover .portada img { transform: scale(1.04); }
+.juego:hover .portada img, .juego:focus-visible .portada img {
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.65)) drop-shadow(0 0 14px rgba(240,190,100,.55));
+}
 .etiqueta {
-  position: absolute; left: 12px; bottom: 12px;
-  padding: 3px 10px; border-radius: 999px;
-  background: rgba(20,15,10,.82); color: var(--oro-claro);
+  position: absolute; left: 10%; bottom: 15%;
+  padding: 2px 10px; border-radius: 999px;
+  background: rgba(20,15,10,.85); color: var(--oro-claro);
   font-size: 15px; letter-spacing: .03em;
 }
-.datos { flex: 1; display: flex; flex-direction: column; padding: 18px 20px 20px; }
-.datos h2 { margin: 0; font-size: 30px; letter-spacing: .06em; font-weight: 600; color: var(--oro-claro); }
-.datos p { margin: 6px 0 16px; color: var(--texto-suave); flex: 1; }
+.datos {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 4px 3% 0;
+  padding: 14px 20px 18px;
+  background: var(--panel);
+  border: 1px solid rgba(217,178,106,.25);
+  border-radius: 8px;
+  backdrop-filter: blur(3px);
+}
+.datos h2 { margin: 0; font-size: 28px; letter-spacing: .06em; font-weight: 600; color: var(--oro-claro); }
+.datos p { margin: 4px 0 14px; color: var(--texto-suave); flex: 1; }
 .jugar {
   align-self: flex-start;
-  padding: 9px 22px;
+  padding: 8px 24px;
   border-radius: 6px;
   background: linear-gradient(#e7c27a, #b88a3e);
   color: #24190c;
@@ -97,15 +113,15 @@ main {
 }
 .juego:hover .jugar { background: linear-gradient(#f3d394, #c99a4b); }
 .pronto { opacity: .6; cursor: default; }
-.pronto:hover { transform: none; border-color: var(--borde); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.pronto:hover { transform: none; }
 .pronto .jugar { background: #4a3d2f; color: var(--texto-suave); box-shadow: none; }
 
-.idiomas { position: absolute; top: 16px; right: 16px; display: flex; border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; }
+.idiomas { position: absolute; top: 14px; right: 16px; z-index: 1; display: flex; border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; background: rgba(20,14,9,.7); }
 .idiomas button { font: inherit; font-size: 15px; letter-spacing: .05em; padding: 4px 12px; border: 0; background: transparent; color: var(--texto-suave); cursor: pointer; }
 .idiomas button[aria-pressed="true"] { background: var(--oro); color: #24190c; font-weight: 700; }
-header { position: relative; }
+@media (max-width: 600px) { header { padding-top: 52px; } }
 
-footer { text-align: center; padding: 0 16px 40px; color: var(--texto-suave); font-size: 16px; }
+footer { text-align: center; padding: 0 16px 40px; color: var(--texto-suave); font-size: 16px; text-shadow: 0 1px 4px #000; }
 footer p { max-width: 640px; margin: 0 auto; }
 </style>
 </head>
@@ -115,9 +131,9 @@ footer p { max-width: 640px; margin: 0 auto; }
     <button type="button" data-idioma="es">ES</button>
     <button type="button" data-idioma="en">EN</button>
   </div>
-  <h1 data-t="titulo">CROSSROADS INN</h1>
+  <h1><img class="cartel" src="img/cartel.webp" alt="Crossroads Inn" width="900" height="587"></h1>
+  <p class="nombre-es" data-t="nombre"></p>
   <p class="lema" data-t="lema"></p>
-  <span class="adorno"></span>
 </header>
 
 <main id="juegos"></main>
@@ -180,6 +196,7 @@ const JUEGOS = [
 const TEXTOS = {
   es: {
     titulo: "POSADA DEL CRUCE",
+    nombre: "Posada del Cruce",
     lema: "Elige tu juego y pulsa para jugar",
     jugar: "Jugar",
     pronto: "Próximamente",
@@ -187,6 +204,7 @@ const TEXTOS = {
   },
   en: {
     titulo: "CROSSROADS INN",
+    nombre: "",
     lema: "Pick your game and click to play",
     jugar: "Play",
     pronto: "Coming soon",
@@ -218,7 +236,7 @@ function pintar(idioma) {
     if (url) tarjeta.href = url;
     tarjeta.innerHTML = `
       <div class="portada">
-        <img src="${j.imagen}" alt="" loading="lazy">
+        <img src="${j.imagen}" alt="" width="800" height="581" loading="lazy">
         <span class="etiqueta">${j.jugadores[idioma]}</span>
       </div>
       <div class="datos">
