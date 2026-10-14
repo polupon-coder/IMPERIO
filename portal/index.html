@@ -98,20 +98,27 @@ main {
 .datos h2 { margin: 0; font-size: 28px; letter-spacing: .06em; font-weight: 600; color: var(--oro-claro); }
 .datos p { margin: 4px 0 14px; color: var(--texto-suave); flex: 1; }
 .jugar {
-  align-self: flex-start;
-  padding: 8px 24px;
-  border-radius: 6px;
-  background: linear-gradient(#e7c27a, #b88a3e);
-  color: #24190c;
+  align-self: center;
+  display: flex; align-items: center; justify-content: center;
+  width: 210px;
+  aspect-ratio: 600 / 190;
+  padding-bottom: 2px;
+  background: url(img/boton.webp) center / 100% 100% no-repeat;
+  color: var(--oro-claro);
   font-weight: 700;
-  font-size: 18px;
-  letter-spacing: .05em;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 0 #6b4c1d;
+  font-size: 20px;
+  letter-spacing: .08em;
+  text-shadow: 0 2px 2px #000, 0 0 8px rgba(0,0,0,.8);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.6));
+  transition: filter .2s ease, color .2s ease;
 }
-.juego:hover .jugar { background: linear-gradient(#f3d394, #c99a4b); }
+.juego:hover .jugar, .juego:focus-visible .jugar {
+  color: #fff3d0;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)) drop-shadow(0 0 8px rgba(240,190,100,.6)) brightness(1.12);
+}
 .pronto { opacity: .6; cursor: default; }
 .pronto:hover { transform: none; }
-.pronto .jugar { background: #4a3d2f; color: var(--texto-suave); box-shadow: none; }
+.pronto .jugar { filter: grayscale(.7) brightness(.8); color: var(--texto-suave); }
 
 .idiomas { position: absolute; top: 14px; right: 16px; z-index: 1; display: flex; border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; background: rgba(20,14,9,.7); }
 .idiomas button { font: inherit; font-size: 15px; letter-spacing: .05em; padding: 4px 12px; border: 0; background: transparent; color: var(--texto-suave); cursor: pointer; }
