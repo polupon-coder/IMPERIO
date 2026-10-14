@@ -29,16 +29,15 @@ body {
   font-size: 18px;
   line-height: 1.45;
 }
-/* La taberna, fija detrás de todo y oscurecida para que se lea el texto. */
+/* La madera, fija detrás de todo y algo oscurecida en el centro para que se lea el texto. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 50% 15%, rgba(20,12,6,.15), rgba(12,8,4,.7) 70%),
-    linear-gradient(rgba(12,8,4,.35), rgba(12,8,4,.8)),
-    url(img/taberna.webp) center / cover no-repeat;
+    radial-gradient(ellipse at 50% 40%, rgba(12,8,4,.45), rgba(12,8,4,.15) 75%),
+    url(img/madera.webp) center / cover no-repeat;
 }
 
 header { position: relative; text-align: center; padding: 28px 16px 8px; }
