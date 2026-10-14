@@ -7,7 +7,7 @@
 <meta name="description" content="Elige un juego y pulsa para jugar con tus amigos o contra la máquina. / Pick a game and click to play with friends or against the computer.">
 <meta property="og:title" content="CROSSROADS INN">
 <meta property="og:description" content="IMPERIO, REGIUM, HÉROES, MANA — elige un juego y pulsa para jugar / pick a game and play.">
-<meta property="og:image" content="img/cartel.webp">
+<meta property="og:image" content="img/cartel-en.webp">
 <style>
 @font-face { font-family: Garamond; src: url(EBGaramond.ttf) format("truetype"); font-display: swap; }
 :root {
@@ -54,9 +54,7 @@ header { position: relative; text-align: center; padding: 28px 16px 8px; }
 @keyframes balanceo { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
 @media (prefers-reduced-motion: reduce) { .cartel { animation: none; } }
 h1 { margin: 0; }
-.nombre-es { margin: 10px 0 0; font-size: 22px; letter-spacing: .14em; color: var(--oro-claro); text-shadow: 0 2px 6px #000; }
-.nombre-es:empty { display: none; }
-.lema { margin: 6px 0 0; color: var(--texto); font-size: 21px; font-style: italic; text-shadow: 0 2px 6px #000; }
+.lema { margin: 10px 0 0; color: var(--texto); font-size: 21px; font-style: italic; text-shadow: 0 2px 6px #000; }
 
 main {
   max-width: 980px;
@@ -131,8 +129,7 @@ footer p { max-width: 640px; margin: 0 auto; }
     <button type="button" data-idioma="es">ES</button>
     <button type="button" data-idioma="en">EN</button>
   </div>
-  <h1><img class="cartel" src="img/cartel.webp" alt="Crossroads Inn" width="900" height="587"></h1>
-  <p class="nombre-es" data-t="nombre"></p>
+  <h1><img class="cartel" id="cartel" src="img/cartel-es.webp" alt="Posada del Cruce" width="900" height="587"></h1>
   <p class="lema" data-t="lema"></p>
 </header>
 
@@ -196,7 +193,7 @@ const JUEGOS = [
 const TEXTOS = {
   es: {
     titulo: "POSADA DEL CRUCE",
-    nombre: "Posada del Cruce",
+    cartel: "img/cartel-es.webp",
     lema: "Elige tu juego y pulsa para jugar",
     jugar: "Jugar",
     pronto: "Próximamente",
@@ -204,7 +201,7 @@ const TEXTOS = {
   },
   en: {
     titulo: "CROSSROADS INN",
-    nombre: "",
+    cartel: "img/cartel-en.webp",
     lema: "Pick your game and click to play",
     jugar: "Play",
     pronto: "Coming soon",
@@ -224,6 +221,9 @@ function pintar(idioma) {
   const t = TEXTOS[idioma];
   document.documentElement.lang = idioma;
   document.title = t.titulo;
+  const cartel = document.getElementById("cartel");
+  cartel.src = t.cartel;
+  cartel.alt = t.titulo;
   for (const el of document.querySelectorAll("[data-t]")) el.textContent = t[el.dataset.t];
   for (const b of document.querySelectorAll("[data-idioma]")) b.setAttribute("aria-pressed", b.dataset.idioma === idioma);
 
